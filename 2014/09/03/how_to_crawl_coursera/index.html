@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>一步步爬取Coursera课程资源 | Just For Fun</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="有时候我们需要把一些经典的东西收藏起来，时时回味，而Coursera上的一些课程无疑就是经典之作。Coursera中的大部分完结课程都提供了完整的配套教学资源，包括ppt，视频以及字幕等，离线下来后会非常便于学习。很明显，我们不会去一个文件一个文件的下载，只有傻子才那么干，程序员都是聪明人！
+那我们聪明人准备怎么办呢？当然是写一个脚本来批量下载了。首先我们需要分析一下手工下载的流程：登录自己的Co">
+<meta property="og:type" content="article">
+<meta property="og:title" content="一步步爬取Coursera课程资源">
+<meta property="og:url" content="http://selfboot.cn/2014/09/03/how_to_crawl_coursera/index.html">
+<meta property="og:site_name" content="Just For Fun">
+<meta property="og:description" content="有时候我们需要把一些经典的东西收藏起来，时时回味，而Coursera上的一些课程无疑就是经典之作。Coursera中的大部分完结课程都提供了完整的配套教学资源，包括ppt，视频以及字幕等，离线下来后会非常便于学习。很明显，我们不会去一个文件一个文件的下载，只有傻子才那么干，程序员都是聪明人！
+那我们聪明人准备怎么办呢？当然是写一个脚本来批量下载了。首先我们需要分析一下手工下载的流程：登录自己的Co">
+<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20140903_guest_lecture.png">
+<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20140903_login_url.png">
+<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20140903_coursera_post.png">
+<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20140903_architecture.png">
+<meta property="og:updated_time" content="2015-09-23T09:58:46.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="一步步爬取Coursera课程资源">
+<meta name="twitter:description" content="有时候我们需要把一些经典的东西收藏起来，时时回味，而Coursera上的一些课程无疑就是经典之作。Coursera中的大部分完结课程都提供了完整的配套教学资源，包括ppt，视频以及字幕等，离线下来后会非常便于学习。很明显，我们不会去一个文件一个文件的下载，只有傻子才那么干，程序员都是聪明人！
+那我们聪明人准备怎么办呢？当然是写一个脚本来批量下载了。首先我们需要分析一下手工下载的流程：登录自己的Co">
+<meta name="twitter:image" content="http://xuelangzf-github.qiniudn.com/20140903_guest_lecture.png">
+  
+    <link rel="alternative" href="/atom.xml" title="Just For Fun" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/image/favicon.ico">
+  
+  <link href="//fonts.useso.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <link href="//libs.useso.com/js/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  
+<!-- Google Analytics -->
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-41784041-1', 'auto');
+ga('send', 'pageview');
+
+</script>
+<!-- End Google Analytics -->
+
+
+  
+<!-- Baidu Analytics -->
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?fd3ab4b3c488cbb43afa1c2669f06648";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+<!-- End Baidu Analytics -->
+
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Just For Fun</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">享受快乐的时光</a>
+        </h2>
+      
+    </div>
+    <div id="header-menu">
+      <nav id="main-nav">
+        <ul>
+        
+          <li><a href="/"><i class="fa fa-home icon-setting"></i></a></li>
+        
+          <li><a href="/archives"><i class="fa fa-archive icon-setting"></i></a></li>
+        
+          <li><a href="/aboutme.html"><i class="fa fa-user icon-setting"></i></a></li>
+        
+        
+          <li><a href="/atom.xml"><i class="fa fa-rss %> icon-setting"></i></a></li>
+        
+        </ul>
+      </nav>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-how_to_crawl_coursera" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/09/03/how_to_crawl_coursera/" class="article-date">
+  <time datetime="2014-09-02T16:00:00.000Z" itemprop="datePublished">9月 3 2014</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/程序设计/">程序设计</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      一步步爬取Coursera课程资源
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>有时候我们需要把一些经典的东西收藏起来，时时回味，而Coursera上的一些课程无疑就是经典之作。Coursera中的大部分完结课程都提供了完整的配套教学资源，包括ppt，视频以及字幕等，离线下来后会非常便于学习。很明显，我们不会去一个文件一个文件的下载，只有傻子才那么干，程序员都是聪明人！</p>
+<p>那我们聪明人准备怎么办呢？当然是写一个脚本来批量下载了。首先我们需要分析一下手工下载的流程：登录自己的Coursera账户(有的课程需要我们登录并选课后才能看到相应的资源)，在课程资源页面里，找到相应的文件链接，然后用喜欢的工具下载。</p>
+<p>很简单是吧？我们可以用程序来模仿以上的步骤，这样就可以解放双手了。整个程序分为三个部分就可以了：</p>
+<ol>
+<li>登录Coursera；</li>
+<li>在课程资源页面里面找到资源链接；</li>
+<li>根据资源链接选择合适的工具下载资源。</li>
+</ol>
+<p>下面就来具体的实现以下吧！<br><a id="more"></a></p>
+<h1 id="登录"><a href="#登录" class="headerlink" title="登录"></a>登录</h1><p>刚开始时自己并没有添加登录模块，以为访客就可以下载相应的课程资源，后来在测试<code>comnetworks-002</code>这门课程时发现访客访问资源页面时会自动跳转到登录界面，下图是chrome在隐身模式访问<a href="https://class.coursera.org/comnetworks-002/lecture" target="_blank" rel="external">该课程资源页面</a>时的情况。</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20140903_guest_lecture.png" alt="未登录用户访问课程页面资源" title="未登录用户访问课程资源"></p>
+<p>要想模拟登录，我们先找到登录的<a href="https://accounts.coursera.org/signin" target="_blank" rel="external">页面</a>，然后利用google的<code>Developer Tools</code>分析账号密码是如何上传到服务器的。</p>
+<p>我们在登录页面的表单中填入账号密码，然后点击登录。与此同时，我们需要双眼紧盯<code>Developer Tools——Network</code>，找到提交账号信息的url。一般情况下，如果要向服务器提交信息，一般都用post方法，这里我们只需要先找到Method为post的url。悲剧的是，每次登录账号时，Network里面都找不到提交账户信息的地址。猜测登录成功后，直接跳转到登录成功后的页面，想要找的内容一闪而过了。</p>
+<p>于是就随便输入了一组账号密码，故意登录失败，果真找到了post的页面地址，如下图:</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20140903_login_url.png" alt="提交账户信息的页面" title="提交账户信息的页面"></p>
+<p>地址为：<code>https://accounts.coursera.org/api/v1/login</code>。为了知道向服务器提交了哪些内容，进一步观察post页面中表单中内容，如下图：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20140903_coursera_post.png" alt="提交表单内容" title="提交表单内容"></p>
+<p>我们看到一共有三个字段：</p>
+<ul>
+<li>email：账号的注册邮箱</li>
+<li>password：账号密码</li>
+<li>webrequest：附加的字段，值为true。</li>
+</ul>
+<p>接下来就动手写吧，我选择用python的<code>Requests</code>库来模拟登录，关于Requests官网是这样介绍的。</p>
+<blockquote>
+<p>Requests is an elegant and simple HTTP library for Python, built for human beings. </p>
+</blockquote>
+<p>事实上requests用起来确实简单方便，不亏是专门为人类设计的http库。requests提供了<code>Session对象</code>，可以用来在不同的请求中传递一些相同的数据，比如在每次请求中都携带cookie。</p>
+<p>初步的代码如下：</p>
+<pre><code>signin_url = &quot;https://accounts.coursera.org/api/v1/login&quot;
+logininfo = {&quot;email&quot;: &quot;...&quot;,
+             &quot;password&quot;: &quot;...&quot;,
+             &quot;webrequest&quot;: &quot;true&quot;
+             }
+
+user_agent = (&quot;Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_4) &quot;
+              &quot;AppleWebKit/537.36 (KHTML, like Gecko) &quot;
+              &quot;Chrome/36.0.1985.143 Safari/537.36&quot;)
+
+post_headers = {&quot;User-Agent&quot;: user_agent,
+                &quot;Referer&quot;: &quot;https://accounts.coursera.org/signin&quot;
+                }
+coursera_session = requests.Session()
+
+login_res = coursera_session.post(signin_url,
+                                  data=logininfo,
+                                  headers=post_headers,
+                                  )
+if login_res.status_code == 200:
+    print &quot;Login Successfully!&quot;
+else:
+    print login_res.text
+</code></pre><p>将表单中提交的内容存放在字典中，然后作为data参数传递给Session.post函数。一般情况下，最好是加上请求<code>User-Agent</code>，<code>Referer</code>等请求头部，User-Agent用来模拟浏览器请求，Referer用来告诉服务器我是从referer页面跳转到请求页面的，有时候服务器会检查请求的Referer字段来保证是从固定地址跳到当前请求页的。</p>
+<p>上面片段的运行结果很奇怪，显示如下信息：<code>Invalid CSRF Token</code>。后来在github上面搜索到一个Coursera的<a href="https://github.com/coursera-dl/coursera" target="_blank" rel="external">批量下载脚本</a>，发现人家发送页面请求时headers多了<code>XCSRF2Cookie, XCSRF2Token, XCSRFToken, cookie</code>4个字段。于是又重新看了一下post页面的请求头部，发现确实有这几个字段，估计是服务器端用来做一些限制的。</p>
+<p>用浏览器登录了几次，发现XCSRF2Token, XCSRFToken是长度为24的随机字符串，XCSRF2Cookie为”csrf2<em>token</em>“加上长度为8的随机字符串。不过一直没搞明白Cookie是怎么求出来的，不过看github上面代码，Cookie似乎只是”csrftoken”和其他三个的组合，试了一下竟然可以。</p>
+<p>在原来的代码上添加以下部分就足够了。</p>
+<pre><code>def randomString(length):
+    return &apos;&apos;.join(random.choice(string.letters + string.digits) for i in xrange(length))
+
+XCSRF2Cookie = &apos;csrf2_token_%s&apos; % &apos;&apos;.join(randomString(8))
+XCSRF2Token = &apos;&apos;.join(randomString(24))
+XCSRFToken = &apos;&apos;.join(randomString(24))
+cookie = &quot;csrftoken=%s; %s=%s&quot; % (XCSRFToken, XCSRF2Cookie, XCSRF2Token)
+
+post_headers = {&quot;User-Agent&quot;: user_agent,
+                &quot;Referer&quot;: &quot;https://accounts.coursera.org/signin&quot;,
+                &quot;X-Requested-With&quot;: &quot;XMLHttpRequest&quot;,
+                &quot;X-CSRF2-Cookie&quot;: XCSRF2Cookie,
+                &quot;X-CSRF2-Token&quot;: XCSRF2Token,
+                &quot;X-CSRFToken&quot;: XCSRFToken,
+                &quot;Cookie&quot;: cookie
+                }
+</code></pre><p>至此登录功能初步实现。</p>
+<h1 id="分析资源链接"><a href="#分析资源链接" class="headerlink" title="分析资源链接"></a>分析资源链接</h1><p>登录成功后，我们只需要get到资源页面的内容，然后过滤出自己需要的资源链接就行了。资源页面的地址很简单，为<code>https://class.coursera.org/name/lecture</code>，其中name为课程名称。比如对于课程comnetworks-002，资源页面地址为<a href="https://class.coursera.org/comnetworks-002/lecture" target="_blank" rel="external">https://class.coursera.org/comnetworks-002/lecture</a>。</p>
+<p>抓取到页面资源后，我们需要分析html文件，这里选择使用<code>BeautifulSoup</code>。BeautifulSoup是一个可以从HTML或XML文件中提取数据的Python库，相当强大。具体使用官网上有很详细的文档，这里不再赘述。在使用BeautifulSoup前，我们还得找出资源链接的规律，方便我们过滤。</p>
+<p>其中课程每周的总题目为<code>class=course-item-list-header</code>的div标签下，每周的课程均在<code>class=course-item-list-section-list</code>的ul标签下，每节课程在一个li标签中，课程资源则在li标签中的div标签中。</p>
+<p>查看了几门课程之后，发现过滤资源链接的方法很简单，如下：</p>
+<ol>
+<li>ppt和ppt资源：用正则表达式匹配链接；</li>
+<li>字幕资源：找到<code>title=&quot;Subtitles (srt)&quot;</code>的标签，取其<code>href</code>属性；</li>
+<li>视频资源：找到<code>title=&quot;Video (MP4)&quot;</code>的标签，取其<code>href</code>属性即可。</li>
+</ol>
+<p>字幕和视频也可以用正则表达式过滤，不过用BeautifulSoup根据title属性来匹配，有更好的易读性。而ppt和pdf资源，没有固定的title属性，只好利用正则表达式来匹配。</p>
+<p>具体代码如下：</p>
+<pre><code>soup = BeautifulSoup(content)
+chapter_list = soup.find_all(&quot;div&quot;, class_=&quot;course-item-list-header&quot;)
+lecture_resource_list = soup.find_all(&quot;ul&quot;, class_=&quot;course-item-list-section-list&quot;)
+
+ppt_pattern = re.compile(r&apos;https://[^&quot;]*\.ppt[x]?&apos;)
+pdf_pattern = re.compile(r&apos;https://[^&quot;]*\.pdf&apos;)
+for lecture_item, chapter_item in zip(lecture_resource_list, chapter_list):
+    # weekly title
+    chapter = chapter_item.h3.text.lstrip()
+
+    for lecture in lecture_item:
+        lecture_name = lecture.a.string.lstrip()
+
+        # get resource link
+        ppt_tag = lecture.find(href=ppt_pattern)
+        pdf_tag = lecture.find(href=pdf_pattern)
+        srt_tag = lecture.find(title=&quot;Subtitles (srt)&quot;)
+        mp4_tag = lecture.find(title=&quot;Video (MP4)&quot;)
+        print ppt_tag[&quot;href&quot;], pdf_tag[&quot;href&quot;]
+        print srt_tag[&quot;href&quot;], mp4_tag[&quot;href&quot;]
+</code></pre><h1 id="下载资源"><a href="#下载资源" class="headerlink" title="下载资源"></a>下载资源</h1><p>既然已经得到了资源链接，下载部分就很容易了，这里我选择使用curl来下载。具体思路很简单，就是输出<code>curl resource_link -o file_name</code>到一个种子文件中去，比如到feed.sh中。这样只需要给种子文件执行权限，然后运行种子文件即可。</p>
+<p>为了便于归类课程资源，可以为课程每周的标题建立一个文件夹，之后该周的所有课程均下载在该目录下。为了方便我们快速定位到每节课的所有资源，可以把一节课的所有资源文件均命名为<code>课名.文件类型</code>。具体的实现比较简单，这里不再给出具体程序了。可以看一下一个测试例子中的feed.sh文件，部分内容如下：</p>
+<pre><code>mkdir &apos;Week 1: Introduction, Protocols, and Layering&apos;
+cd &apos;Week 1: Introduction, Protocols, and Layering&apos;
+curl https://d396qusza40orc.cloudfront.net/comnetworks/lect/1-readings.pdf -o &apos;1-1 Goals and Motivation (15:46).pdf&apos;
+curl https://class.coursera.org/comnetworks-002/lecture/subtitles?q=25_en&amp;format=srt -o &apos;1-1 Goals and Motivation (15:46).srt&apos;
+curl https://class.coursera.org/comnetworks-002/lecture/download.mp4?lecture_id=25 -o &apos;1-1 Goals and Motivation (15:46).mp4&apos;
+curl https://d396qusza40orc.cloudfront.net/comnetworks/lect/1-readings.pdf -o &apos;1-2 Uses of Networks (17:12).pdf&apos;
+curl https://class.coursera.org/comnetworks-002/lecture/subtitles?q=11_en&amp;format=srt -o &apos;1-2 Uses of Networks (17:12).srt&apos;
+curl https://class.coursera.org/comnetworks-002/lecture/download.mp4?lecture_id=11 -o &apos;1-2 Uses of Networks (17:12).mp4&apos;
+</code></pre><p>到这里为止，我们已经成功完成爬取Coursera课程资源的目标，具体的代码放在<a href="https://gist.github.com/xuelangZF/1a8ce8715960ff1a1bd1" target="_blank" rel="external">gist</a>上。使用时，我们只需要运行程序，并把课程名称作为参数传递给程序就可以了(这里的课程名称并不是整个课程的完整名字，而是在课程介绍页面地址中的缩略名字，比如Computer Networks这门课，课程名称是comnetworks-002)。</p>
+<hr>
+<p>后来发现，Coursera提供了<a href="https://tech.coursera.org/app-platform/catalog/" target="_blank" rel="external">接口</a>，方便我们下载资源。<br>update:September 3, 2014</p>
+<hr>
+<p>其实，这个程序可以看做一个简单的小爬虫程序了，下面粗略介绍下爬虫的概念。</p>
+<h1 id="一点都不简单的爬虫"><a href="#一点都不简单的爬虫" class="headerlink" title="一点都不简单的爬虫"></a>一点都不简单的爬虫</h1><p>关于什么是爬虫，wiki上是这样说的</p>
+<blockquote>
+<p>A Web crawler is an Internet bot that systematically browses the World Wide Web, typically for the purpose of Web indexing. </p>
+</blockquote>
+<p>爬虫的总体架构图如下(图片来自wiki)：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20140903_architecture.png" alt="爬虫的总体架构图" title="web 爬虫架构图"></p>
+<p>简单来说，爬虫从Scheduler中获取初始的urls，下载相应的页面，存储有用的数据，同时分析该页面中的链接，如果已经访问就pass，没访问的话加入到Scheduler中等待抓取页面。</p>
+<p>当然有一些协议来约束爬虫的行为规范，比如许多网站都有一个<code>robots.txt</code>文件来规定网站哪些内容可以被爬取，哪些不可以。</p>
+<p>每个搜索引擎背后都有一个强大的爬虫程序，把触角伸到网络中的所有角落，不断去收集有用信息，并建立索引。这种搜索引擎级别的爬虫实现起来非常复杂，因为网络上的页面数量太过庞大，只是遍历他们就已经很困难了，更不要说去分析页面信息，并建立索引了。</p>
+<p>实际应用中，我们只需要爬取特定站点，抓取少量的资源，这样实现起来简单很多。不过仍然有许多让人头疼的问题，比如许多页面元素是javascript生成的，这时候我们需要一个javascript引擎，渲染出整个页面，再加以过滤。</p>
+<p>更糟糕的是，许多站点都会用一些措施来阻止爬虫爬取资源，比如限定同一IP一段时间的访问次数，或者是限制两次操作的时间间隔，加入验证码等等。绝大多数情况下，我们不知道服务器端是如何防止爬虫的，所以要想让爬虫工作起来确实挺难的。</p>
+<p><strong>参考：</strong><br><a href="https://github.com/coursera-dl/coursera" target="_blank" rel="external">github:coursera-dl/coursera</a><br><a href="https://github.com/xuelangZF/coursera-downloader" target="_blank" rel="external">github:coursera-downloader</a><br><a href="http://segmentfault.com/q/1010000000646685" target="_blank" rel="external">python爬取页面元素失败</a><br><a href="https://en.wikipedia.org/wiki/Web_crawler" target="_blank" rel="external">Wiki: Web crawler</a><br><a href="http://www.zhihu.com/question/20899988" target="_blank" rel="external">Python 爬虫如何入门学习？</a>  </p>
+
+      
+    </div>
+
+    
+	    <!-- 添加捐赠图标 -->
+<div class ="post-donate">
+    <div id="donate_board" class="donate_bar center">
+        <a id="btn_donate" class="btn_donate" href="javascript:;" title="打赏"></a>
+        <span class="donate_txt">
+           &uarr;<br>
+		   欣赏此文？支持一下吧
+        </span>
+        <br>
+      </div>  
+	<div id="donate_guide" class="donate_bar center hidden" >
+		<!-- 支付宝打赏图案 -->
+		<img src="http://xuelangzf-github.qiniudn.com/zhifubao.jpg" alt="支付宝打赏"> 
+		<!-- 微信打赏图案 -->
+		<img src="http://xuelangzf-github.qiniudn.com/weixin.jpg" alt="微信打赏">  
+    </div>
+	<script type="text/javascript">
+		document.getElementById('btn_donate').onclick = function(){
+			$('#donate_board').addClass('hidden');
+			$('#donate_guide').removeClass('hidden');
+		}
+	</script>
+</div>
+<!-- 添加捐赠图标 -->
+
+    
+  
+    
+	    <div class="article-footer-copyright">
+
+<p>本文由 selfboot 发表于 <a href="http://selfboot.cn" target="_blank">个人博客</a>，采用<a href="http://creativecommons.org/licenses/by-sa/3.0/cn" target="_blank" >署名-非商业性使用-相同方式共享 3.0 中国大陆许可协议</a>。</p>
+<p>非商业转载请注明作者及出处。商业转载请联系<a href="mailto:xuezaigds@gmail.com">作者</a>本人。</p>
+<p>
+本文标题为: 一步步爬取Coursera课程资源<br/>
+本文链接为: <a href="/2014/09/03/how_to_crawl_coursera/" target="_blank">http://selfboot.cn/2014/09/03/how_to_crawl_coursera/</a>
+</p>
+</div>
+
+    
+
+    <footer class="article-footer">
+      
+        <a href="http://selfboot.cn/2014/09/03/how_to_crawl_coursera/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/python/">python</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/教程/">教程</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/09/14/timeline_demo/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          简单美丽的时间线
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/08/28/character_encoding/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">人机交互之字符编码</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+
+  <!-- Go to www.addthis.com/dashboard to customize your tools -->
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-57adc438b914651b"></script>
+
+
+
+</section>
+      </div>
+    </div>
+    
+    
+<script>
+  var disqus_shortname = 'xuelangZF';
+  
+  var disqus_url = 'http://selfboot.cn/2014/09/03/how_to_crawl_coursera/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  }());
+</script>
+
+
+<script src="http://libs.useso.com/js/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

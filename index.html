@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Just For Fun</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="website">
+<meta property="og:title" content="Just For Fun">
+<meta property="og:url" content="http://selfboot.cn/index.html">
+<meta property="og:site_name" content="Just For Fun">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Just For Fun">
+  
+    <link rel="alternative" href="/atom.xml" title="Just For Fun" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/image/favicon.ico">
+  
+  <link href="//fonts.useso.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <link href="//libs.useso.com/js/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  
+<!-- Google Analytics -->
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-41784041-1', 'auto');
+ga('send', 'pageview');
+
+</script>
+<!-- End Google Analytics -->
+
+
+  
+<!-- Baidu Analytics -->
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?fd3ab4b3c488cbb43afa1c2669f06648";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+<!-- End Baidu Analytics -->
+
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Just For Fun</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">享受快乐的时光</a>
+        </h2>
+      
+    </div>
+    <div id="header-menu">
+      <nav id="main-nav">
+        <ul>
+        
+          <li><a href="/"><i class="fa fa-home icon-setting"></i></a></li>
+        
+          <li><a href="/archives"><i class="fa fa-archive icon-setting"></i></a></li>
+        
+          <li><a href="/aboutme.html"><i class="fa fa-user icon-setting"></i></a></li>
+        
+        
+          <li><a href="/atom.xml"><i class="fa fa-rss %> icon-setting"></i></a></li>
+        
+        </ul>
+      </nav>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main">
+  
+    <article id="post-forum_design_wsgi" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/08/07/forum_design_wsgi/" class="article-date">
+  <time datetime="2016-08-07T14:02:50.000Z" itemprop="datePublished">8月 7 2016</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/项目实践/">项目实践</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2016/08/07/forum_design_wsgi/">从零开始搭建论坛（二）：Web服务器网关接口</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>在 <a href="http://selfboot.cn/2016/07/28/forum_design_framework/">从零开始搭建论坛（一）：Web服务器与Web框架</a> 中我们弄清楚了Web 服务器、Web 应用程序、Web框架的概念。对于 Python 来说，越来越多的 Web 框架面世，在给我们更多选择机会的同时，也限制了我们对于 Web Server 的选择。同样是有着很多 Web 框架的Java，因为有着 servlet API 的存在，任何Java Web框架写的应用程序都可以运行在任意一个 Web Server 上。</p>
+<p>Python 社区当然也需要这样一套 API，来适配Web服务器和应用程序，这套 API 就是 WSGI（Python Web Server Gateway Interface），在 <a href="https://www.python.org/dev/peps/pep-3333/">PEP 3333</a> 里有详细的说明。简单来说，WSGI是连接Web服务器和Web应用程序的桥梁，一方面从Web server 拿到原始 HTTP 数据，处理成统一格式后交给 Web 应用程序，另一方面从应用程序／框架这边进行业务逻辑处理，生成响应内容后交给服务器。</p>
+<p>Web服务器和框架通过 WSGI 来进行耦合的详细过程如下图所示：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160807_forum_design_WSGI_1.png" alt="WSGI Server 适配"></p>
+        
+          <p class="article-more-link">
+            <a href="/2016/08/07/forum_design_wsgi/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+
+    
+  
+    
+
+    <footer class="article-footer">
+      
+        <a href="http://selfboot.cn/2016/08/07/forum_design_wsgi/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Flask/">Flask</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/python/">python</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+
+
+
+  
+    <article id="post-forum_design_framework" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/07/28/forum_design_framework/" class="article-date">
+  <time datetime="2016-07-28T14:02:50.000Z" itemprop="datePublished">7月 28 2016</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/项目实践/">项目实践</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2016/07/28/forum_design_framework/">从零开始搭建论坛（一）：Web服务器与Web框架</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>之前用 Django 做过一个小的站点，感觉Django太过笨重，于是就准备换一个比较轻量级的 Web 框架来玩玩。Web.py 作者已经挂掉，项目好久没有更新，所以不准备用它。而 Flask 也是一个成熟的轻量级 Web 框架，在 github 上有众多的 Star 和 Fork，文档和扩展也很丰富，值得学习。</p>
+<p>学习一个框架最好的方式就是用框架做一个项目，在实战中理解掌握框架。这里我用 Flask 框架，使用 Mysql 数据库做了一个<a href="https://github.com/xuelangZF/NaHan">论坛系统</a>。麻雀虽小，五脏俱全，论坛效果图如下：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160728_forum_design_framework_1.png" alt="论坛系统截图"></p>
+<p>下面是论坛的基本功能：</p>
+<ul>
+<li>完整的用户模块（注册、登录，更改、找回密码、信息修改、站内消息通知）；</li>
+<li>丰富的论坛模块（创建、回复话题，站内搜索，markdown支持，@user 提醒）；</li>
+<li>强大的后台管理，支持屏蔽用户、话题、评论，支持各种条件搜索话题、评论；</li>
+</ul>
+<p>本博客将会用一系列文章，记录论坛系统搭建的过程，希望对刚入门Web开发的同学有所帮助。</p>
+        
+          <p class="article-more-link">
+            <a href="/2016/07/28/forum_design_framework/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+
+    
+  
+    
+
+    <footer class="article-footer">
+      
+        <a href="http://selfboot.cn/2016/07/28/forum_design_framework/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Flask/">Flask</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/python/">python</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+
+
+
+  
+    <article id="post-leetcode_guide_why" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/07/24/leetcode_guide_why/" class="article-date">
+  <time datetime="2016-07-24T14:02:50.000Z" itemprop="datePublished">7月 24 2016</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/算法/">算法</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2016/07/24/leetcode_guide_why/">LeetCode 刷题指南（一）：为什么要刷题</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>虽然刷题一直饱受诟病，不过不可否认刷题确实能锻炼我们的编程能力，相信每个认真刷题的人都会有体会。现在提供在线编程评测的平台有很多，比较有名的有 <a href="http://hihocoder.com/">hihocoder</a>，<a href="http://www.lintcode.com/zh-cn/">LintCode</a>，以及这里我们关注的 <a href="https://LeetCode.com/">LeetCode</a>。</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160724_leetcode_guide_1.png" alt=""></p>
+<p>LeetCode 是一个非常棒的 OJ（Online Judge）平台，收集了许多公司的面试题目。相对其他 OJ 平台而言，有着下面的几个优点：</p>
+<ul>
+<li>题目全部来自业内大公司的真实面试</li>
+<li>不用处理输入输出，精力全放在解决具体问题上</li>
+<li>题目有丰富的讨论，可以参考别人的思路</li>
+<li>精确了解自己代码在所有提交代码中运行效率的排名</li>
+<li>支持多种主流语言：C/C++，Python, Java</li>
+<li>可以在线进行测试，方便调试</li>
+</ul>
+        
+          <p class="article-more-link">
+            <a href="/2016/07/24/leetcode_guide_why/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+
+    
+  
+    
+
+    <footer class="article-footer">
+      
+        <a href="http://selfboot.cn/2016/07/24/leetcode_guide_why/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/python/">python</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/思考/">思考</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+
+
+
+  
+  
+    <nav id="page-nav">
+      <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/page/13/">13</a><a class="extend next" rel="next" href="/page/2/">Next &raquo;</a>
+    </nav>
+  
+</section>
+      </div>
+    </div>
+    
+    
+<script>
+  var disqus_shortname = 'xuelangZF';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = 'https://' + disqus_shortname + '.disqus.com/count.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  }());
+</script>
+
+
+<script src="http://libs.useso.com/js/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

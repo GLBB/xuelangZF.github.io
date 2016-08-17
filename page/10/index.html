@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Just For Fun</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="website">
+<meta property="og:title" content="Just For Fun">
+<meta property="og:url" content="http://selfboot.cn/page/10/index.html">
+<meta property="og:site_name" content="Just For Fun">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Just For Fun">
+  
+    <link rel="alternative" href="/atom.xml" title="Just For Fun" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/image/favicon.ico">
+  
+  <link href="//fonts.useso.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <link href="//libs.useso.com/js/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  
+<!-- Google Analytics -->
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-41784041-1', 'auto');
+ga('send', 'pageview');
+
+</script>
+<!-- End Google Analytics -->
+
+
+  
+<!-- Baidu Analytics -->
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?fd3ab4b3c488cbb43afa1c2669f06648";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+<!-- End Baidu Analytics -->
+
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Just For Fun</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">享受快乐的时光</a>
+        </h2>
+      
+    </div>
+    <div id="header-menu">
+      <nav id="main-nav">
+        <ul>
+        
+          <li><a href="/"><i class="fa fa-home icon-setting"></i></a></li>
+        
+          <li><a href="/archives"><i class="fa fa-archive icon-setting"></i></a></li>
+        
+          <li><a href="/aboutme.html"><i class="fa fa-user icon-setting"></i></a></li>
+        
+        
+          <li><a href="/atom.xml"><i class="fa fa-rss %> icon-setting"></i></a></li>
+        
+        </ul>
+      </nav>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main">
+  
+    <article id="post-character_encoding" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/08/28/character_encoding/" class="article-date">
+  <time datetime="2014-08-27T16:00:00.000Z" itemprop="datePublished">8月 28 2014</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/计算机基础/">计算机基础</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/08/28/character_encoding/">人机交互之字符编码</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>编码其实并不神秘，可以说是随处可见。上溯到远古时期，猿人为了记录所见到的事物，就在岩壁刻下简单的图形，这些图形可以说是最古老的一种编码了。我们的汉语其实也是一种编码，李白同学为了描述瀑布美景，就写出了“飞流直下三千尺，疑是银河落九天”的千古名句。随着汉语的不断完善，我们遇见的每件具体物体和大部分抽象的概念都有了编码，比如“树”代表长有绿叶的高高的植被，“开心”代表了一种愉悦的精神状态。当然了，还有英语、法语、德语等等，它们每一个都是一种编码，可以表达自然万物以及抽象概念。</p>
+<p>千百年来，文字这种编码足以应付我们的生存所需，直到计算机的出现。那么计算机有什么特别之处呢？这就要从计算机的诞生说起，可以说计算机的诞生主要归功于布尔、香农、图灵、冯·诺依曼。</p>
+<ol>
+<li>布尔创立逻辑代数学，为数字电子计算机的二进制、开关逻辑元件和逻辑电路的设计辅平了道路。1854年，出版了名著《布尔代数》，后来发展成为现代计算机的理论基础——数理逻辑。</li>
+<li>香农在其一篇硕士论文中指出，能够用二进制系统表达布尔代数中的逻辑关系，用“1”代表“真True”，用“0”代表“假False”，并由此用二进制系统来构筑逻辑运算系统。</li>
+<li>1936年，图灵在论文《论可计算数及在密码上的应用》中，严格地描述了计算机的逻辑结构，首次提出了计算机的通用模型——“图灵机”，并从理论上证明了这种抽象计算机的可能性。</li>
+<li>冯·诺依曼提出计算机基本结构和工作方式的设想，理论要点就是：数字计算机的数制采用二进制；计算机应该按照程序顺序执行。人们把冯诺依曼的这个理论称为冯诺依曼体系结构，所有的的计算机都采用的是冯诺依曼体系结构。</li>
+</ol>
+<p>由此，我们知道计算机内部只有0和1两个数，无论是什么样的信息，在计算机内部都是用0和1来表示。尽管计算机内部用0和1来表达万物，但是计算机与外部的交互仍然采用人们熟悉和便于阅读的方式，期间的转换过程可以简单的称为编码、解码。</p>
+        
+          <p class="article-more-link">
+            <a href="/2014/08/28/character_encoding/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+
+    
+  
+    
+
+    <footer class="article-footer">
+      
+        <a href="http://selfboot.cn/2014/08/28/character_encoding/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/python/">python</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/思考/">思考</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+
+
+
+  
+    <article id="post-regular_expression_all" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/08/21/regular_expression_all/" class="article-date">
+  <time datetime="2014-08-20T16:00:00.000Z" itemprop="datePublished">8月 21 2014</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/算法/">算法</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/08/21/regular_expression_all/">众里寻她千百度--正则表达式</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>先来看一个让人震撼的小故事，故事来自知乎问题<a href="http://www.zhihu.com/question/20100408">PC用户的哪些行为让你当时就震惊了？</a>。</p>
+<blockquote>
+<p>同学在一个化妆品公司上班，旁边一个大妈（四十多岁）发给他一个exl表，让他在里面帮忙找一个经销商的资料。<br>表格里面大约有几百个客户资料，我同学直接筛选填入信息，然后没找到，就转头告诉大妈，说这个表里没有。<br>大妈很严厉的批评了我同学，说年轻人干工作一定要沉的住气，心浮气躁可不行。这才几分钟啊，我才看了二十行，你怎么就找完了。<br>同学过去一看，大妈在一行一行的精挑细选，顿时一身冷汗。把筛选办法告知后，大妈不但不领情，还召集办公司其他老职员，一起声讨我同学，我们平时都是这么找的，你肯定是偷工减料，我们找一个小时没找完，你几分钟就找完了。</p>
+</blockquote>
+<p>不知道是否确有此事，不过看起来好吓人的样子。仔细想想，大多数人都是用以往的经验来分析遇见的新问题的。就上面的大妈而言，在接触计算机之前的几十年里，她面对的都是纸质的客户资料，此时，要查找某一客户资料，只能一行一行看下去了。</p>
+<p>现在，虽然有了计算机，但是只是简单的把它看做一个比较大的纸质资料库罢了，并没有认识到计算机的强大之处。这里的强大主要就是说计算机在处理电子文档时的强大的搜索功能了。</p>
+<p>当然，对于大部分年轻人来说，计算机中的搜索功能是再熟悉不过了。我们可以在word、excel、网页中搜索特定内容，可以在整个计算机文件系统中搜索文件名，甚至搜索文件中的内容（Win下的everthing，Mac下的Spotlight）。</p>
+<p>这些搜索主要用到了两种技术：</p>
+<ol>
+<li>正则表达式</li>
+<li>数据库索引</li>
+</ol>
+<p>这里我们先介绍一下正则表达式。</p>
+        
+          <p class="article-more-link">
+            <a href="/2014/08/21/regular_expression_all/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+
+    
+  
+    
+
+    <footer class="article-footer">
+      
+        <a href="http://selfboot.cn/2014/08/21/regular_expression_all/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/python/">python</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/思考/">思考</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+
+
+
+  
+    <article id="post-python_how_to_use_trie_tree" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/08/12/python_how_to_use_trie_tree/" class="article-date">
+  <time datetime="2014-08-11T16:00:00.000Z" itemprop="datePublished">8月 12 2014</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/算法/">算法</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/08/12/python_how_to_use_trie_tree/">大展身手的字典树</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>在<a href="../08-04-2014/simple_trie_tree.html">简单字典树(Trie)的实现</a>一文中，我们以<code>单词输入自动提示</code>为引子，简单介绍了字典树的实现。那么，字典树到底可以用于哪些场合呢？</p>
+<ol>
+<li>前缀匹配：给定字典库，输入一段字符，返回以该字符串为前缀的所有单词。</li>
+<li>字频统计：给出一段文本，统计其中指定单词出现的频数。</li>
+</ol>
+        
+          <p class="article-more-link">
+            <a href="/2014/08/12/python_how_to_use_trie_tree/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+
+    
+  
+    
+
+    <footer class="article-footer">
+      
+        <a href="http://selfboot.cn/2014/08/12/python_how_to_use_trie_tree/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/python/">python</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+
+
+
+  
+  
+    <nav id="page-nav">
+      <a class="extend prev" rel="prev" href="/page/9/">&laquo; Prev</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/8/">8</a><a class="page-number" href="/page/9/">9</a><span class="page-number current">10</span><a class="page-number" href="/page/11/">11</a><a class="page-number" href="/page/12/">12</a><a class="page-number" href="/page/13/">13</a><a class="extend next" rel="next" href="/page/11/">Next &raquo;</a>
+    </nav>
+  
+</section>
+      </div>
+    </div>
+    
+    
+<script>
+  var disqus_shortname = 'xuelangZF';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = 'https://' + disqus_shortname + '.disqus.com/count.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  }());
+</script>
+
+
+<script src="http://libs.useso.com/js/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

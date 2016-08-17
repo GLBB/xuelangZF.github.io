@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Dash助手——任意html转换为Docset | Just For Fun</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="作为一名程序员，最离不开的就是文档了，大多数情况下我们都是通过文档了解一个陌生的领域。想象一下，打开了一堆文档，在文档中跳来跳去，多么的不优雅！所以Bogdan Popescu一怒之下开发了dash，解放了太多在文档中跳来跳去的码农。
+dash主要有以下特点：
+
+自带大量常用文档(iOS/Mac/PHP/Python/Java等)
+支持用户自定义文档(scrapy/requests/beautif">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Dash助手——任意html转换为Docset">
+<meta property="og:url" content="http://selfboot.cn/2014/10/13/html2dash/index.html">
+<meta property="og:site_name" content="Just For Fun">
+<meta property="og:description" content="作为一名程序员，最离不开的就是文档了，大多数情况下我们都是通过文档了解一个陌生的领域。想象一下，打开了一堆文档，在文档中跳来跳去，多么的不优雅！所以Bogdan Popescu一怒之下开发了dash，解放了太多在文档中跳来跳去的码农。
+dash主要有以下特点：
+
+自带大量常用文档(iOS/Mac/PHP/Python/Java等)
+支持用户自定义文档(scrapy/requests/beautif">
+<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20141013_dash_overview.png">
+<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20141013_request_dash.png">
+<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20141013_docset_API.png">
+<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20141013_sitesucker.png">
+<meta property="og:updated_time" content="2015-09-23T10:01:35.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Dash助手——任意html转换为Docset">
+<meta name="twitter:description" content="作为一名程序员，最离不开的就是文档了，大多数情况下我们都是通过文档了解一个陌生的领域。想象一下，打开了一堆文档，在文档中跳来跳去，多么的不优雅！所以Bogdan Popescu一怒之下开发了dash，解放了太多在文档中跳来跳去的码农。
+dash主要有以下特点：
+
+自带大量常用文档(iOS/Mac/PHP/Python/Java等)
+支持用户自定义文档(scrapy/requests/beautif">
+<meta name="twitter:image" content="http://xuelangzf-github.qiniudn.com/20141013_dash_overview.png">
+  
+    <link rel="alternative" href="/atom.xml" title="Just For Fun" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/image/favicon.ico">
+  
+  <link href="//fonts.useso.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <link href="//libs.useso.com/js/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  
+<!-- Google Analytics -->
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-41784041-1', 'auto');
+ga('send', 'pageview');
+
+</script>
+<!-- End Google Analytics -->
+
+
+  
+<!-- Baidu Analytics -->
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?fd3ab4b3c488cbb43afa1c2669f06648";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+<!-- End Baidu Analytics -->
+
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Just For Fun</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">享受快乐的时光</a>
+        </h2>
+      
+    </div>
+    <div id="header-menu">
+      <nav id="main-nav">
+        <ul>
+        
+          <li><a href="/"><i class="fa fa-home icon-setting"></i></a></li>
+        
+          <li><a href="/archives"><i class="fa fa-archive icon-setting"></i></a></li>
+        
+          <li><a href="/aboutme.html"><i class="fa fa-user icon-setting"></i></a></li>
+        
+        
+          <li><a href="/atom.xml"><i class="fa fa-rss %> icon-setting"></i></a></li>
+        
+        </ul>
+      </nav>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-html2dash" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/10/13/html2dash/" class="article-date">
+  <time datetime="2014-10-12T16:00:00.000Z" itemprop="datePublished">10月 13 2014</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/工具介绍/">工具介绍</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Dash助手——任意html转换为Docset
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>作为一名程序员，最离不开的就是文档了，大多数情况下我们都是通过文档了解一个陌生的领域。想象一下，打开了一堆文档，在文档中跳来跳去，多么的不优雅！所以<a href="http://blog.kapeli.com/about" target="_blank" rel="external">Bogdan Popescu</a>一怒之下开发了<a href="http://kapeli.com/dash" target="_blank" rel="external">dash</a>，解放了太多在文档中跳来跳去的码农。</p>
+<p>dash主要有以下特点：</p>
+<ul>
+<li>自带大量常用文档(iOS/Mac/PHP/Python/Java等)</li>
+<li>支持用户自定义文档(scrapy/requests/beautifulsoup等)</li>
+<li>快速搜索文档及 API</li>
+<li>管理和搜索代码片段</li>
+<li>无缝插入众多第三方应用(Alfred/Xcode/Terminal等)</li>
+</ul>
+<p>dash界面左侧列出所有的文档，支持标签页和书签功能，在搜索框内通过输入关键字，可以查找相关的API、文档，并且响应速度非常快！下面先来一睹Dash芳容吧：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20141013_dash_overview.png" alt="Dash界面" title="dash主界面"></p>
+<a id="more"></a>
+<p>虽说dash官方给了足够多的Docset文档，不过有时候仍然不够用，这时候我们可以去找第三方的Docset，如果找不到，那么只好自己动手丰衣足食啦。</p>
+<p>其<a href="http://kapeli.com/docsets" target="_blank" rel="external">生成DocSets帮助文档</a>中，有许多种生成Docset的方法介绍，比如从AppleDoc(Objective-C Source Files)、Python(Sphinx or PyDoctor)<br>、Javadoc、Any HTML Documentation生成文档等。注意，这里可以从<code>Any HTML Documentation</code>生成Docset文档，真是大福利！</p>
+<h1 id="html2Dash"><a href="#html2Dash" class="headerlink" title="html2Dash"></a>html2Dash</h1><p>相信大家都很喜欢python的<a href="http://python-requests.org/" target="_blank" rel="external">requests</a>吧，它的语法以及文档十分简单明了，不愧它<code>HTTP for Humans</code>的称号。在使用Dash之前，我将requests的文档<a href="#backup">镜像</a>到本地，以便随时使用。其实，我不只离线了requests的文档，还有beautifulsoup4、scrapy等许多文档。我甚至将<a href="http://coolshell.cn/" target="_blank" rel="external">酷壳</a>整个站点都离线了下来，以便拜读人家的文章。</p>
+<p>当我遇见Dash之后，我常常想如果能将我离线的文档转换为Docset格式，丢给Dash管理，那该多美妙。幸好，dash官网提供了html文件转换为DocSet的方法，整个转换主要有以下几个步骤：</p>
+<ol>
+<li>创建Docset目录结构(Create the Docset Folder)；</li>
+<li>复制HTML文件(Copy the HTML Documentation)；</li>
+<li>创建Info.plist文件(Create the Info.plist File)；</li>
+<li>创建SQLite数据库文件(Create the SQLite Index)；</li>
+<li>写入SQLite数据索引(Populate the SQLite Index)；</li>
+</ol>
+<p>为了将转换的过程自动化，我写了一个小程序<a href="https://github.com/xuelangZF/html2Dash" target="_blank" rel="external">html2dash</a>放在github上，使用十分简单，可以用<code>./html2dash.py -h</code>查看帮助，如下：</p>
+<pre><code>$ /html2dash.py -h
+usage: html2dash.py [-h] [-n NAME] [-d PATH] [-i FILENAME] [-p INDEX_PAGE]
+                    SOURCE
+
+positional arguments:
+  SOURCE                Directory containing the HTML documents
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -n NAME, --name NAME  Name the docset explicitly
+  -d PATH, --destination PATH
+                        Put the resulting docset into PATH
+  -i FILENAME, --icon FILENAME
+                        Add PNG icon FILENAME to docset
+  -p INDEX_PAGE, --index-page INDEX_PAGE
+                        Set the file that is shown
+</code></pre><p>下面是转换requests文档的示例：</p>
+<pre><code>$ ./html2dash.py -n requests -i ~/Documents/requests-sidebar.png ~/Documents/requests  
+Create the Docset Folder!  
+Copy the HTML Documentation!  
+Create the SQLite Index    
+Create the Info.plist File  
+Create the Icon for the Docset!  
+Generate Docset Successfully!  
+</code></pre><p>效果如下：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20141013_request_dash.png" alt="requests文档效果图" title="requests文档"></p>
+<p>从HTML制作的文档其实不算真正意义上的“文档”，因为并没有Classes、Functions、Types等API，如下图：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20141013_docset_API.png" alt="HTML Docset" title="HTML Docset"></p>
+<p>下面介绍一下我常用的镜像站点的方法。</p>
+<h1 id="镜像站点"><a href="#镜像站点" class="headerlink" title="镜像站点"></a><a href="id:backup" target="_blank" rel="external">镜像站点</a></h1><p>镜像站点最简单的方法就是使用wget，一般像这样使用：</p>
+<pre><code>wget -r -p -k -np http://tengine.taobao.org/book/ 
+</code></pre><p>关于wget的更多内容，可以看之前的一篇文章：<a href="https://xuelangzf.github.io/06-07-2013/use_wget.html" target="_blank" rel="external">如何使用wget</a></p>
+<p>其实OS X 下有一款比较不错的工具可以用来镜像站点，那就是<a href="http://sitesucker.us/home.html" target="_blank" rel="external">SiteSucker</a>。比如要下载requests的文档，只需要输入文档首页地址，然后设置Path Constraint为Directory即可下载文档，如下图：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20141013_sitesucker.png" alt="SiteSucker下载文档" title="SiteSucker下载文档"></p>
+<p>前面两种镜像方法都不是很完美，因为有时候某些站点(比如<a href="http://doc.scrapy.org/en/latest/index.html" target="_blank" rel="external">Scrapy</a>)引用的css、js文件来自其他的站点，这时候如果选择只镜像当前目录下面的文件，就会漏掉这些资源文件，目前还没有找到一个合适的方法解决这个问题。</p>
+<p>参考：<br><a href="https://github.com/ablfx/Dash-Docset-Creator" target="_blank" rel="external">Dash-Docset-Creator</a><br><a href="http://kapeli.com/docsets" target="_blank" rel="external">Generate a docset from any HTML Documentation</a>  </p>
+
+      
+    </div>
+
+    
+	    <!-- 添加捐赠图标 -->
+<div class ="post-donate">
+    <div id="donate_board" class="donate_bar center">
+        <a id="btn_donate" class="btn_donate" href="javascript:;" title="打赏"></a>
+        <span class="donate_txt">
+           &uarr;<br>
+		   欣赏此文？支持一下吧
+        </span>
+        <br>
+      </div>  
+	<div id="donate_guide" class="donate_bar center hidden" >
+		<!-- 支付宝打赏图案 -->
+		<img src="http://xuelangzf-github.qiniudn.com/zhifubao.jpg" alt="支付宝打赏"> 
+		<!-- 微信打赏图案 -->
+		<img src="http://xuelangzf-github.qiniudn.com/weixin.jpg" alt="微信打赏">  
+    </div>
+	<script type="text/javascript">
+		document.getElementById('btn_donate').onclick = function(){
+			$('#donate_board').addClass('hidden');
+			$('#donate_guide').removeClass('hidden');
+		}
+	</script>
+</div>
+<!-- 添加捐赠图标 -->
+
+    
+  
+    
+	    <div class="article-footer-copyright">
+
+<p>本文由 selfboot 发表于 <a href="http://selfboot.cn" target="_blank">个人博客</a>，采用<a href="http://creativecommons.org/licenses/by-sa/3.0/cn" target="_blank" >署名-非商业性使用-相同方式共享 3.0 中国大陆许可协议</a>。</p>
+<p>非商业转载请注明作者及出处。商业转载请联系<a href="mailto:xuezaigds@gmail.com">作者</a>本人。</p>
+<p>
+本文标题为: Dash助手——任意html转换为Docset<br/>
+本文链接为: <a href="/2014/10/13/html2dash/" target="_blank">http://selfboot.cn/2014/10/13/html2dash/</a>
+</p>
+</div>
+
+    
+
+    <footer class="article-footer">
+      
+        <a href="http://selfboot.cn/2014/10/13/html2dash/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/python/">python</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/10/27/python_default_values/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          陷阱！python参数默认值
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/09/19/chrome_DevTools_1/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">神器——Chrome开发者工具(一)</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+
+  <!-- Go to www.addthis.com/dashboard to customize your tools -->
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-57adc438b914651b"></script>
+
+
+
+</section>
+      </div>
+    </div>
+    
+    
+<script>
+  var disqus_shortname = 'xuelangZF';
+  
+  var disqus_url = 'http://selfboot.cn/2014/10/13/html2dash/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  }());
+</script>
+
+
+<script src="http://libs.useso.com/js/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

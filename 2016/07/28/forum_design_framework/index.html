@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>从零开始搭建论坛（一）：Web服务器与Web框架 | Just For Fun</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="之前用 Django 做过一个小的站点，感觉Django太过笨重，于是就准备换一个比较轻量级的 Web 框架来玩玩。Web.py 作者已经挂掉，项目好久没有更新，所以不准备用它。而 Flask 也是一个成熟的轻量级 Web 框架，在 github 上有众多的 Star 和 Fork，文档和扩展也很丰富，值得学习。
+学习一个框架最好的方式就是用框架做一个项目，在实战中理解掌握框架。这里我用 Flas">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从零开始搭建论坛（一）：Web服务器与Web框架">
+<meta property="og:url" content="http://selfboot.cn/2016/07/28/forum_design_framework/index.html">
+<meta property="og:site_name" content="Just For Fun">
+<meta property="og:description" content="之前用 Django 做过一个小的站点，感觉Django太过笨重，于是就准备换一个比较轻量级的 Web 框架来玩玩。Web.py 作者已经挂掉，项目好久没有更新，所以不准备用它。而 Flask 也是一个成熟的轻量级 Web 框架，在 github 上有众多的 Star 和 Fork，文档和扩展也很丰富，值得学习。
+学习一个框架最好的方式就是用框架做一个项目，在实战中理解掌握框架。这里我用 Flas">
+<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20160728_forum_design_framework_1.png">
+<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20160728_forum_design_framework_2.png">
+<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20160728_forum_design_framework_3.png">
+<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20160728_forum_design_framework_4.png">
+<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20160728_forum_design_framework_5.png">
+<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20160728_forum_design_framework_6.jpeg">
+<meta property="og:updated_time" content="2016-08-07T11:41:16.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="从零开始搭建论坛（一）：Web服务器与Web框架">
+<meta name="twitter:description" content="之前用 Django 做过一个小的站点，感觉Django太过笨重，于是就准备换一个比较轻量级的 Web 框架来玩玩。Web.py 作者已经挂掉，项目好久没有更新，所以不准备用它。而 Flask 也是一个成熟的轻量级 Web 框架，在 github 上有众多的 Star 和 Fork，文档和扩展也很丰富，值得学习。
+学习一个框架最好的方式就是用框架做一个项目，在实战中理解掌握框架。这里我用 Flas">
+<meta name="twitter:image" content="http://xuelangzf-github.qiniudn.com/20160728_forum_design_framework_1.png">
+  
+    <link rel="alternative" href="/atom.xml" title="Just For Fun" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/image/favicon.ico">
+  
+  <link href="//fonts.useso.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <link href="//libs.useso.com/js/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  
+<!-- Google Analytics -->
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-41784041-1', 'auto');
+ga('send', 'pageview');
+
+</script>
+<!-- End Google Analytics -->
+
+
+  
+<!-- Baidu Analytics -->
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?fd3ab4b3c488cbb43afa1c2669f06648";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+<!-- End Baidu Analytics -->
+
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Just For Fun</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">享受快乐的时光</a>
+        </h2>
+      
+    </div>
+    <div id="header-menu">
+      <nav id="main-nav">
+        <ul>
+        
+          <li><a href="/"><i class="fa fa-home icon-setting"></i></a></li>
+        
+          <li><a href="/archives"><i class="fa fa-archive icon-setting"></i></a></li>
+        
+          <li><a href="/aboutme.html"><i class="fa fa-user icon-setting"></i></a></li>
+        
+        
+          <li><a href="/atom.xml"><i class="fa fa-rss %> icon-setting"></i></a></li>
+        
+        </ul>
+      </nav>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-forum_design_framework" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/07/28/forum_design_framework/" class="article-date">
+  <time datetime="2016-07-28T14:02:50.000Z" itemprop="datePublished">7月 28 2016</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/项目实践/">项目实践</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      从零开始搭建论坛（一）：Web服务器与Web框架
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>之前用 Django 做过一个小的站点，感觉Django太过笨重，于是就准备换一个比较轻量级的 Web 框架来玩玩。Web.py 作者已经挂掉，项目好久没有更新，所以不准备用它。而 Flask 也是一个成熟的轻量级 Web 框架，在 github 上有众多的 Star 和 Fork，文档和扩展也很丰富，值得学习。</p>
+<p>学习一个框架最好的方式就是用框架做一个项目，在实战中理解掌握框架。这里我用 Flask 框架，使用 Mysql 数据库做了一个<a href="https://github.com/xuelangZF/NaHan" target="_blank" rel="external">论坛系统</a>。麻雀虽小，五脏俱全，论坛效果图如下：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160728_forum_design_framework_1.png" alt="论坛系统截图"></p>
+<p>下面是论坛的基本功能：</p>
+<ul>
+<li>完整的用户模块（注册、登录，更改、找回密码、信息修改、站内消息通知）；</li>
+<li>丰富的论坛模块（创建、回复话题，站内搜索，markdown支持，@user 提醒）；</li>
+<li>强大的后台管理，支持屏蔽用户、话题、评论，支持各种条件搜索话题、评论；</li>
+</ul>
+<p>本博客将会用一系列文章，记录论坛系统搭建的过程，希望对刚入门Web开发的同学有所帮助。</p>
+<a id="more"></a>
+<p>我们经常听说 Django, Flask 这些 python 语言的<code>Web 框架</code>，那么框架到底是什么，Web框架和Web服务器（Nginx, Apache等）有什么区别？离开框架还能用 Python 搭建Web站点吗？要解决这些疑问，我们有必要来理解下 Web 服务器的工作原理，以及 Web 框架的本质。</p>
+<h1 id="Web-服务器"><a href="#Web-服务器" class="headerlink" title="Web 服务器"></a>Web 服务器</h1><p>当我们在浏览器输入URL后，浏览器会先请求<a href="http://selfboot.cn/2015/11/05/dns_theory/">DNS服务器，获得请求站点的 IP 地址</a>。然后发送一个HTTP Request（请求）给拥有该 IP 的主机，接着就会接收到服务器给我们的 HTTP Response（响应），浏览器经过渲染后，以一种较好的效果呈现给我们。这个过程中，正是Web服务器在幕后默默做贡献。</p>
+<p>简单来说，Web服务器是在运行在物理服务器上的一个程序，它永久地等待客户端（主要是浏览器，比如Chrome，Firefox等）发送请求。当收到请求之后，它会生成相应的响应并将其返回至客户端。Web服务器通过HTTP协议与客户端通信，因此也被称为HTTP服务器。</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160728_forum_design_framework_2.png" alt="Web 服务器"></p>
+<p>Web服务器的工作原理并不复杂，一般可分成如下4个步骤：<code>建立连接、请求过程、应答过程以及关闭连接</code>。</p>
+<ol>
+<li>建立连接：客户机通过TCP/IP协议建立到服务器的TCP连接。</li>
+<li>请求过程：客户端向服务器发送HTTP协议请求包，请求服务器里的资源文档。</li>
+<li>应答过程：服务器向客户机发送HTTP协议应答包，如果请求的资源包含有动态语言的内容，那么服务器会调用动态语言的解释引擎负责处理“动态内容”，并将处理得到的数据返回给客户端。由客户端解释HTML文档，在客户端屏幕上渲染图形结果。</li>
+<li>关闭连接：客户机与服务器断开。</li>
+</ol>
+<p>下面我们实现一个简单的 Web 服务器。运行<a href="https://gist.github.com/xuelangZF/19cd52525b64ed3973f480902447a9ea" target="_blank" rel="external">示例程序</a>后，会监听本地端口 8000，在浏览器访问 <a href="http://localhost:8000" target="_blank" rel="external">http://localhost:8000</a> 就能看到响应内容。而我们的程序也能够打印出客户端发来的请求内容，如下图：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160728_forum_design_framework_3.png" alt="简单Web服务器"></p>
+<p>这里Request 和 Response 都需要遵守 HTTP 协议，关于 HTTP 协议的详细内容，可以读读《HTTP 权威指南》，或者看我整理的<a href="https://github.com/xuelangZF/CS_Offer/blob/master/Network/HTTP.md" target="_blank" rel="external">HTTP 部分内容</a>。</p>
+<p>虽然说web服务器的主要工作是根据request返回response，但是实际中的 Web 服务器远远比上面示例的复杂的多，因为要考虑的因素实在是太多了，比如：</p>
+<ul>
+<li>缓存机制：讲一些经常被访问的页面缓存起来，提高响应速度；</li>
+<li>安全：防止黑客的各种攻击，比如 SYN Flood 攻击；</li>
+<li>并发处理：如何响应不同客户端同时发起的请求；</li>
+<li>日志：记录访问日至，方便做一些分析。</li>
+</ul>
+<p>目前在UNIX和LINUX平台下使用最广泛的免费 Web 服务器有Apache和 Nginx 。</p>
+<h1 id="Web-应用程序"><a href="#Web-应用程序" class="headerlink" title="Web 应用程序"></a>Web 应用程序</h1><p>Web 服务器接受 Http Request，返回 Response，很多时候 Response 并不是静态文件，因此需要有一个应用程序根据 Request 生成相应的 Response。这里的应用程序主要用来处理相关业务逻辑，读取或者更新数据库，根据不同 Request 返回相应的 Response。注意这里并不是 Web 服务器本身来做这件事，它只负责 Http 协议层面和一些诸如并发处理，安全，日志等相关的事情。</p>
+<p>应用程序可以用各种语言编写（Java, PHP, Python, Ruby等），这个应用程序会从Web服务器接收客户端的请求，处理完成后，再返回响应给Web服务器，最后由Web服务器返回给客户端。整个架构如下：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160728_forum_design_framework_4.png" alt="Web应用程序"></p>
+<p>以 Python 为例，使用Python开发Web，最原始和直接的办法是使用<a href="https://en.wikipedia.org/wiki/Common_Gateway_Interface" target="_blank" rel="external">CGI标准</a>，在1998年这种方式很流行。首先确保 Web 服务器支持CGI及已经配置了CGI的处理程序，然后设置好CGI目录，在目录里面添加相应的 python 文件，每一个 python 文件处理相应输入，生成一个 html 文件即可，如下例：</p>
+<pre><code>#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
+print &quot;Content-type:text/html&quot;
+print         # 空行，告诉服务器结束头部
+print &apos;&lt;html&gt;&apos;
+print &apos;&lt;head&gt;&apos;
+print &apos;&lt;meta charset=&quot;utf-8&quot;&gt;&apos;
+print &apos;&lt;/head&gt;&apos;
+print &apos;&lt;body&gt;&apos;
+print &apos;&lt;h2&gt;Hello Word! 我是一个CGI程序&lt;/h2&gt;&apos;
+print &apos;&lt;/body&gt;&apos;
+print &apos;&lt;/html&gt;&apos;
+</code></pre><p>这样在浏览器访问该文件就可以得到一个简单的 Hello World 网页内容。直接通过 CGI 写 Web 应用程序看起来很简单，每一个文件处理输入，生成html。但是实际开发中，可能会遇到许多不方便的地方。比如：</p>
+<ul>
+<li>每个独立的CGI脚本可能会重复写数据库连接，关闭的代码；</li>
+<li>后端开发者会看到一堆 Content-Type 等和自己无关的 html 页面元素；</li>
+</ul>
+<h1 id="Web-框架"><a href="#Web-框架" class="headerlink" title="Web 框架"></a>Web 框架</h1><p>早期开发站点确做了许多重复性劳动，后来为了减少重复，避免写出庞杂，混乱的代码，人们将 Web 开发的关键性过程提取出来，开发出了各种 Web 框架。有了框架，就可以专注于编写清晰、易维护的代码，无需关心数据库连接之类的重复性工作。</p>
+<p>其中一种比较经典的Web框架采用了 <a href="https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller" target="_blank" rel="external">MVC</a> 架构，如下图所示：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160728_forum_design_framework_5.png" alt="MVC 架构"></p>
+<p>用户输入 URL，客户端发送请求，<code>控制器（Controller）</code>首先会拿到请求，然后用<code>模型（Models）</code>从数据库取出所有需要的数据，进行必要的处理，将处理后的结果发送给 <code>视图（View）</code>，视图利用获取到的数据，进行渲染生成 Html Response返回给客户端。</p>
+<p>以 python web 框架 flask 为例，框架本身并不限定我们用哪种架构来组织我们的应用，不过 flask 可以很好地支持以 MVC 方式组织应用。</p>
+<p>控制器：flask 可以用装饰器来添加路由项，如下：</p>
+<pre><code>@app.route(&apos;/&apos;)
+def main_page():
+    pass
+</code></pre><p>模型：主要用来取出需要的数据，如下面函数中操作：</p>
+<pre><code>@app.route(&apos;/&apos;)
+def main_page():
+    &quot;&quot;&quot;Searches the database for entries, then displays them.&quot;&quot;&quot;
+    db = get_db()
+    cur = db.execute(&apos;select * from entries order by id desc&apos;)
+    entries = cur.fetchall()
+    return render_template(&apos;index.html&apos;, entries=entries)
+</code></pre><p>视图：flask 利用 jinja2 来渲染页面，下面的模版文件指定了页面的样式：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">&#123;% for entry in entries %&#125;</div><div class="line">&lt;li&gt;</div><div class="line">  &lt;h2&gt;&#123;&#123; entry.title &#125;&#125;&lt;/h2&gt;</div><div class="line">  &lt;div&gt;&#123;&#123; entry.text|safe &#125;&#125;&lt;/div&gt;</div><div class="line">&lt;/li&gt;</div><div class="line">&#123;% else %&#125;</div><div class="line">&lt;li&gt;&lt;em&gt;No entries yet. Add some!&lt;/em&gt;&lt;/li&gt;</div><div class="line">&#123;% endfor %&#125;</div></pre></td></tr></table></figure>
+<h1 id="Web-服务器网关接口"><a href="#Web-服务器网关接口" class="headerlink" title="Web 服务器网关接口"></a>Web 服务器网关接口</h1><p>我们知道Python有着许多的 Web 框架，而同时又有着许多的 Web 服务器（Apache, Nginx, Gunicorn等），框架和Web服务器之间需要进行通信，如果在设计时它们之间不可以相互匹配的，那么选择了一个框架就会限制对 Web 服务器的选择，这显然是不合理的。</p>
+<p>那么，怎样确保可以在不修改Web服务器代码或网络框架代码的前提下，使用自己选择的服务器，并且匹配多个不同的网络框架呢？答案是接口，设计一套双方都遵守的接口就可以了。对python来说，就是<code>WSGI</code>（Web Server Gateway Interface，Web服务器网关接口）。其他编程语言也拥有类似的接口：例如Java的Servlet API和Ruby的Rack。</p>
+<p>Python WSGI的出现，让开发者可以将 Web 框架与 Web 服务器的选择分隔开来，不再相互限制。现在，你可以真正地将不同的 Web 服务器与Web框架进行混合搭配，选择满足自己需求的组合。例如，可以使用 Gunicorn 或Nginx/uWSGI来运行Django、Flask或web.py应用。</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160728_forum_design_framework_6.jpeg" alt="WSGI 适配"></p>
+<p><a href="http://selfboot.cn/2016/08/07/forum_design_wsgi/">下一篇</a>我们将会仔细分析 WSGI 接口标准，然后一起来写一个简单的 WSGI Web 服务器。</p>
+<h1 id="更多阅读"><a href="#更多阅读" class="headerlink" title="更多阅读"></a>更多阅读</h1><p><a href="http://codingpy.com/article/build-a-simple-web-server-part-one/" target="_blank" rel="external">自己动手开发网络服务器（一）</a><br><a href="http://codingpy.com/article/build-a-simple-web-server-part-two/" target="_blank" rel="external">自己动手开发网络服务器（二）</a><br><a href="http://codingpy.com/article/build-a-simple-web-server-part-three/" target="_blank" rel="external">自己动手开发网络服务器（三）</a><br><a href="https://www.hitoy.org/principle-of-wsgi.html" target="_blank" rel="external">Web服务器网关接口实现原理分析</a><br><a href="http://pythonguidecn.readthedocs.io/zh/latest/scenarios/web.html" target="_blank" rel="external">Python最佳实践指南：Web 应用</a><br><a href="http://feilong.me/2011/01/talk-about-python-web-framework" target="_blank" rel="external">浅谈Python web框架</a><br><a href="http://www.runoob.com/python/python-cgi.html" target="_blank" rel="external">Python CGI编程</a><br><a href="https://www.airpair.com/python/posts/django-flask-pyramid" target="_blank" rel="external">Django vs Flask vs Pyramid: Choosing a Python Web Framework</a><br><a href="https://www.python.org/dev/peps/pep-0333/" target="_blank" rel="external">PEP 333 – Python Web Server Gateway Interface v1.0</a><br><a href="https://segmentfault.com/a/1190000003069785" target="_blank" rel="external">WSGI简介</a><br><a href="https://realpython.com/blog/python/the-model-view-controller-mvc-paradigm-summarized-with-legos/" target="_blank" rel="external">Model-View-Controller (MVC) Explained – With Legos</a>  </p>
+
+      
+    </div>
+
+    
+	    <!-- 添加捐赠图标 -->
+<div class ="post-donate">
+    <div id="donate_board" class="donate_bar center">
+        <a id="btn_donate" class="btn_donate" href="javascript:;" title="打赏"></a>
+        <span class="donate_txt">
+           &uarr;<br>
+		   欣赏此文？支持一下吧
+        </span>
+        <br>
+      </div>  
+	<div id="donate_guide" class="donate_bar center hidden" >
+		<!-- 支付宝打赏图案 -->
+		<img src="http://xuelangzf-github.qiniudn.com/zhifubao.jpg" alt="支付宝打赏"> 
+		<!-- 微信打赏图案 -->
+		<img src="http://xuelangzf-github.qiniudn.com/weixin.jpg" alt="微信打赏">  
+    </div>
+	<script type="text/javascript">
+		document.getElementById('btn_donate').onclick = function(){
+			$('#donate_board').addClass('hidden');
+			$('#donate_guide').removeClass('hidden');
+		}
+	</script>
+</div>
+<!-- 添加捐赠图标 -->
+
+    
+  
+    
+	    <div class="article-footer-copyright">
+
+<p>本文由 selfboot 发表于 <a href="http://selfboot.cn" target="_blank">个人博客</a>，采用<a href="http://creativecommons.org/licenses/by-sa/3.0/cn" target="_blank" >署名-非商业性使用-相同方式共享 3.0 中国大陆许可协议</a>。</p>
+<p>非商业转载请注明作者及出处。商业转载请联系<a href="mailto:xuezaigds@gmail.com">作者</a>本人。</p>
+<p>
+本文标题为: 从零开始搭建论坛（一）：Web服务器与Web框架<br/>
+本文链接为: <a href="/2016/07/28/forum_design_framework/" target="_blank">http://selfboot.cn/2016/07/28/forum_design_framework/</a>
+</p>
+</div>
+
+    
+
+    <footer class="article-footer">
+      
+        <a href="http://selfboot.cn/2016/07/28/forum_design_framework/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Flask/">Flask</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/python/">python</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/08/07/forum_design_wsgi/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          从零开始搭建论坛（二）：Web服务器网关接口
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/07/24/leetcode_guide_why/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">LeetCode 刷题指南（一）：为什么要刷题</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+
+  <!-- Go to www.addthis.com/dashboard to customize your tools -->
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-57adc438b914651b"></script>
+
+
+
+</section>
+      </div>
+    </div>
+    
+    
+<script>
+  var disqus_shortname = 'xuelangZF';
+  
+  var disqus_url = 'http://selfboot.cn/2016/07/28/forum_design_framework/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  }());
+</script>
+
+
+<script src="http://libs.useso.com/js/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

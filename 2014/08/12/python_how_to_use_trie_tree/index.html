@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>大展身手的字典树 | Just For Fun</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="在简单字典树(Trie)的实现一文中，我们以单词输入自动提示为引子，简单介绍了字典树的实现。那么，字典树到底可以用于哪些场合呢？
+
+前缀匹配：给定字典库，输入一段字符，返回以该字符串为前缀的所有单词。
+字频统计：给出一段文本，统计其中指定单词出现的频数。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="大展身手的字典树">
+<meta property="og:url" content="http://selfboot.cn/2014/08/12/python_how_to_use_trie_tree/index.html">
+<meta property="og:site_name" content="Just For Fun">
+<meta property="og:description" content="在简单字典树(Trie)的实现一文中，我们以单词输入自动提示为引子，简单介绍了字典树的实现。那么，字典树到底可以用于哪些场合呢？
+
+前缀匹配：给定字典库，输入一段字符，返回以该字符串为前缀的所有单词。
+字频统计：给出一段文本，统计其中指定单词出现的频数。">
+<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20140812_trie_data_structure.png">
+<meta property="og:updated_time" content="2015-09-23T10:01:04.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="大展身手的字典树">
+<meta name="twitter:description" content="在简单字典树(Trie)的实现一文中，我们以单词输入自动提示为引子，简单介绍了字典树的实现。那么，字典树到底可以用于哪些场合呢？
+
+前缀匹配：给定字典库，输入一段字符，返回以该字符串为前缀的所有单词。
+字频统计：给出一段文本，统计其中指定单词出现的频数。">
+<meta name="twitter:image" content="http://xuelangzf-github.qiniudn.com/20140812_trie_data_structure.png">
+  
+    <link rel="alternative" href="/atom.xml" title="Just For Fun" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/image/favicon.ico">
+  
+  <link href="//fonts.useso.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  <link href="//libs.useso.com/js/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  
+<!-- Google Analytics -->
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-41784041-1', 'auto');
+ga('send', 'pageview');
+
+</script>
+<!-- End Google Analytics -->
+
+
+  
+<!-- Baidu Analytics -->
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?fd3ab4b3c488cbb43afa1c2669f06648";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+<!-- End Baidu Analytics -->
+
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Just For Fun</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">享受快乐的时光</a>
+        </h2>
+      
+    </div>
+    <div id="header-menu">
+      <nav id="main-nav">
+        <ul>
+        
+          <li><a href="/"><i class="fa fa-home icon-setting"></i></a></li>
+        
+          <li><a href="/archives"><i class="fa fa-archive icon-setting"></i></a></li>
+        
+          <li><a href="/aboutme.html"><i class="fa fa-user icon-setting"></i></a></li>
+        
+        
+          <li><a href="/atom.xml"><i class="fa fa-rss %> icon-setting"></i></a></li>
+        
+        </ul>
+      </nav>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-python_how_to_use_trie_tree" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/08/12/python_how_to_use_trie_tree/" class="article-date">
+  <time datetime="2014-08-11T16:00:00.000Z" itemprop="datePublished">8月 12 2014</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/算法/">算法</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      大展身手的字典树
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>在<a href="../08-04-2014/simple_trie_tree.html">简单字典树(Trie)的实现</a>一文中，我们以<code>单词输入自动提示</code>为引子，简单介绍了字典树的实现。那么，字典树到底可以用于哪些场合呢？</p>
+<ol>
+<li>前缀匹配：给定字典库，输入一段字符，返回以该字符串为前缀的所有单词。</li>
+<li>字频统计：给出一段文本，统计其中指定单词出现的频数。</li>
+</ol>
+<a id="more"></a>
+<h1 id="前缀匹配"><a href="#前缀匹配" class="headerlink" title="前缀匹配"></a>前缀匹配</h1><p>本文讲述前缀匹配的字典树实现方案。仍然假设我们有以下单词：apps apple cook cookie cold，当我们想获得以co为前缀的单词时，只需要在字典树中依次找到c、o节点，然后搜索o节点的所有子树，取出其中的单词即可。</p>
+<p>在<a href="../08-04-2014/simple_trie_tree.html">简单字典树(Trie)的实现</a>一文中，我们已经实现了字典树的基本操作，这里只需要再加上一个前缀匹配方法即可。具体流程如下，将前缀字符串标记为<code>当前前缀</code>，将根节点标记为<code>当前节点</code>，执行操作1：</p>
+<ol>
+<li>当前前缀为空，对当前节点执行操作2。否则，取出当前单词的首字符，标记为X，遍历当前节点的子节点，如果X存在于子节点N中，将N标记为当前节点，将剩余字符串标记为当前单词，重复操作1；如果X不存在于子节点中，返回None。</li>
+<li>以当前节点为根节点，进行深度优先搜索，取得当前节点所有子树下的所有单词。</li>
+</ol>
+<p>实现的伪代码如下：</p>
+<pre><code>def pre_match_op(current_word, current_node):
+    if current_word not empty:
+        X = current_word[0]
+        if X in current_node.child_node:
+            current_word = current_word[1:]
+            current_node = child_node
+            return pre_match_op(current_word, current_node)
+        else:
+            return None
+    else:
+        return pre_match_bfs(&quot;&quot;, current_node)
+
+def pre_match_dfs(keep_char, current_node):
+    match_word = []
+    for child in current_node.child_node:
+        current_pre = pre_str + keep_char
+        if child.isword = True:
+            word = current_pre + child.char
+            match_word.append(word)
+        else:
+            pass
+
+        pre_match_dfs(current_pre, child)
+
+    return match_word
+</code></pre><p>具体程序以及测试例子放在gist上，可以在<a href="https://https://gist.github.com/xuelangZF/7addb2810e60a9031d76" target="_blank" rel="external">这里</a>找到。测试了一下，两千多个单词，寻找共同前缀的单词，速度还是蛮快的。</p>
+<h1 id="字频统计"><a href="#字频统计" class="headerlink" title="字频统计"></a>字频统计</h1><p>有时候我们需要统计一篇文章中一些单词出现的次数，这个时候用字典树可以很方便的解决这个问题。</p>
+<p>在<a href="../08-04-2014/simple_trie_tree.html">字典树的简单实现</a>中，我们设计的节点数据结构如下：</p>
+<p align="center"><br>图1. 用list实现字典树<br></p>
+
+<p><img src="http://xuelangzf-github.qiniudn.com/20140812_trie_data_structure.png" alt="字典树节点数据结构" title="图1. 字典树节点数据结构"></p>
+<p>只要对这里节点的数据结构稍作修改，就可以用于统计字频了。把原来数据结构中的标记位改为<code>频数位</code>，即保存该单词出现的次数。然后，再把原有字典树实现中的插入操作和查找操作稍微改动，就可以实现字频统计功能了。</p>
+<ul>
+<li><p>插入操作：将单词标记为<code>当前单词</code>，将根节点标记为<code>当前节点</code>，执行操作1：</p>
+<ol>
+<li>当前单词为空，当前节点单词出现频数加1，终止操作；否则取出当前单词的首字符记为X，遍历当前节点的子节点：如果X存在于子节点N，将剩余字符标记为当前单词，将N标记为当前节点，重复操作1，如果X不存在于当前节点的子节点中，那么进入操作2。</li>
+<li>取出当前单词的首字符记为X，新建一个节点M存储X，M的父节点为当前节点。剩余字符串记为当前单词，如果当前单词为空，M节点单词出现频数加1，终止操作；否则，将M标记为当前节点，重复操作2。</li>
+</ol>
+</li>
+<li><p>查询操作：将单词标记为<code>当前单词</code>，将根节点标记为<code>当前节点</code>，执行操作1：</p>
+<ol>
+<li>当前单词为空，返回当前节点字频数，即为该单词出现的次数。否则，取出当前单词的首字符，标记为X，遍历当前节点的子节点，如果X存在于子节点N中，将N标记为当前节点，将剩余字符串标记为当前单词，重复操作1；如果X不存在于子节点中，返回0。</li>
+</ol>
+</li>
+</ul>
+<p>实现伪代码如下，插入操作如下：</p>
+<pre><code>def insert(word):
+    current_word = word
+    current_node = root
+    insert_operation_1(current_word, current_node)
+
+def insert_operation_1(current_word, current_node):
+    if current_word not empty:
+        X = current_word[0]
+
+        if X in current_node.child:
+            current_word = current_word[1:]
+            current_node = child_node
+            insert_operation_1(current_word, current_node)
+        else:
+            insert_operation_2(current_word, current_node)
+
+    else:
+        current_node.count++
+
+def insert_operation_2(current_word, current_node):
+    X = current_word[0]
+    M.value = x
+    M.father = current_node
+    current_node.child = M
+
+    current_word = current_word[1:]
+    if current_word not empty:
+        current_node = M
+        insert_operation_2(current_word, current_node)
+
+    else:
+        current_node.count++
+</code></pre><p>查询操作：</p>
+<pre><code>def count(word):
+    current_word = word
+    current_node = root
+    return find_opration(current_word, current_node)
+
+def count_opration(current_word, current_node):
+    if current_word not empty:
+        X = current_word[0]
+        if X in current_node.child_node:
+            current_word = current_word[1:]
+            current_node = child_node
+            return find_opration(current_word, current_node)
+        else:
+            return 0
+    else:
+        return current_node.count
+</code></pre><p>具体程序以及测试例子放在gist上，可以在<a href="https://gist.github.com/xuelangZF/f8d731a0dbf24d692860" target="_blank" rel="external">这里</a>找到。</p>
+
+      
+    </div>
+
+    
+	    <!-- 添加捐赠图标 -->
+<div class ="post-donate">
+    <div id="donate_board" class="donate_bar center">
+        <a id="btn_donate" class="btn_donate" href="javascript:;" title="打赏"></a>
+        <span class="donate_txt">
+           &uarr;<br>
+		   欣赏此文？支持一下吧
+        </span>
+        <br>
+      </div>  
+	<div id="donate_guide" class="donate_bar center hidden" >
+		<!-- 支付宝打赏图案 -->
+		<img src="http://xuelangzf-github.qiniudn.com/zhifubao.jpg" alt="支付宝打赏"> 
+		<!-- 微信打赏图案 -->
+		<img src="http://xuelangzf-github.qiniudn.com/weixin.jpg" alt="微信打赏">  
+    </div>
+	<script type="text/javascript">
+		document.getElementById('btn_donate').onclick = function(){
+			$('#donate_board').addClass('hidden');
+			$('#donate_guide').removeClass('hidden');
+		}
+	</script>
+</div>
+<!-- 添加捐赠图标 -->
+
+    
+  
+    
+	    <div class="article-footer-copyright">
+
+<p>本文由 selfboot 发表于 <a href="http://selfboot.cn" target="_blank">个人博客</a>，采用<a href="http://creativecommons.org/licenses/by-sa/3.0/cn" target="_blank" >署名-非商业性使用-相同方式共享 3.0 中国大陆许可协议</a>。</p>
+<p>非商业转载请注明作者及出处。商业转载请联系<a href="mailto:xuezaigds@gmail.com">作者</a>本人。</p>
+<p>
+本文标题为: 大展身手的字典树<br/>
+本文链接为: <a href="/2014/08/12/python_how_to_use_trie_tree/" target="_blank">http://selfboot.cn/2014/08/12/python_how_to_use_trie_tree/</a>
+</p>
+</div>
+
+    
+
+    <footer class="article-footer">
+      
+        <a href="http://selfboot.cn/2014/08/12/python_how_to_use_trie_tree/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/python/">python</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/08/21/regular_expression_all/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          众里寻她千百度--正则表达式
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/08/10/python_decorator/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">python装饰器详解</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<section id="comments">
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+
+
+
+  <!-- Go to www.addthis.com/dashboard to customize your tools -->
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-57adc438b914651b"></script>
+
+
+
+</section>
+      </div>
+    </div>
+    
+    
+<script>
+  var disqus_shortname = 'xuelangZF';
+  
+  var disqus_url = 'http://selfboot.cn/2014/08/12/python_how_to_use_trie_tree/';
+  
+  (function(){
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  }());
+</script>
+
+
+<script src="http://libs.useso.com/js/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,2288 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Just For Fun</title>
+  <subtitle>享受快乐的时光</subtitle>
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="http://selfboot.cn/"/>
+  <updated>2016-08-08T05:48:13.000Z</updated>
+  <id>http://selfboot.cn/</id>
+  
+  <author>
+    <name>FeiZhao</name>
+    <email>xuezaigds@gmail.com</email>
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>从零开始搭建论坛（二）：Web服务器网关接口</title>
+    <link href="http://selfboot.cn/2016/08/07/forum_design_wsgi/"/>
+    <id>http://selfboot.cn/2016/08/07/forum_design_wsgi/</id>
+    <published>2016-08-07T14:02:50.000Z</published>
+    <updated>2016-08-08T05:48:13.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>在 <a href="http://selfboot.cn/2016/07/28/forum_design_framework/">从零开始搭建论坛（一）：Web服务器与Web框架</a> 中我们弄清楚了Web 服务器、Web 应用程序、Web框架的概念。对于 Python 来说，越来越多的 Web 框架面世，在给我们更多选择机会的同时，也限制了我们对于 Web Server 的选择。同样是有着很多 Web 框架的Java，因为有着 servlet API 的存在，任何Java Web框架写的应用程序都可以运行在任意一个 Web Server 上。</p>
+<p>Python 社区当然也需要这样一套 API，来适配Web服务器和应用程序，这套 API 就是 WSGI（Python Web Server Gateway Interface），在 <a href="https://www.python.org/dev/peps/pep-3333/" target="_blank" rel="external">PEP 3333</a> 里有详细的说明。简单来说，WSGI是连接Web服务器和Web应用程序的桥梁，一方面从Web server 拿到原始 HTTP 数据，处理成统一格式后交给 Web 应用程序，另一方面从应用程序／框架这边进行业务逻辑处理，生成响应内容后交给服务器。</p>
+<p>Web服务器和框架通过 WSGI 来进行耦合的详细过程如下图所示：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160807_forum_design_WSGI_1.png" alt="WSGI Server 适配"></p>
+<a id="more"></a>
+<p>具体解释如下：</p>
+<ul>
+<li>应用程序（网络框架）提供一个命名为application的可调用对象（WSGI协议并没有指定如何实现这个对象）。</li>
+<li>服务器每次从HTTP客户端接收请求之后，调用可调用对象application，调用时传递一个名叫environ的字典作为参数，以及一个名为start_response的可调用对象。</li>
+<li>框架/应用生成HTTP状态码以及HTTP响应报头，然后将二者传递至start_response，等待服务器保存。此外，框架/应用还将返回响应的正文。</li>
+<li>服务器将状态码、响应报头和响应正文组合成HTTP响应，并返回给客户端（这一步并不属于WSGI协议）。</li>
+</ul>
+<p>下面分别从服务器端和应用程序端来看看 WSGI 是如何做适配的。</p>
+<h1 id="服务器端"><a href="#服务器端" class="headerlink" title="服务器端"></a>服务器端</h1><p>我们知道客户端（通常是浏览器）发出的每个HTTP请求由请求行、消息报头、请求正文三部分组成，里面包含了本次请求的相关细节内容。比如：</p>
+<ul>
+<li>Method：指出在由Request-URI标识的资源上所执行的方法，包括GET，POST 等</li>
+<li>User-Agent：允许客户端将它的操作系统、浏览器和其它属性告诉服务器；</li>
+</ul>
+<p>服务器从客户端接收HTTP请求之后，WSGI 接口必须要对这些请求字段进行统一化处理，方便传给应用服务器接口（其实就是给框架）。Web服务器具体传递哪些数据给应用程序，早在<a href="https://en.wikipedia.org/wiki/Common_Gateway_Interface" target="_blank" rel="external">CGI</a>（Common Gateway Interface，通用网关接口）里就有详细规定，这些数据被叫做 CGI 环境变量。WSGI 沿用了 CGI 环境变量的内容，要求 Web 服务器必须创建一个字典用来保存这些环境变量（一般将其命名为 <code>environ</code>）。除了 CGI 定义的变量，environ 还必须保存一些WSGI定义的变量，此外还可以保存一些客户端系统的环境变量，可以参考 <a href="https://www.python.org/dev/peps/pep-3333/#environ-variables" target="_blank" rel="external">environ Variables</a> 来看看具体有哪些变量。</p>
+<p>接着 WSGI 接口必须将 environ 交给应用程序去处理，这里 WSGI 规定应用程序提供一个可调用对象 application，然后服务器去调用 application，获得返回值为HTTP响应正文。服务器在调用 application 的时候，需要提供两个变量，一个是前面提到的变量字典environ，另一个是可调用对象 start_response，它产生状态码和响应头，这样我们就得到了一个完整的HTTP响应。Web 服务器将响应返回给客户端，一次完整的<code>HTTP请求－响应</code>过程就完成了。</p>
+<h2 id="wsgiref-分析"><a href="#wsgiref-分析" class="headerlink" title="wsgiref 分析"></a>wsgiref 分析</h2><p>Python 中内置了一个实现了WSGI接口的 Web 服务器，在模块<a href="https://docs.python.org/2.7/library/wsgiref.html" target="_blank" rel="external">wsgiref</a>中，它是用纯Python编写的WSGI服务器的参考实现，我们一起来简单分析一下它的实现。首先假设我们用下面代码启动一个 Web 服务器：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># Instantiate the server</span></div><div class="line">httpd = make_server(</div><div class="line">    <span class="string">'localhost'</span>,    <span class="comment"># The host name</span></div><div class="line">    <span class="number">8051</span>,           <span class="comment"># A port number where to wait for the request</span></div><div class="line">    application     <span class="comment"># The application object name, in this case a function</span></div><div class="line">)</div><div class="line"></div><div class="line"><span class="comment"># Wait for a single request, serve it and quit</span></div><div class="line">httpd.handle_request()</div></pre></td></tr></table></figure>
+<p>然后我们以Web服务器接收一个请求、生成 environ，然后调用 application 来处理请求这条主线来分析源码的调用过程，简化如下图所示：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160807_forum_design_WSGI_2.png" alt="WSGI Server 调用流程"></p>
+<p>这里主要有三个类，WSGIServer，WSGIRequestHandler，ServerHandle。WSGIServer 是Web服务器类，可以提供server_address（IP:Port）和 WSGIRequestHandler 类来进行初始化获得一个server对象。该对象监听响应的端口，收到HTTP请求后通过 finish_request 创建一个RequestHandler 类的实例，在该实例的初始化过程中会生成一个 Handle 类实例，然后调用其 run(application) 函数，在该函数里面再调用应用程序提供的 application对象来生成响应。</p>
+<p>这三个类的继承关系如下图所示：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160807_forum_design_WSGI_3.png" alt="WSGI 类继承关系图"></p>
+<p>其中 TCPServer 使用 socket 来完成 TCP 通信，HTTPServer 则是用来做 HTTP 层面的处理。同样的，StreamRequestHandler 来处理 stream socket，BaseHTTPRequestHandler 则是用来处理 HTTP 层面的内容，这部分和 WSGI 接口关系不大，更多的是 Web 服务器的具体实现，可以忽略。</p>
+<h2 id="微服务器实例"><a href="#微服务器实例" class="headerlink" title="微服务器实例"></a>微服务器实例</h2><p>如果上面的 wsgiref 过于复杂的话，下面一起来实现一个微小的 Web 服务器，便于我们理解 Web 服务器端 WSGI 接口的实现。代码摘自 <a href="http://codingpy.com/article/build-a-simple-web-server-part-two/" target="_blank" rel="external">自己动手开发网络服务器（二）</a>，放在 <a href="https://gist.github.com/xuelangZF/217b1b6ab34ec33c3ca155ce681f72ad" target="_blank" rel="external">gist</a> 上，主要结构如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">WSGIServer</span><span class="params">(object)</span>:</span></div><div class="line">    <span class="comment"># 套接字参数</span></div><div class="line">    address_family, socket_type = socket.AF_INET, socket.SOCK_STREAM</div><div class="line">    request_queue_size = <span class="number">1</span></div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, server_address)</span>:</span></div><div class="line">        <span class="comment"># TCP 服务端初始化：创建套接字，绑定地址，监听端口</span></div><div class="line">        <span class="comment"># 获取服务器地址，端口</span></div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">set_app</span><span class="params">(self, application)</span>:</span></div><div class="line">        <span class="comment"># 获取框架提供的 application</span></div><div class="line">        self.application = application</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">serve_forever</span><span class="params">(self)</span>:</span></div><div class="line">        <span class="comment"># 处理 TCP 连接：获取请求内容，调用处理函数</span></div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">handle_request</span><span class="params">(self)</span>:</span></div><div class="line">        <span class="comment"># 解析 HTTP 请求，获取 environ，处理请求内容，返回HTTP响应结果</span></div><div class="line">        env = self.get_environ()</div><div class="line">        result = self.application(env, self.start_response)</div><div class="line">        self.finish_response(result)</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">parse_request</span><span class="params">(self, text)</span>:</span></div><div class="line">        <span class="comment"># 解析 HTTP 请求</span></div><div class="line">        </div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">get_environ</span><span class="params">(self)</span>:</span></div><div class="line">        <span class="comment"># 分析 environ 参数，这里只是示例，实际情况有很多参数。</span></div><div class="line">        env[<span class="string">'wsgi.url_scheme'</span>]   = <span class="string">'http'</span></div><div class="line">        ...</div><div class="line">        env[<span class="string">'REQUEST_METHOD'</span>]    =  self.request_method    <span class="comment"># GET</span></div><div class="line">        ...</div><div class="line">        <span class="keyword">return</span> env</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">start_response</span><span class="params">(self, status, response_headers, exc_info=None)</span>:</span></div><div class="line">        <span class="comment"># 添加响应头，状态码</span></div><div class="line">        self.headers_set = [status, response_headers + server_headers]</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">finish_response</span><span class="params">(self, result)</span>:</span></div><div class="line">        <span class="comment"># 返回 HTTP 响应信息</span></div><div class="line"></div><div class="line">SERVER_ADDRESS = (HOST, PORT) = <span class="string">''</span>, <span class="number">8888</span></div><div class="line"></div><div class="line"><span class="comment"># 创建一个服务器实例</span></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">make_server</span><span class="params">(server_address, application)</span>:</span></div><div class="line">    server = WSGIServer(server_address)</div><div class="line">    server.set_app(application)</div><div class="line">    <span class="keyword">return</span> server</div></pre></td></tr></table></figure>
+<p>目前支持 WSGI 的成熟Web服务器有很多，<a href="http://gunicorn.org/" target="_blank" rel="external">Gunicorn</a>是相当不错的一个。它脱胎于ruby社区的Unicorn，成功移植到python上，成为一个WSGI HTTP Server。有以下优点：</p>
+<ul>
+<li>容易配置</li>
+<li>可以自动管理多个worker进程</li>
+<li>选择不同的后台扩展接口（sync, gevent, tornado等）</li>
+</ul>
+<h1 id="应用程序端（框架）"><a href="#应用程序端（框架）" class="headerlink" title="应用程序端（框架）"></a>应用程序端（框架）</h1><p>和服务器端相比，应用程序端（也可以认为框架）要做的事情就简单很多，它只需要提供一个可调用对象（一般习惯将其命名为application），这个对象接收服务器端传递的两个参数 environ 和 start_response。这里的可调用对象不仅可以是函数，还可以是类（下面第二个示例）或者拥有 <code>__call__</code> 方法的实例，总之只要<strong>可以接受前面说的两个参数，并且返回值可以被服务器进行迭代即可</strong>。</p>
+<p>Application 具体要做的就是根据 environ 里面提供的关于 HTTP 请求的信息，进行一定的业务处理，返回一个可迭代对象，服务器端通过迭代这个对象，来获得 HTTP 响应的正文。如果没有响应正文，那么可以返回None。</p>
+<p>同时，application 还会调用服务器提供的 start_response，产生HTTP响应的状态码和响应头，原型如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">start_response</span><span class="params">(self, status, headers,exc_info=None)</span>:</span></div></pre></td></tr></table></figure>
+<p>Application 需要提供 status：一个字符串，表示HTTP响应状态字符串，还有 response_headers: 一个列表，包含有如下形式的元组：(header_name, header_value)，用来表示HTTP响应的headers。同时 exc_info 是可选的，用于出错时，server需要返回给浏览器的信息。</p>
+<p>到这里为止，我们就可以实现一个简单的 application 了，如下所示：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">simple_app</span><span class="params">(environ, start_response)</span>:</span></div><div class="line">    <span class="string">"""Simplest possible application function"""</span></div><div class="line">    HELLO_WORLD = <span class="string">"Hello world!\n"</span></div><div class="line">    status = <span class="string">'200 OK'</span></div><div class="line">    response_headers = [(<span class="string">'Content-type'</span>, <span class="string">'text/plain'</span>)]</div><div class="line">    start_response(status, response_headers)</div><div class="line">    <span class="keyword">return</span> [HELLO_WORLD]</div></pre></td></tr></table></figure>
+<p>或者用类实现如下。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">AppClass</span>:</span></div><div class="line">    <span class="string">"""Produce the same output, but using a class"""</span></div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, environ, start_response)</span>:</span></div><div class="line">        self.environ = environ</div><div class="line">        self.start = start_response</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__iter__</span><span class="params">(self)</span>:</span></div><div class="line">        ...</div><div class="line">        HELLO_WORLD = <span class="string">"Hello world!\n"</span></div><div class="line">        <span class="keyword">yield</span> HELLO_WORLD</div></pre></td></tr></table></figure>
+<p>注意这里 <code>AppClass</code> 类本身就是 application，用 environ 和 start_response 调用（实例化）它返回一个实例对象，这个实例对象本身是可迭代的，符合 WSGI 对 application 的要求。</p>
+<p>如果想使用 AppClass 类的对象作为 application，那么必须给类添加一个 <code>__call__</code> 方法，接受 environ 和 start_response 为参数，返回可迭代对象，如下所示：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">AppClass</span>:</span></div><div class="line">    <span class="string">"""Produce the same output, but using an object"""</span></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__call__</span><span class="params">(self, environ, start_response)</span>:</span></div><div class="line">        ...</div></pre></td></tr></table></figure>
+<p>这部分涉及到python的一些高级特性，比如 yield 和 magic method，可以参考我总结的<a href="https://github.com/xuelangZF/CS_Offer/tree/master/Python" target="_blank" rel="external">python语言要点</a>来理解。 </p>
+<h2 id="Flask-中的-WSGI"><a href="#Flask-中的-WSGI" class="headerlink" title="Flask 中的 WSGI"></a>Flask 中的 WSGI</h2><p>flask 是一个轻量级的Python Web框架，符合 WSGI 的规范要求。它的最初版本只有 600 多行，相对便于理解。下面我们来看下它最初版本中关于 WSGI 接口的部分。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">wsgi_app</span><span class="params">(self, environ, start_response)</span>:</span></div><div class="line">    <span class="string">"""The actual WSGI application.</span></div><div class="line"></div><div class="line">    This is not implemented in `__call__` so that middlewares can be applied:</div><div class="line">        app.wsgi_app = MyMiddleware(app.wsgi_app)</div><div class="line">    """</div><div class="line">    <span class="keyword">with</span> self.request_context(environ):</div><div class="line">        rv = self.preprocess_request()</div><div class="line">        <span class="keyword">if</span> rv <span class="keyword">is</span> <span class="keyword">None</span>:</div><div class="line">            rv = self.dispatch_request()</div><div class="line">        response = self.make_response(rv)</div><div class="line">        response = self.process_response(response)</div><div class="line">        <span class="keyword">return</span> response(environ, start_response)</div><div class="line"></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">__call__</span><span class="params">(self, environ, start_response)</span>:</span></div><div class="line">    <span class="string">"""Shortcut for :attr:`wsgi_app`"""</span></div><div class="line">    <span class="keyword">return</span> self.wsgi_app(environ, start_response)</div></pre></td></tr></table></figure>
+<p>这里的 wsgi_app 实现了我们说的 application 功能，rv 是 对请求的封装，response 是框架用来处理业务逻辑的具体函数。这里对 flask 源码不做过多解释，感兴趣的可以去github下载，然后check 到最初版本去查看。</p>
+<h1 id="中间件"><a href="#中间件" class="headerlink" title="中间件"></a>中间件</h1><p>前面 flask 代码 wsgi_app 函数的注释中提到不直接在 <code>__call__</code> 中实现 application 部分，是为了可以使用<code>中间件</code>。 那么为什么要使用中间件，中间件又是什么呢？</p>
+<p>回顾前面的 application/server 端接口，对于一个 HTTP 请求，server 端总是会调用一个 application 来进行处理，并返回 application 处理后的结果。这足够应付一般的场景了，不过并不完善，考虑下面的几种应用场景：</p>
+<ul>
+<li>对于不同的请求（比如不同的 URL），server 需要调用不同的 application，那么如何选择调用哪个呢；</li>
+<li>为了做负载均衡或者是远程处理，需要使用网络上其他主机上运行的 application 来做处理；</li>
+<li>需要对 application 返回的内容做一定处理后才能作为 HTTP 响应；</li>
+</ul>
+<p>上面这些场景有一个共同点就是，有一些必需的操作不管放在服务端还是应用（框架）端都不合适。对应用端来说，这些操作应该由服务器端来做，对服务器端来说，这些操作应该由应用端来做。为了处理这种情况，引入了<code>中间件</code>。</p>
+<p>中间件就像是应用端和服务端的桥梁，来沟通两边。对服务器端来说，中间件表现的像是应用端，对应用端来说，它表现的像是服务器端。如下图所示：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160807_forum_design_WSGI_4.png" alt="中间件"></p>
+<h2 id="中间件的实现"><a href="#中间件的实现" class="headerlink" title="中间件的实现"></a>中间件的实现</h2><p>flask 框架在 Flask 类的初始化代码中就使用了中间件：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">self.wsgi_app = SharedDataMiddleware(self.wsgi_app, &#123; self.static_path: target &#125;)</div></pre></td></tr></table></figure>
+<p>这里的作用和 python 中的装饰器一样，就是在执行 self.wsgi_app 前后执行 SharedDataMiddleware 中的一些内容。中间件做的事，很类似python中装饰器做的事情。SharedDataMiddleware 中间件是 <a href="https://github.com/pallets/werkzeug/blob/2e9f5c0d0c1c36b612f6797c00f8c6ac3ba7b1db/werkzeug/wsgi.py" target="_blank" rel="external">werkzeug</a> 库提供的，用来支持站点托管静态内容。此外，还有DispatcherMiddleware 中间件，用来支持根据不同的请求，调用不同的 application，这样就可以解决前面场景 1, 2 中的问题了。</p>
+<p>下面来看看 DispatcherMiddleware 的实现：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">DispatcherMiddleware</span><span class="params">(object)</span>:</span></div><div class="line">    <span class="string">"""Allows one to mount middlewares or applications in a WSGI application.</span></div><div class="line">    This is useful if you want to combine multiple WSGI applications::</div><div class="line">        app = DispatcherMiddleware(app, &#123;</div><div class="line">            '/app2':        app2,</div><div class="line">            '/app3':        app3</div><div class="line">        &#125;)</div><div class="line">    """</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, app, mounts=None)</span>:</span></div><div class="line">        self.app = app</div><div class="line">        self.mounts = mounts <span class="keyword">or</span> &#123;&#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__call__</span><span class="params">(self, environ, start_response)</span>:</span></div><div class="line">        script = environ.get(<span class="string">'PATH_INFO'</span>, <span class="string">''</span>)</div><div class="line">        path_info = <span class="string">''</span></div><div class="line">        <span class="keyword">while</span> <span class="string">'/'</span> <span class="keyword">in</span> script:</div><div class="line">            <span class="keyword">if</span> script <span class="keyword">in</span> self.mounts:</div><div class="line">                app = self.mounts[script]</div><div class="line">                <span class="keyword">break</span></div><div class="line">            script, last_item = script.rsplit(<span class="string">'/'</span>, <span class="number">1</span>)</div><div class="line">            path_info = <span class="string">'/%s%s'</span> % (last_item, path_info)</div><div class="line">        <span class="keyword">else</span>:</div><div class="line">            app = self.mounts.get(script, self.app)</div><div class="line">        original_script_name = environ.get(<span class="string">'SCRIPT_NAME'</span>, <span class="string">''</span>)</div><div class="line">        environ[<span class="string">'SCRIPT_NAME'</span>] = original_script_name + script</div><div class="line">        environ[<span class="string">'PATH_INFO'</span>] = path_info</div><div class="line">        <span class="keyword">return</span> app(environ, start_response)</div></pre></td></tr></table></figure>
+<p>初始化中间件时需要提供一个 mounts 字典，用来指定不同 URL 路径到 application 的映射关系。这样对于一个请求，中间件检查其路径，然后选择合适的 application 进行处理。</p>
+<p>关于 WSGI 的原理部分基本结束，下一篇我会介绍下对 flask 框架的理解。</p>
+<h1 id="更多阅读"><a href="#更多阅读" class="headerlink" title="更多阅读"></a>更多阅读</h1><p><a href="https://wsgi.readthedocs.io/en/latest/" target="_blank" rel="external">WSGI Content</a><br><a href="http://wsgi.tutorial.codepoint.net/intro" target="_blank" rel="external">WSGI Tutorial by Clodoaldo Neto</a><br><a href="http://linuxgazette.net/115/orr.html" target="_blank" rel="external">WSGI Explorations in Python</a><br><a href="http://codingpy.com/article/build-a-simple-web-server-part-two/" target="_blank" rel="external">自己动手开发网络服务器（二）</a><br><a href="https://segmentfault.com/a/1190000003069785" target="_blank" rel="external">WSGI 是什么?</a><br><a href="https://segmentfault.com/a/1190000005640475" target="_blank" rel="external">自己写一个 wsgi 服务器运行 Django 、Tornado 等框架应用</a><br><a href="https://www.python.org/dev/peps/pep-3333/" target="_blank" rel="external">PEP 3333 – Python Web Server Gateway Interface v1.0.1</a><br><a href="http://stackoverflow.com/questions/111234/what-is-a-callable-in-python" target="_blank" rel="external">What is a “callable” in Python?</a>  </p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;在 &lt;a href=&quot;http://selfboot.cn/2016/07/28/forum_design_framework/&quot;&gt;从零开始搭建论坛（一）：Web服务器与Web框架&lt;/a&gt; 中我们弄清楚了Web 服务器、Web 应用程序、Web框架的概念。对于 Python 来说，越来越多的 Web 框架面世，在给我们更多选择机会的同时，也限制了我们对于 Web Server 的选择。同样是有着很多 Web 框架的Java，因为有着 servlet API 的存在，任何Java Web框架写的应用程序都可以运行在任意一个 Web Server 上。&lt;/p&gt;
+&lt;p&gt;Python 社区当然也需要这样一套 API，来适配Web服务器和应用程序，这套 API 就是 WSGI（Python Web Server Gateway Interface），在 &lt;a href=&quot;https://www.python.org/dev/peps/pep-3333/&quot;&gt;PEP 3333&lt;/a&gt; 里有详细的说明。简单来说，WSGI是连接Web服务器和Web应用程序的桥梁，一方面从Web server 拿到原始 HTTP 数据，处理成统一格式后交给 Web 应用程序，另一方面从应用程序／框架这边进行业务逻辑处理，生成响应内容后交给服务器。&lt;/p&gt;
+&lt;p&gt;Web服务器和框架通过 WSGI 来进行耦合的详细过程如下图所示：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://xuelangzf-github.qiniudn.com/20160807_forum_design_WSGI_1.png&quot; alt=&quot;WSGI Server 适配&quot;&gt;&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="项目实践" scheme="http://selfboot.cn/categories/%E9%A1%B9%E7%9B%AE%E5%AE%9E%E8%B7%B5/"/>
+    
+    
+      <category term="python" scheme="http://selfboot.cn/tags/python/"/>
+    
+      <category term="Flask" scheme="http://selfboot.cn/tags/Flask/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>从零开始搭建论坛（一）：Web服务器与Web框架</title>
+    <link href="http://selfboot.cn/2016/07/28/forum_design_framework/"/>
+    <id>http://selfboot.cn/2016/07/28/forum_design_framework/</id>
+    <published>2016-07-28T14:02:50.000Z</published>
+    <updated>2016-08-07T11:41:16.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>之前用 Django 做过一个小的站点，感觉Django太过笨重，于是就准备换一个比较轻量级的 Web 框架来玩玩。Web.py 作者已经挂掉，项目好久没有更新，所以不准备用它。而 Flask 也是一个成熟的轻量级 Web 框架，在 github 上有众多的 Star 和 Fork，文档和扩展也很丰富，值得学习。</p>
+<p>学习一个框架最好的方式就是用框架做一个项目，在实战中理解掌握框架。这里我用 Flask 框架，使用 Mysql 数据库做了一个<a href="https://github.com/xuelangZF/NaHan" target="_blank" rel="external">论坛系统</a>。麻雀虽小，五脏俱全，论坛效果图如下：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160728_forum_design_framework_1.png" alt="论坛系统截图"></p>
+<p>下面是论坛的基本功能：</p>
+<ul>
+<li>完整的用户模块（注册、登录，更改、找回密码、信息修改、站内消息通知）；</li>
+<li>丰富的论坛模块（创建、回复话题，站内搜索，markdown支持，@user 提醒）；</li>
+<li>强大的后台管理，支持屏蔽用户、话题、评论，支持各种条件搜索话题、评论；</li>
+</ul>
+<p>本博客将会用一系列文章，记录论坛系统搭建的过程，希望对刚入门Web开发的同学有所帮助。</p>
+<a id="more"></a>
+<p>我们经常听说 Django, Flask 这些 python 语言的<code>Web 框架</code>，那么框架到底是什么，Web框架和Web服务器（Nginx, Apache等）有什么区别？离开框架还能用 Python 搭建Web站点吗？要解决这些疑问，我们有必要来理解下 Web 服务器的工作原理，以及 Web 框架的本质。</p>
+<h1 id="Web-服务器"><a href="#Web-服务器" class="headerlink" title="Web 服务器"></a>Web 服务器</h1><p>当我们在浏览器输入URL后，浏览器会先请求<a href="http://selfboot.cn/2015/11/05/dns_theory/">DNS服务器，获得请求站点的 IP 地址</a>。然后发送一个HTTP Request（请求）给拥有该 IP 的主机，接着就会接收到服务器给我们的 HTTP Response（响应），浏览器经过渲染后，以一种较好的效果呈现给我们。这个过程中，正是Web服务器在幕后默默做贡献。</p>
+<p>简单来说，Web服务器是在运行在物理服务器上的一个程序，它永久地等待客户端（主要是浏览器，比如Chrome，Firefox等）发送请求。当收到请求之后，它会生成相应的响应并将其返回至客户端。Web服务器通过HTTP协议与客户端通信，因此也被称为HTTP服务器。</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160728_forum_design_framework_2.png" alt="Web 服务器"></p>
+<p>Web服务器的工作原理并不复杂，一般可分成如下4个步骤：<code>建立连接、请求过程、应答过程以及关闭连接</code>。</p>
+<ol>
+<li>建立连接：客户机通过TCP/IP协议建立到服务器的TCP连接。</li>
+<li>请求过程：客户端向服务器发送HTTP协议请求包，请求服务器里的资源文档。</li>
+<li>应答过程：服务器向客户机发送HTTP协议应答包，如果请求的资源包含有动态语言的内容，那么服务器会调用动态语言的解释引擎负责处理“动态内容”，并将处理得到的数据返回给客户端。由客户端解释HTML文档，在客户端屏幕上渲染图形结果。</li>
+<li>关闭连接：客户机与服务器断开。</li>
+</ol>
+<p>下面我们实现一个简单的 Web 服务器。运行<a href="https://gist.github.com/xuelangZF/19cd52525b64ed3973f480902447a9ea" target="_blank" rel="external">示例程序</a>后，会监听本地端口 8000，在浏览器访问 <a href="http://localhost:8000" target="_blank" rel="external">http://localhost:8000</a> 就能看到响应内容。而我们的程序也能够打印出客户端发来的请求内容，如下图：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160728_forum_design_framework_3.png" alt="简单Web服务器"></p>
+<p>这里Request 和 Response 都需要遵守 HTTP 协议，关于 HTTP 协议的详细内容，可以读读《HTTP 权威指南》，或者看我整理的<a href="https://github.com/xuelangZF/CS_Offer/blob/master/Network/HTTP.md" target="_blank" rel="external">HTTP 部分内容</a>。</p>
+<p>虽然说web服务器的主要工作是根据request返回response，但是实际中的 Web 服务器远远比上面示例的复杂的多，因为要考虑的因素实在是太多了，比如：</p>
+<ul>
+<li>缓存机制：讲一些经常被访问的页面缓存起来，提高响应速度；</li>
+<li>安全：防止黑客的各种攻击，比如 SYN Flood 攻击；</li>
+<li>并发处理：如何响应不同客户端同时发起的请求；</li>
+<li>日志：记录访问日至，方便做一些分析。</li>
+</ul>
+<p>目前在UNIX和LINUX平台下使用最广泛的免费 Web 服务器有Apache和 Nginx 。</p>
+<h1 id="Web-应用程序"><a href="#Web-应用程序" class="headerlink" title="Web 应用程序"></a>Web 应用程序</h1><p>Web 服务器接受 Http Request，返回 Response，很多时候 Response 并不是静态文件，因此需要有一个应用程序根据 Request 生成相应的 Response。这里的应用程序主要用来处理相关业务逻辑，读取或者更新数据库，根据不同 Request 返回相应的 Response。注意这里并不是 Web 服务器本身来做这件事，它只负责 Http 协议层面和一些诸如并发处理，安全，日志等相关的事情。</p>
+<p>应用程序可以用各种语言编写（Java, PHP, Python, Ruby等），这个应用程序会从Web服务器接收客户端的请求，处理完成后，再返回响应给Web服务器，最后由Web服务器返回给客户端。整个架构如下：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160728_forum_design_framework_4.png" alt="Web应用程序"></p>
+<p>以 Python 为例，使用Python开发Web，最原始和直接的办法是使用<a href="https://en.wikipedia.org/wiki/Common_Gateway_Interface" target="_blank" rel="external">CGI标准</a>，在1998年这种方式很流行。首先确保 Web 服务器支持CGI及已经配置了CGI的处理程序，然后设置好CGI目录，在目录里面添加相应的 python 文件，每一个 python 文件处理相应输入，生成一个 html 文件即可，如下例：</p>
+<pre><code>#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
+print &quot;Content-type:text/html&quot;
+print         # 空行，告诉服务器结束头部
+print &apos;&lt;html&gt;&apos;
+print &apos;&lt;head&gt;&apos;
+print &apos;&lt;meta charset=&quot;utf-8&quot;&gt;&apos;
+print &apos;&lt;/head&gt;&apos;
+print &apos;&lt;body&gt;&apos;
+print &apos;&lt;h2&gt;Hello Word! 我是一个CGI程序&lt;/h2&gt;&apos;
+print &apos;&lt;/body&gt;&apos;
+print &apos;&lt;/html&gt;&apos;
+</code></pre><p>这样在浏览器访问该文件就可以得到一个简单的 Hello World 网页内容。直接通过 CGI 写 Web 应用程序看起来很简单，每一个文件处理输入，生成html。但是实际开发中，可能会遇到许多不方便的地方。比如：</p>
+<ul>
+<li>每个独立的CGI脚本可能会重复写数据库连接，关闭的代码；</li>
+<li>后端开发者会看到一堆 Content-Type 等和自己无关的 html 页面元素；</li>
+</ul>
+<h1 id="Web-框架"><a href="#Web-框架" class="headerlink" title="Web 框架"></a>Web 框架</h1><p>早期开发站点确做了许多重复性劳动，后来为了减少重复，避免写出庞杂，混乱的代码，人们将 Web 开发的关键性过程提取出来，开发出了各种 Web 框架。有了框架，就可以专注于编写清晰、易维护的代码，无需关心数据库连接之类的重复性工作。</p>
+<p>其中一种比较经典的Web框架采用了 <a href="https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller" target="_blank" rel="external">MVC</a> 架构，如下图所示：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160728_forum_design_framework_5.png" alt="MVC 架构"></p>
+<p>用户输入 URL，客户端发送请求，<code>控制器（Controller）</code>首先会拿到请求，然后用<code>模型（Models）</code>从数据库取出所有需要的数据，进行必要的处理，将处理后的结果发送给 <code>视图（View）</code>，视图利用获取到的数据，进行渲染生成 Html Response返回给客户端。</p>
+<p>以 python web 框架 flask 为例，框架本身并不限定我们用哪种架构来组织我们的应用，不过 flask 可以很好地支持以 MVC 方式组织应用。</p>
+<p>控制器：flask 可以用装饰器来添加路由项，如下：</p>
+<pre><code>@app.route(&apos;/&apos;)
+def main_page():
+    pass
+</code></pre><p>模型：主要用来取出需要的数据，如下面函数中操作：</p>
+<pre><code>@app.route(&apos;/&apos;)
+def main_page():
+    &quot;&quot;&quot;Searches the database for entries, then displays them.&quot;&quot;&quot;
+    db = get_db()
+    cur = db.execute(&apos;select * from entries order by id desc&apos;)
+    entries = cur.fetchall()
+    return render_template(&apos;index.html&apos;, entries=entries)
+</code></pre><p>视图：flask 利用 jinja2 来渲染页面，下面的模版文件指定了页面的样式：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">&#123;% for entry in entries %&#125;</div><div class="line">&lt;li&gt;</div><div class="line">  &lt;h2&gt;&#123;&#123; entry.title &#125;&#125;&lt;/h2&gt;</div><div class="line">  &lt;div&gt;&#123;&#123; entry.text|safe &#125;&#125;&lt;/div&gt;</div><div class="line">&lt;/li&gt;</div><div class="line">&#123;% else %&#125;</div><div class="line">&lt;li&gt;&lt;em&gt;No entries yet. Add some!&lt;/em&gt;&lt;/li&gt;</div><div class="line">&#123;% endfor %&#125;</div></pre></td></tr></table></figure>
+<h1 id="Web-服务器网关接口"><a href="#Web-服务器网关接口" class="headerlink" title="Web 服务器网关接口"></a>Web 服务器网关接口</h1><p>我们知道Python有着许多的 Web 框架，而同时又有着许多的 Web 服务器（Apache, Nginx, Gunicorn等），框架和Web服务器之间需要进行通信，如果在设计时它们之间不可以相互匹配的，那么选择了一个框架就会限制对 Web 服务器的选择，这显然是不合理的。</p>
+<p>那么，怎样确保可以在不修改Web服务器代码或网络框架代码的前提下，使用自己选择的服务器，并且匹配多个不同的网络框架呢？答案是接口，设计一套双方都遵守的接口就可以了。对python来说，就是<code>WSGI</code>（Web Server Gateway Interface，Web服务器网关接口）。其他编程语言也拥有类似的接口：例如Java的Servlet API和Ruby的Rack。</p>
+<p>Python WSGI的出现，让开发者可以将 Web 框架与 Web 服务器的选择分隔开来，不再相互限制。现在，你可以真正地将不同的 Web 服务器与Web框架进行混合搭配，选择满足自己需求的组合。例如，可以使用 Gunicorn 或Nginx/uWSGI来运行Django、Flask或web.py应用。</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160728_forum_design_framework_6.jpeg" alt="WSGI 适配"></p>
+<p><a href="http://selfboot.cn/2016/08/07/forum_design_wsgi/">下一篇</a>我们将会仔细分析 WSGI 接口标准，然后一起来写一个简单的 WSGI Web 服务器。</p>
+<h1 id="更多阅读"><a href="#更多阅读" class="headerlink" title="更多阅读"></a>更多阅读</h1><p><a href="http://codingpy.com/article/build-a-simple-web-server-part-one/" target="_blank" rel="external">自己动手开发网络服务器（一）</a><br><a href="http://codingpy.com/article/build-a-simple-web-server-part-two/" target="_blank" rel="external">自己动手开发网络服务器（二）</a><br><a href="http://codingpy.com/article/build-a-simple-web-server-part-three/" target="_blank" rel="external">自己动手开发网络服务器（三）</a><br><a href="https://www.hitoy.org/principle-of-wsgi.html" target="_blank" rel="external">Web服务器网关接口实现原理分析</a><br><a href="http://pythonguidecn.readthedocs.io/zh/latest/scenarios/web.html" target="_blank" rel="external">Python最佳实践指南：Web 应用</a><br><a href="http://feilong.me/2011/01/talk-about-python-web-framework" target="_blank" rel="external">浅谈Python web框架</a><br><a href="http://www.runoob.com/python/python-cgi.html" target="_blank" rel="external">Python CGI编程</a><br><a href="https://www.airpair.com/python/posts/django-flask-pyramid" target="_blank" rel="external">Django vs Flask vs Pyramid: Choosing a Python Web Framework</a><br><a href="https://www.python.org/dev/peps/pep-0333/" target="_blank" rel="external">PEP 333 – Python Web Server Gateway Interface v1.0</a><br><a href="https://segmentfault.com/a/1190000003069785" target="_blank" rel="external">WSGI简介</a><br><a href="https://realpython.com/blog/python/the-model-view-controller-mvc-paradigm-summarized-with-legos/" target="_blank" rel="external">Model-View-Controller (MVC) Explained – With Legos</a>  </p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;之前用 Django 做过一个小的站点，感觉Django太过笨重，于是就准备换一个比较轻量级的 Web 框架来玩玩。Web.py 作者已经挂掉，项目好久没有更新，所以不准备用它。而 Flask 也是一个成熟的轻量级 Web 框架，在 github 上有众多的 Star 和 Fork，文档和扩展也很丰富，值得学习。&lt;/p&gt;
+&lt;p&gt;学习一个框架最好的方式就是用框架做一个项目，在实战中理解掌握框架。这里我用 Flask 框架，使用 Mysql 数据库做了一个&lt;a href=&quot;https://github.com/xuelangZF/NaHan&quot;&gt;论坛系统&lt;/a&gt;。麻雀虽小，五脏俱全，论坛效果图如下：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://xuelangzf-github.qiniudn.com/20160728_forum_design_framework_1.png&quot; alt=&quot;论坛系统截图&quot;&gt;&lt;/p&gt;
+&lt;p&gt;下面是论坛的基本功能：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;完整的用户模块（注册、登录，更改、找回密码、信息修改、站内消息通知）；&lt;/li&gt;
+&lt;li&gt;丰富的论坛模块（创建、回复话题，站内搜索，markdown支持，@user 提醒）；&lt;/li&gt;
+&lt;li&gt;强大的后台管理，支持屏蔽用户、话题、评论，支持各种条件搜索话题、评论；&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;本博客将会用一系列文章，记录论坛系统搭建的过程，希望对刚入门Web开发的同学有所帮助。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="项目实践" scheme="http://selfboot.cn/categories/%E9%A1%B9%E7%9B%AE%E5%AE%9E%E8%B7%B5/"/>
+    
+    
+      <category term="python" scheme="http://selfboot.cn/tags/python/"/>
+    
+      <category term="Flask" scheme="http://selfboot.cn/tags/Flask/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>LeetCode 刷题指南（一）：为什么要刷题</title>
+    <link href="http://selfboot.cn/2016/07/24/leetcode_guide_why/"/>
+    <id>http://selfboot.cn/2016/07/24/leetcode_guide_why/</id>
+    <published>2016-07-24T14:02:50.000Z</published>
+    <updated>2016-07-24T09:11:09.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>虽然刷题一直饱受诟病，不过不可否认刷题确实能锻炼我们的编程能力，相信每个认真刷题的人都会有体会。现在提供在线编程评测的平台有很多，比较有名的有 <a href="http://hihocoder.com/" target="_blank" rel="external">hihocoder</a>，<a href="http://www.lintcode.com/zh-cn/" target="_blank" rel="external">LintCode</a>，以及这里我们关注的 <a href="https://LeetCode.com/" target="_blank" rel="external">LeetCode</a>。</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160724_leetcode_guide_1.png" alt=""></p>
+<p>LeetCode 是一个非常棒的 OJ（Online Judge）平台，收集了许多公司的面试题目。相对其他 OJ 平台而言，有着下面的几个优点：</p>
+<ul>
+<li>题目全部来自业内大公司的真实面试</li>
+<li>不用处理输入输出，精力全放在解决具体问题上</li>
+<li>题目有丰富的讨论，可以参考别人的思路</li>
+<li>精确了解自己代码在所有提交代码中运行效率的排名</li>
+<li>支持多种主流语言：C/C++，Python, Java</li>
+<li>可以在线进行测试，方便调试</li>
+</ul>
+<a id="more"></a>
+<p>下面是我刷 LeetCode 的一些收获，希望能够引诱大家有空时刷刷题目。</p>
+<h1 id="问题：抽象思维"><a href="#问题：抽象思维" class="headerlink" title="问题：抽象思维"></a>问题：抽象思维</h1><p><a href="https://en.wikipedia.org/wiki/George_P%C3%B3lya" target="_blank" rel="external">波利亚</a>用三本书：《How To Solve It》、《数学的发现》、《数学与猜想》）来试图阐明人类解决问题的一般性的思维方法，总结起来主要有以下几种：</p>
+<ul>
+<li><code>时刻不忘未知量</code>。即时刻别忘记你到底想要求什么，问题是什么。（<a href="https://github.com/xuelangZF/LeetCode/tree/master/DynamicProgramming" target="_blank" rel="external">动态规划</a>中问题状态的设定）</li>
+<li><code>试错</code>。对题目这里捅捅那里捣捣，用上所有的已知量，或使用所有你想到的操作手法，尝试着看看能不能得到有用的结论，能不能离答案近一步（<a href="https://github.com/xuelangZF/LeetCode/tree/master/Backtracking" target="_blank" rel="external">回溯算法</a>中走不通就回退）。</li>
+<li><code>求解一个类似的题目</code>。类似的题目也许有类似的结构，类似的性质，类似的解方案。通过考察或回忆一个类似的题目是如何解决的，也许就能够借用一些重要的点子（比较 Ugly Number 的三个题目：<a href="https://LeetCode.com/problems/ugly-number/" target="_blank" rel="external">263. Ugly Number</a>， <a href="https://LeetCode.com/problems/ugly-number-ii/" target="_blank" rel="external">264. Ugly Number II</a>， <a href="https://LeetCode.com/problems/super-ugly-number/" target="_blank" rel="external">313. Super Ugly Number</a>）。</li>
+<li><code>用特例启发思考</code>。通过考虑一个合适的特例，可以方便我们快速寻找出一般问题的解。</li>
+<li><code>反过来推导</code>。对于许多题目而言，其要求的结论本身就隐藏了推论，不管这个推论是充分的还是必要的，都很可能对解题有帮助。</li>
+</ul>
+<p>刷 LeetCode 的最大好处就是可以锻炼解决问题的思维能力，相信我，如何去思考本身也是一个需要不断学习和练习的技能。</p>
+<p>此外，大量高质量的题目可以加深我们对计算机科学中经典数据结构的<code>深刻理解</code>，从而可以快速用合适的数据结构去解决现实中的问题。我们看到很多ACM大牛，拿到题目后立即就能想出解法，大概就是因为他们对于各种数据结构有着深刻的认识吧。LeetCode 上面的题目涵盖了几乎所有常用的数据结构：</p>
+<ul>
+<li><a href="https://github.com/xuelangZF/LeetCode/tree/master/Stack" target="_blank" rel="external">Stack</a>：简单来说具有后进先出的特性，具体应用起来也是妙不可言，可以看看题目 <a href="https://LeetCode.com/problems/longest-valid-parentheses/" target="_blank" rel="external">32. Longest Valid Parentheses</a>。</li>
+<li><a href="https://github.com/xuelangZF/LeetCode/tree/master/LinkedList" target="_blank" rel="external">Linked List</a>：链表可以快速地插入、删除，但是查找比较费时（具体操作链表时结合图会简单很多，此外要注意空节点）。通常链表的相关问题可以用双指针巧妙的解决，<a href="https://LeetCode.com/problems/intersection-of-two-linked-lists/" target="_blank" rel="external">160. Intersection of Two Linked Lists</a> 可以帮我们重新审视链表的操作。</li>
+<li><a href="https://github.com/xuelangZF/LeetCode/tree/master/HashTable" target="_blank" rel="external">Hash Table</a>：利用 Hash 函数来将数据映射到固定的一块区域，方便 O(1) 时间内读取以及修改。<a href="https://LeetCode.com/problems/sudoku-solver/" target="_blank" rel="external">37. Sudoku Solver</a> 数独是一个经典的回溯问题，配合 HashTable 的话，运行时间将大幅减少。</li>
+<li><a href="https://github.com/xuelangZF/LeetCode/tree/master/Tree" target="_blank" rel="external">Tree</a>：树在计算机学科的应用十分广泛，常用的有二叉搜索树，红黑书，B+树等。树的建立，遍历，删除相对来说比较复杂，通常会用到递归的思路，<a href="https://LeetCode.com/problems/path-sum-ii/" target="_blank" rel="external">113. Path Sum II</a> 是一个不错的开胃菜。</li>
+<li><a href="https://github.com/xuelangZF/LeetCode/tree/master/Heap" target="_blank" rel="external">Heap</a>：特殊的完全二叉树，“等级森严”，可以用 O(nlogn) 的时间复杂度来进行排序，可以用 O(nlogk) 的时间复杂度找出 n 个数中的最大（小）k个，具体可以看看 <a href="https://LeetCode.com/problems/top-k-frequent-elements/" target="_blank" rel="external">347. Top K Frequent Elements</a>。</li>
+</ul>
+<h1 id="算法：时间空间"><a href="#算法：时间空间" class="headerlink" title="算法：时间空间"></a>算法：时间空间</h1><p>我们知道，除了数据结构，具体算法在一个程序中也是十分重要的，而算法效率的度量则是时间复杂度和空间复杂度。通常情况下，人们更关注时间复杂度，往往希望找到比 O( n^2 ) 快的算法，在数据量比较大的情况下，算法时间复杂度最好是O(logn)或者O(n)。计算机学科中经典的算法思想就那么多，LeetCode 上面的题目涵盖了其中大部分，下面大致来看下。</p>
+<ul>
+<li><a href="https://github.com/xuelangZF/LeetCode/tree/master/DivideConquer" target="_blank" rel="external">分而治之</a>：有点类似“大事化小、小事化了”的思想，经典的归并排序和快速排序都用到这种思想，可以看看  <a href="https://leetcode.com/problems/search-a-2d-matrix-ii/" target="_blank" rel="external">Search a 2D Matrix II</a> 来理解这种思想。</li>
+<li><a href="https://github.com/xuelangZF/LeetCode/tree/master/DynamicProgramming" target="_blank" rel="external">动态规划</a>：有点类似数学中的归纳总结法，找出状态转移方程，然后逐步求解。 <a href="https://leetcode.com/problems/best-time-to-buy-and-sell-stock-with-cooldown/" target="_blank" rel="external">309. Best Time to Buy and Sell Stock with Cooldown</a> 是理解动态规划的一个不错的例子。</li>
+<li><a href="https://github.com/xuelangZF/LeetCode/tree/master/Greedy" target="_blank" rel="external">贪心算法</a>：有时候只顾局部利益，最终也会有最好的全局收益。<a href="https://leetcode.com/problems/best-time-to-buy-and-sell-stock-ii/" target="_blank" rel="external">122. Best Time to Buy and Sell Stock II</a> 看看该如何“贪心”。</li>
+<li>搜索算法（<a href="https://github.com/xuelangZF/LeetCode/tree/master/DepthFirstSearch" target="_blank" rel="external">深度优先</a>，<a href="https://github.com/xuelangZF/LeetCode/tree/master/BreadthFirstSearch" target="_blank" rel="external">广度优先</a>，<a href="https://github.com/xuelangZF/LeetCode/tree/master/BinarySearch" target="_blank" rel="external">二分搜索</a>）：在有限的解空间中找出满足条件的解，深度和广度通常比较费时间，二分搜索每次可以将问题规模缩小一半，所以比较高效。</li>
+<li><a href="https://github.com/xuelangZF/LeetCode/tree/master/Backtracking" target="_blank" rel="external">回溯</a>：不断地去试错，同时要注意回头是岸，走不通就换条路，最终也能找到解决问题方法或者知道问题无解，可以看看 <a href="https://leetcode.com/problems/palindrome-partitioning/" target="_blank" rel="external">131. Palindrome Partitioning</a>。</li>
+</ul>
+<p>当然，还有一部分问题可能需要一些<a href="https://github.com/xuelangZF/LeetCode/tree/master/Math" target="_blank" rel="external">数学知识</a>去解决，或者是需要一些<a href="https://github.com/xuelangZF/LeetCode/tree/master/BitManipulation" target="_blank" rel="external">位运算的技巧</a>去快速解决。总之，我们希望找到时间复杂度低的解决方法。为了达到这个目的，我们可能需要在一个解题方法中融合多种思想，比如在 <a href="https://leetcode.com/problems/longest-increasing-subsequence/" target="_blank" rel="external">300. Longest Increasing Subsequence</a> 中同时用到了动态规划和二分查找的方法，将复杂度控制在 O(nlogn)。如果用其他方法，时间复杂度可能会高很多，这种题目的运行时间统计图也比较有意思，可以看到不同解决方案运行时间的巨大差异，如下：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160724_leetcode_guide_2.png" alt=""></p>
+<p>当然有时候我们会牺牲空间换取时间，比如在动态规划中状态的保存，或者是记忆化搜索，避免在递归中计算重复子问题。<a href="https://leetcode.com/problems/house-robber-ii/" target="_blank" rel="external">213. House Robber II</a> 的<a href="https://discuss.leetcode.com/topic/39834/step-by-step-tackling-of-the-problem" target="_blank" rel="external">一个Discuss</a>会教我们如何用记忆化搜索减少程序执行时间。</p>
+<h1 id="语言：各有千秋"><a href="#语言：各有千秋" class="headerlink" title="语言：各有千秋"></a>语言：各有千秋</h1><p>对一个问题来说，解题逻辑不会因编程语言而不同，但是具体coding起来语言之间的差别还是很大的。用不同语言去解决同一个问题，可以让我们更好地去理解语言之间的差异，以及特定语言的优势。</p>
+<h2 id="速度-VS-代码量"><a href="#速度-VS-代码量" class="headerlink" title="速度 VS 代码量"></a>速度 VS 代码量</h2><p>C++ 以高效灵活著称，LeetCode 很好地印证了这一点。对于绝大多数题目来说，c++ 代码的运行速度要远远超过 python 以及其他语言。和 C++ 相比，Python 允许我们用更少的代码量实现同样的逻辑。通常情况下，Python程序的代码行数只相当于对应的C++代码的行数的三分之一左右。</p>
+<p>以 <a href="https://LeetCode.com/problems/top-k-frequent-elements/" target="_blank" rel="external">347 Top K Frequent Elements</a> 为例，给定一个数组，求数组里出现频率最高的 K 个数字，比如对于数组 [1,1,1,2,2,3]，K=2 时，返回 [1,2]。解决该问题的思路比较常规，首先用 hashmap 记录每个数字的出现频率，然后可以用 heap 来求出现频率最高的 k 个数字。</p>
+<p>如果用 python 来实现的话，主要逻辑部分用两行代码就足够了，如下：</p>
+<pre><code>num_count = collections.Counter(nums)
+return heapq.nlargest(k, num_count, key=lambda x: num_count[x])
+</code></pre><p>当然了，要想写出短小优雅的 python 代码，需要对 python 思想以及模块有很好的了解。关于 python 的相关知识点讲解，可以参考<a href="https://github.com/xuelangZF/CS_Offer/blob/master/Python.md" target="_blank" rel="external">这里</a>。</p>
+<p>而用 C++ 实现的话，代码会多很多，带来的好处就是速度的飞跃。具体代码在<a href="https://github.com/xuelangZF/LeetCode/blob/master/Heap/347_TopKFrequentElements.cpp" target="_blank" rel="external">这里</a>，建立大小为 k 的小顶堆，每次进堆时和堆顶进行比较，核心代码如下：</p>
+<pre><code>// Build the min-heap with size k.
+for(auto it = num_count.begin(); it != num_count.end(); it++){
+  if(frequent_heap.size() &lt; k){
+      frequent_heap.push(*it);
+  }
+  else if(it-&gt;second &gt;= frequent_heap.top().second){
+      frequent_heap.pop();
+      frequent_heap.push(*it);
+  }
+}
+</code></pre><h2 id="语言的差异"><a href="#语言的差异" class="headerlink" title="语言的差异"></a>语言的差异</h2><p>我们都知道 c++ 和 python 是不同的语言，它们有着显著的区别，不过一不小心我们就会忘记它们之间的差别，从而写出bug来。不信？来看 <a href="https://LeetCode.com/problems/sqrtx/" target="_blank" rel="external">69 Sqrt(x)</a>，实现 <code>int sqrt(int x)</code>。这题目是经典的二分查找（当然也可以用更高级的牛顿迭代法），用 python 来实现的话很容易写出 <a href="https://github.com/xuelangZF/LeetCode/blob/master/BinarySearch/69_Sqrt_x.py" target="_blank" rel="external">AC 的代码</a>。</p>
+<p>如果用 C++ 的话，相信很多人也能避开求中间值的整型溢出的坑：<code>int mid = low + (high - low) / 2;</code>，于是写出下面的代码：</p>
+<pre><code>int low = 0, high = x;
+while(low &lt;= high){
+  // int mid = (low+high) / 2,  may overflow.
+  int mid = low + (high - low) / 2;
+  if(x&gt;=mid*mid &amp;&amp; x&lt;(mid+1)*(mid+1)) return mid;
+  else if(x &lt; mid*mid)  high = mid - 1;
+  else low = mid + 1;
+}
+</code></pre><p>很可惜，这样的代码仍然存在整型溢出的问题，因为mid*mid 有可能大于 <code>INT_MAX</code>，正确的代码在<a href="https://github.com/xuelangZF/LeetCode/blob/master/BinarySearch/69_Sqrt_x.cpp" target="_blank" rel="external">这里</a>。当我们被 python 的自动整型转换宠坏后，就很容易忘记c++整型溢出的问题。</p>
+<p>除了臭名昭著的整型溢出问题，c++ 和 python 在位运算上也有着一点不同。以 <a href="https://LeetCode.com/problems/sum-of-two-integers/" target="_blank" rel="external">371 Sum of Two Integers</a> 为例，不用 +, - 实现 int 型的加法 <code>int getSum(int a, int b)</code>。其实就是模拟计算机内部加法的实现，很明显是一个位运算的问题，c++实现起来比较简单，如下：</p>
+<pre><code>int getSum(int a, int b) {
+    if(b==0){
+        return a;
+    }
+    return getSum(a^b, (a&amp;b)&lt;&lt;1);
+}
+</code></pre><p>然而用 python 的话，情况变的复杂了很多，归根到底还是因为 python 整型的实现机制，具体代码在<a href="https://github.com/xuelangZF/LeetCode/blob/master/BitManipulation/371_SumOfTwoIntegers.py" target="_blank" rel="external">这里</a>。</p>
+<h1 id="讨论：百家之长"><a href="#讨论：百家之长" class="headerlink" title="讨论：百家之长"></a>讨论：百家之长</h1><p>如果说 LeetCode 上面的题目是一块块金子的话，那么评论区就是一个点缀着钻石的矿山。多少次，当你绞尽脑汁终于 AC，兴致勃发地来到评论区准备吹水。结果迎接你的却是大师级的代码。于是，你高呼：尼玛，竟然可以这样！然后闭关去思考那些优秀的代码，顺便默默鄙视自己。</p>
+<p>除了优秀的代码，有时候还会有直观的解题思路分享，方便看看别人是如何解决这个问题的。<a href="https://discuss.LeetCode.com/user/missmary" target="_blank" rel="external">@MissMary</a>在“两个排序数组中找出中位数”这个题目中，给出了一个很棒的解释：<a href="https://discuss.LeetCode.com/topic/4996/share-my-o-log-min-m-n-solution-with-explanation/2" target="_blank" rel="external">Share my o(log(min(m,n)) solution with explanation</a>，获得了400多个赞。</p>
+<p>你也可以评论大牛的代码，或者提出改进方案，不过有时候可能并非如你预期一样改进后代码会运行地更好。在 <a href="https://LeetCode.com/problems/n-queens/" target="_blank" rel="external">51. N-Queens</a> 的讨论 <a href="https://discuss.LeetCode.com/topic/13617/accepted-4ms-c-solution-use-backtracking-and-bitmask-easy-understand" target="_blank" rel="external">Accepted 4ms c++ solution use backtracking and bitmask, easy understand</a> 中，@binz 在讨论区中纳闷自己将数组 vector<int> （取值非零即一）改为 vector<bool> 后，运行时间变慢。@prime_tang 随后就给出建议说最好不要用 vector<bool>，并给出了<a href="https://discuss.LeetCode.com/topic/13617/accepted-4ms-c-solution-use-backtracking-and-bitmask-easy-understand/16" target="_blank" rel="external">两个 StackOverflow 答案</a>。</bool></bool></int></p>
+<p>当你逛讨论区久了，你可能会有那么一两个偶像，比如<a href="https://discuss.LeetCode.com/user/stefanpochmann" target="_blank" rel="external">@StefanPochmann</a>。他的一个粉丝 @agave 曾经问 StefanPochmann 一个问题：</p>
+<blockquote>
+<p>Hi Stefan, I noticed that you use a lot of Python tricks in your solutions, like “v += val,” and so on… Could you share where you found them, or how your learned about them, and maybe where we can find more of that? Thanks!</p>
+</blockquote>
+<p>StefanPochmann 也不厌其烦地给出了自己的答案：</p>
+<blockquote>
+<p>@agave From many places, though I’d say I learned a lot on CheckiO and StackOverflow (when I was very active there for a month). You might also find some by googling python code golf.</p>
+</blockquote>
+<p>原来大神也是在 StackOverflow 上修炼的，看来需要在 <a href="http://selfboot.cn/2016/06/26/why_need_to_read_StackOverflow/">为什么离不开 StackOverflow</a> 中添加一个理由了：因为 StefanPochmann 都混迹于此。</p>
+<p>类似这样友好，充满技术味道的讨论，在 LeetCode 讨论区遍地都是，绝对值得我们去好好探访。</p>
+<h1 id="成长：大有益处"><a href="#成长：大有益处" class="headerlink" title="成长：大有益处"></a>成长：大有益处</h1><p>偶尔会听旁边人说 XX 大牛 LeetCode 刷了3遍，成功进微软，还拿了 special offer！听起来好像刷题就可以解决工作问题，不过要知道还有<a href="http://www.1point3acres.com/bbs/thread-168094-1-1.html" target="_blank" rel="external">刷5遍 LeetCode 仍然没有找到工作的人</a>呢。所以，不要想着刷了很多遍就可以找到好工作，毕竟比你刷的还疯狂的大有人在（开个玩笑）。</p>
+<p>不过，想想前面列出的那些好处，应该值得大家抽出点时间来刷刷题了吧。</p>
+<h1 id="更多阅读"><a href="#更多阅读" class="headerlink" title="更多阅读"></a>更多阅读</h1><p><a href="http://mindhacks.cn/2008/04/18/learning-from-polya/" target="_blank" rel="external">跟波利亚学解题</a><br><a href="http://coolshell.cn/articles/8138.html" target="_blank" rel="external">为什么我反对纯算法面试题</a><br><a href="http://blog.iderzheng.com/coding-is-not-everything/" target="_blank" rel="external">聊聊刷题</a><br><a href="https://www.zhihu.com/question/35133069" target="_blank" rel="external">如何看待中国学生为了进 Google、微软等企业疯狂地刷题？</a><br><a href="http://coolshell.cn/articles/12052.html" target="_blank" rel="external">LeetCode 编程训练</a><br><a href="https://www.zhihu.com/question/25574458" target="_blank" rel="external">国内有哪些好的刷题网站?</a>  </p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;虽然刷题一直饱受诟病，不过不可否认刷题确实能锻炼我们的编程能力，相信每个认真刷题的人都会有体会。现在提供在线编程评测的平台有很多，比较有名的有 &lt;a href=&quot;http://hihocoder.com/&quot;&gt;hihocoder&lt;/a&gt;，&lt;a href=&quot;http://www.lintcode.com/zh-cn/&quot;&gt;LintCode&lt;/a&gt;，以及这里我们关注的 &lt;a href=&quot;https://LeetCode.com/&quot;&gt;LeetCode&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://xuelangzf-github.qiniudn.com/20160724_leetcode_guide_1.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;LeetCode 是一个非常棒的 OJ（Online Judge）平台，收集了许多公司的面试题目。相对其他 OJ 平台而言，有着下面的几个优点：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;题目全部来自业内大公司的真实面试&lt;/li&gt;
+&lt;li&gt;不用处理输入输出，精力全放在解决具体问题上&lt;/li&gt;
+&lt;li&gt;题目有丰富的讨论，可以参考别人的思路&lt;/li&gt;
+&lt;li&gt;精确了解自己代码在所有提交代码中运行效率的排名&lt;/li&gt;
+&lt;li&gt;支持多种主流语言：C/C++，Python, Java&lt;/li&gt;
+&lt;li&gt;可以在线进行测试，方便调试&lt;/li&gt;
+&lt;/ul&gt;
+    
+    </summary>
+    
+      <category term="算法" scheme="http://selfboot.cn/categories/%E7%AE%97%E6%B3%95/"/>
+    
+    
+      <category term="思考" scheme="http://selfboot.cn/tags/%E6%80%9D%E8%80%83/"/>
+    
+      <category term="python" scheme="http://selfboot.cn/tags/python/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>为什么离不开 Stackoverflow</title>
+    <link href="http://selfboot.cn/2016/06/26/why_need_to_read_stackoverflow/"/>
+    <id>http://selfboot.cn/2016/06/26/why_need_to_read_stackoverflow/</id>
+    <published>2016-06-26T14:02:50.000Z</published>
+    <updated>2016-06-26T04:05:41.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>作为一名程序员，如果没有听过 Stackoverflow，那么你最好去面壁思过一下。程序员最需要阅读的一本编程书籍（其实编程书留下这本就够了！）：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160626_stackoverflow_book.jpg" alt=""></p>
+<p>那些还没有读过这本书的程序员，是时候买一本了。如果还在犹豫，那么先看下这篇文章，看看为什么离不开 stackoverflow。</p>
+<a id="more"></a>
+<h1 id="提问的智慧"><a href="#提问的智慧" class="headerlink" title="提问的智慧"></a>提问的智慧</h1><blockquote>
+<p>当你拋出一个技术问题时，最终是否能得到有用的回答，往往取决于你所提问和追问的方式。 –Eric S. Raymond</p>
+</blockquote>
+<p>有时候，清晰描述一个问题，特别是技术问题没有想象的那么简单。提问从来就是一门学问，可惜很多人没有意识到这一点，或者没有给予足够的重视。或者，有的提问者根本不是抱着提问的态度来请求大家的帮助。所以我们会发现各种让人无法解答或者无心解答的问题：</p>
+<ul>
+<li><a href="https://segmentfault.com/q/1010000005694368" target="_blank" rel="external">java正则表达式问题？</a></li>
+<li><a href="https://segmentfault.com/q/1010000005695451" target="_blank" rel="external">sla响应时间是指什么？</a></li>
+<li><a href="https://segmentfault.com/q/1010000005694256" target="_blank" rel="external">ATL类与一般的类继承有什么区别</a></li>
+</ul>
+<p>为了避免上面的问题被关闭或者修改，放一张图片在这里，来体会下这种狗屎问题：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160626_shit_questions.png" alt=""></p>
+<p>去 segmentfault 的未回答题目中随便就能找到一堆这样的问题，所以很多人显然并没有提问的智慧或者没有很好的态度。Raymond 和 Rick Moen 写了一份经典的文章 <a href="http://www.catb.org/~esr/faqs/smart-questions.html#translations" target="_blank" rel="external">How To Ask Questions The Smart Way</a>专门来描述如何提问，这篇文章被翻译成各国文字，留传很广，可以在<a href="https://github.com/ryanhanwu/How-To-Ask-Questions-The-Smart-Way/blob/master/README-zh_CN.md" target="_blank" rel="external">这里</a>找到中文版。Stackoverflow 和 Segmentfalut 也给出了关于提问的建议：</p>
+<ul>
+<li><a href="https://stackoverflow.com/help/asking" target="_blank" rel="external">Help Center &gt; Asking</a></li>
+<li><a href="https://stackoverflow.com/questions/ask/advice" target="_blank" rel="external">How to Ask</a>  </li>
+<li><a href="https://stackoverflow.com/help/how-to-ask" target="_blank" rel="external">How do I ask a good question?</a>  </li>
+<li><a href="https://segmentfault.com/faq#what-should-ask" target="_blank" rel="external">什么样的问题才是受欢迎的</a></li>
+</ul>
+<p>在 Stackoverflow 可以看到太多经典的问题，我们可以从这些问题中学习如何去提问，如何和答题者沟通。当你看习惯了stackoverflow 上面的问题，提问时就会不自觉去模仿，从而避免问出无脑问题。下面是提问时最需要注意的几个问题：</p>
+<ul>
+<li>问搜索引擎没有满意答案（google 起码过四页）的问题</li>
+<li>问那些自己无法独立解决，已经做过很多尝试的问题</li>
+<li>尽量清楚地描述问题：良好的排版，代码，错误提示，图片等</li>
+<li>让你的问题对别人有帮助</li>
+<li>问题要有确定的答案，不要有太多的主观性</li>
+</ul>
+<h1 id="不同的方案"><a href="#不同的方案" class="headerlink" title="不同的方案"></a>不同的方案</h1><p>很多时候我们希望能够找到一个解决办法，但是在 stackoverflow 上，经常会有意外的收获。你可能会看到对一个问题不同的解决方案，甚至包括对这些解决方案的比较。</p>
+<p>假设现在你想知道 python 中如何调用外部命令，比如 ls -l 来打印某个目录下面的文章。Google一下 <code>python call system command</code>，第一条就是stackoverflow 上面的一个相关问题：<a href="http://stackoverflow.com/questions/89228/calling-an-external-command-in-python" target="_blank" rel="external">Calling an external command in Python.</a> （google技术问题，基本都会显示 stackoverflow 相关问题）。</p>
+<p>然后在这个问题下面，有人总结了调用外部命令的几种方法：</p>
+<ul>
+<li>os.system() </li>
+<li>os.popen()</li>
+<li>subprocess.popen()</li>
+<li>subprocess.call()  </li>
+<li>subprocess.run()</li>
+</ul>
+<p>并且还对每个方法做了介绍，你可以选择适合自己应用场景的方法。再比如这个问题 <a href="http://stackoverflow.com/questions/82831/how-to-check-whether-a-file-exists-using-python" target="_blank" rel="external">How to check whether a file exists using Python?</a>，介绍了 python 中检查文件是否存在的不同方法。</p>
+<h1 id="工具的使用"><a href="#工具的使用" class="headerlink" title="工具的使用"></a>工具的使用</h1><p>有许多强有力的工具可以帮我们更好地研究问题，你可能知道gdb调试工具，可能知道python的timeit时间监控模块，但是你不知道那些自己不知道的工具。很多时候，当第一次知道某个工具时，我们心中会产生相见恨晚的感觉。然而，心仪的趁手工具总是那么可遇不可求。</p>
+<p>在 stackoverflow，每一个问题答案或者评论中都可能会有一些好的工具，你总有机会发现那些遗落在字里行间的优秀工具。</p>
+<p>下面列出我发现的一些不错的工具：</p>
+<ul>
+<li><code>truss/strace</code>：跟踪进程执行时的系统调用和所接收的信号，strace可以跟踪到一个进程产生的系统调用，包括参数，返回值，执行消耗的时间。（来自问题：<a href="https://stackoverflow.com/questions/9371238/why-is-reading-lines-from-stdin-much-slower-in-c-than-python" target="_blank" rel="external">Why is reading lines from stdin much slower in C++ than Python?</a>）</li>
+<li><a href="https://github.com/nvdv/vprof" target="_blank" rel="external">vprof</a>：一个可视化工具，可以分析 Python 程序的特点，比如运行时间，内存使用等。（来自问题：<a href="https://stackoverflow.com/questions/582336/how-can-you-profile-a-python-script" target="_blank" rel="external">How can you profile a Python script?</a>）</li>
+<li><a href="http://www.regex101.com/" target="_blank" rel="external">Regex 101</a>：一款在线的正则表达式辅助工具，可以帮助理解正则表达式的含义，方便调试正则表达式以及做一些简单的尝试。（来自问题：<a href="http://stackoverflow.com/questions/4736/learning-regular-expressions" target="_blank" rel="external">Learning Regular Expressions</a>）</li>
+</ul>
+<p>下面为 Regex 101 的一个简单示例：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160626_regex101.png" alt="3"></p>
+<h1 id="思考的过程"><a href="#思考的过程" class="headerlink" title="思考的过程"></a>思考的过程</h1><p>很多时候，遇到一个问题，我们根本无从下手，不知道朝哪个方向思考。但是通过 stackoverflow，我们可以轻易知道具体的解决方案，有时候甚至还能知道别人面对这个问题时候是怎么思考的。</p>
+<p>假设你想利用装饰器来完成一个任务，即在下面say函数返回的字符串前后加上<code>&lt;b&gt;&lt;i&gt;</code>，你想想这样定义 say。</p>
+<pre><code>@makebold
+@makeitalic
+def say():
+   return &quot;Hello&quot;
+</code></pre><p>每次调用 say 返回 <code>&lt;b&gt;&lt;i&gt;Hello&lt;/i&gt;&lt;/b&gt;</code>。但是要如何实现 makebold 和 makeitalic 呢，这是一个<a href="https://stackoverflow.com/questions/739654/how-can-i-make-a-chain-of-function-decorators-in-python" target="_blank" rel="external">问题</a>。在 stackoverflow 上，有大牛会直接告诉你答案，并扔给你一个装饰器的文档链接。但是还有大牛会把自己的思考过程，把自己对装饰器的理解详细地告诉你，让你深入去理解装饰器机制。</p>
+<p>针对上面的这个问题，有一个答案获得了 3000 多赞，一步步告诉大家如何解决问题。首先告诉我们python中函数有什么特点：</p>
+<ul>
+<li>函数是对象</li>
+<li>函数可以被赋给一个变量</li>
+<li>函数可以被定义在另一个函数中</li>
+<li>一个函数可以返回另一个函数</li>
+<li>可以把函数作为参数传递</li>
+</ul>
+<p>然后开始解释什么是装饰器：其实就是封装器，可以让我们在不修改原函数的基础上，在执行原函数的前后执行别的代码。接下来手工实现了一个简单的装饰器原型，紧接着引入 python 中的装饰器语法。最后还列出了一些装饰器的高级用法，包括给装饰器传递参数等。读完整个答案，一定能对装饰器有较深的理解，并且知道理解装饰器的思考过程。这样，沿着这条思考的路径，你自己就可以推导出装饰器的使用方法。</p>
+<h1 id="可能的盲区"><a href="#可能的盲区" class="headerlink" title="可能的盲区"></a>可能的盲区</h1><p>没有问题要提问时也可以时常逛一逛 stackoverflow，浏览一些投票比较多的问题，看看别人的回答。在这个庞大的知识库中，你很可能会发现自己的一些认知盲区，发现一些自己从未关注过的内容。</p>
+<p>我就发现了一些比较有意思的问题，比如：</p>
+<ul>
+<li><a href="http://stackoverflow.com/questions/287871/print-in-terminal-with-colors-using-python" target="_blank" rel="external">Print in terminal with colors using Python?</a></li>
+<li><a href="http://stackoverflow.com/questions/100003/what-is-a-metaclass-in-python" target="_blank" rel="external">What is a metaclass in Python?</a></li>
+<li><a href="http://stackoverflow.com/questions/1218390/what-is-your-most-productive-shortcut-with-vim" target="_blank" rel="external">What is your most productive shortcut with Vim?</a></li>
+</ul>
+<p>我整理了一份 Python 的高质量问题清单，放在<a href="https://github.com/xuelangZF/CS_Offer/blob/master/More/Python_StackOverflow.md" target="_blank" rel="external">这里</a>以供时常翻阅。</p>
+<h1 id="相见恨晚"><a href="#相见恨晚" class="headerlink" title="相见恨晚"></a>相见恨晚</h1><p>那么怎么才能找到 stackoverflow 呢，两个建议：</p>
+<ul>
+<li>英语精确描述问题</li>
+<li>用 Google 去搜索</li>
+</ul>
+<p>只要你不是第一个遇见某个技术问题的人，你基本就会在 stackoverflow 找到相同或者类似的问题。早日遇见，早日喜欢上 stackoverflow，你会发现生活是如此惬意。</p>
+<h1 id="更多阅读"><a href="#更多阅读" class="headerlink" title="更多阅读"></a>更多阅读</h1><p><a href="http://blog.jobbole.com/101980/" target="_blank" rel="external">玩转 Stack Overflow 之提问篇</a><br><a href="http://www.thegeekstuff.com/2011/11/strace-examples/" target="_blank" rel="external">7 Strace Examples to Debug the Execution of a Program in Linux</a><br><a href="https://stackoverflow.com/questions/739654/how-can-i-make-a-chain-of-function-decorators-in-python" target="_blank" rel="external">How can I make a chain of function decorators in Python?</a>  </p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;作为一名程序员，如果没有听过 Stackoverflow，那么你最好去面壁思过一下。程序员最需要阅读的一本编程书籍（其实编程书留下这本就够了！）：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://xuelangzf-github.qiniudn.com/20160626_stackoverflow_book.jpg&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;那些还没有读过这本书的程序员，是时候买一本了。如果还在犹豫，那么先看下这篇文章，看看为什么离不开 stackoverflow。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="计算机基础" scheme="http://selfboot.cn/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/"/>
+    
+    
+      <category term="总结" scheme="http://selfboot.cn/tags/%E6%80%BB%E7%BB%93/"/>
+    
+      <category term="思考" scheme="http://selfboot.cn/tags/%E6%80%9D%E8%80%83/"/>
+    
+      <category term="python" scheme="http://selfboot.cn/tags/python/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Python 性能分析大全</title>
+    <link href="http://selfboot.cn/2016/06/13/python_performance_analysis/"/>
+    <id>http://selfboot.cn/2016/06/13/python_performance_analysis/</id>
+    <published>2016-06-13T14:02:50.000Z</published>
+    <updated>2016-06-13T14:22:54.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>虽然运行速度慢是 Python 与生俱来的特点，大多数时候我们用 Python 就意味着放弃对性能的追求。但是，就算是用纯 Python 完成同一个任务，老手写出来的代码可能会比菜鸟写的代码块几倍，甚至是几十倍（这里不考虑算法的因素，只考虑语言方面的因素）。很多时候，我们将自己的代码运行缓慢地原因归结于python本来就很慢，从而心安理得地放弃深入探究。</p>
+<p>但是，事实真的是这样吗？面对python代码，你有分析下面这些问题吗：</p>
+<ul>
+<li>程序运行的速度如何？</li>
+<li>程序运行时间的瓶颈在哪里？</li>
+<li>能否稍加改进以提高运行速度呢？</li>
+</ul>
+<p>为了更好了解python程序，我们需要一套工具，能够记录代码运行时间，生成一个性能分析报告，方便彻底了解代码，从而进行针对性的优化（本篇侧重于代码性能分析，不关注如何优化）。</p>
+<a id="more"></a>
+<h1 id="谁快谁慢"><a href="#谁快谁慢" class="headerlink" title="谁快谁慢"></a>谁快谁慢</h1><p>假设有一个字符串，想将里面的空格替换为字符‘-’，用python实现起来很简单，下面是四种方案：</p>
+<pre><code>def slowest_replace():
+    replace_list = []
+    for i, char in enumerate(orignal_str):
+        c = char if char != &quot; &quot; else &quot;-&quot;
+        replace_list.append(c)
+    return &quot;&quot;.join(replace_list)
+
+def slow_replace():
+    replace_str = &quot;&quot;
+    for i, char in enumerate(orignal_str):
+        c = char if char != &quot; &quot; else &quot;-&quot;
+        replace_str += c
+    return replace_str
+
+def fast_replace():
+    return &quot;-&quot;.join(orignal_str.split())
+
+def fastest_replace():
+    return orignal_str.replace(&quot; &quot;, &quot;-&quot;)
+</code></pre><p>这四种方案的效率如何呢，哪种方案比较慢呢？这是一个问题！</p>
+<h1 id="时间断点"><a href="#时间断点" class="headerlink" title="时间断点"></a>时间断点</h1><p>最直接的想法是在开始 replace 函数之前记录时间，程序结束后再记录时间，计算时间差即为程序运行时间。python提供了模块 time，其中 time.clock() 在Unix/Linux下返回的是CPU时间(浮点数表示的秒数)，Win下返回的是以秒为单位的真实时间(Wall-clock time)。</p>
+<p>由于替换函数耗时可能非常短，所以这里考虑分别执行 100000次，然后查看不同函数的效率。我们的性能分析辅助函数如下：</p>
+<pre><code>def _time_analyze_(func):
+    from time import clock
+    start = clock()
+    for i in range(exec_times):
+        func()
+    finish = clock()
+    print &quot;{:&lt;20}{:10.6} s&quot;.format(func.__name__ + &quot;:&quot;, finish - start)
+</code></pre><p>这样就可以了解上面程序的运行时间情况：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160613_simple_analyze.png" alt=""></p>
+<p>第一种方案耗时是第四种的 45 倍多，大跌眼镜了吧！同样是 python代码，完成一样的功能，耗时可以差这么多。</p>
+<p>为了避免每次在程序开始、结束时插入时间断点，然后计算耗时，可以考虑实现一个上下文管理器，具体代码如下：</p>
+<pre><code>class Timer(object):
+    def __init__(self, verbose=False):
+        self.verbose = verbose
+
+    def __enter__(self):
+        self.start = clock()
+        return self
+
+    def __exit__(self, *args):
+        self.end = clock()
+        self.secs = self.end - self.start
+        self.msecs = self.secs * 1000  # millisecs
+        if self.verbose:
+            print &apos;elapsed time: %f ms&apos; % self.msecs
+</code></pre><p>使用时只需要将要测量时间的代码段放进 with 语句即可，具体的使用例子放在 <a href="https://gist.github.com/xuelangZF/1d83cd5da734836bc7641bcc92b13ce0" target="_blank" rel="external">gist</a> 上。</p>
+<h1 id="timeit"><a href="#timeit" class="headerlink" title="timeit"></a><a href="https://docs.python.org/2/library/timeit.html" target="_blank" rel="external">timeit</a></h1><p>上面手工插断点的方法十分原始，用起来不是那么方便，即使用了上下文管理器实现起来还是略显笨重。还好 Python 提供了timeit模块，用来测试代码块的运行时间。它既提供了命令行接口，又能用于代码文件之中。</p>
+<h3 id="命令行接口"><a href="#命令行接口" class="headerlink" title="命令行接口"></a>命令行接口</h3><p>命令行接口可以像下面这样使用：</p>
+<pre><code>$ python -m timeit -n 1000000 &apos;&quot;I like to reading.&quot;.replace(&quot; &quot;, &quot;-&quot;)&apos;
+1000000 loops, best of 3: 0.253 usec per loop
+$ python -m timeit -s &apos;orignal_str = &quot;I like to reading.&quot;&apos; &apos;&quot;-&quot;.join(orignal_str.split())&apos;
+1000000 loops, best of 3: 0.53 usec per loop
+</code></pre><p>具体参数使用可以用命令 <code>python -m timeit -h</code> 查看帮助。使用较多的是下面的选项：</p>
+<ul>
+<li>-s S, –setup=S: 用来初始化statement中的变量，只运行一次；</li>
+<li>-n N, –number=N: 执行statement的次数，默认会选择一个合适的数字；</li>
+<li>-r N, –repeat=N: 重复测试的次数，默认为3；</li>
+</ul>
+<h3 id="Python-接口"><a href="#Python-接口" class="headerlink" title="Python 接口"></a>Python 接口</h3><p>可以用下面的程序测试四种 replace函数的运行情况（完整的测试程序可以在 <a href="https://gist.github.com/xuelangZF/67c97f92d4e4d70208d1e592a1bac1da" target="_blank" rel="external">gist</a> 上找到）：</p>
+<pre><code>def _timeit_analyze_(func):
+    from timeit import Timer
+    t1 = Timer(&quot;%s()&quot; % func.__name__, &quot;from __main__ import %s&quot; % func.__name__)
+    print &quot;{:&lt;20}{:10.6} s&quot;.format(func.__name__ + &quot;:&quot;, t1.timeit(exec_times))
+</code></pre><p>运行结果如下：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160613_timeit_analyze.png" alt=""></p>
+<p>Python的timeit提供了 timeit.Timer() 类，类构造方法如下：</p>
+<pre><code>Timer(stmt=&apos;pass&apos;, setup=&apos;pass&apos;, timer=&lt;timer function&gt;)
+</code></pre><p>其中： </p>
+<ul>
+<li>stmt: 要计时的语句或者函数；</li>
+<li>setup: 为stmt语句构建环境的导入语句；</li>
+<li>timer: 基于平台的时间函数(timer function)；</li>
+</ul>
+<p>Timer()类有三个方法：</p>
+<ul>
+<li>timeit(number=1000000): 返回stmt执行number次的秒数(float)；</li>
+<li>repeat(repeat=3, number=1000000): repeat为重复整个测试的次数，number为执行stmt的次数，返回以秒记录的每个测试循环的耗时列表；</li>
+<li>print_exc(file=None): 打印stmt的跟踪信息。</li>
+</ul>
+<p>此外，timeit 还提供了另外三个函数方便使用，参数和 Timer 差不多。</p>
+<pre><code>timeit.timeit(stmt=&apos;pass&apos;, setup=&apos;pass&apos;, timer=&lt;default timer&gt;, number=1000000)
+timeit.repeat(stmt=&apos;pass&apos;, setup=&apos;pass&apos;, timer=&lt;default timer&gt;, repeat=3, number=1000000)
+timeit.default_timer()
+</code></pre><h1 id="profile"><a href="#profile" class="headerlink" title="profile"></a><a href="https://docs.python.org/2/library/profile.html" target="_blank" rel="external">profile</a></h1><p>以上方法适用于比较简单的场合，更复杂的情况下，可以用标准库里面的profile或者cProfile，它可以统计程序里每一个函数的运行时间，并且提供了可视化的报表。大多情况下，建议使用cProfile，它是profile的C实现，适用于运行时间长的程序。不过有的系统可能不支持cProfile，此时只好用profile。</p>
+<p>可以用下面程序测试 timeit_profile() 函数运行时间分配情况。</p>
+<pre><code>import cProfile
+from time_profile import *
+
+cProfile.run(&quot;timeit_profile()&quot;)
+</code></pre><p>这样的输出可能会很长，很多时候我们感兴趣的可能只有耗时最多的几个函数，这个时候先将cProfile 的输出保存到诊断文件中，然后用 pstats 定制更加有好的输出（完整代码在 <a href="https://gist.github.com/xuelangZF/b1787c8ab4159de9f797fc13dad47808" target="_blank" rel="external">gist</a> 上）。</p>
+<pre><code>cProfile.run(&quot;timeit_profile()&quot;, &quot;timeit&quot;)
+p = pstats.Stats(&apos;timeit&apos;)
+p.sort_stats(&apos;time&apos;)
+p.print_stats(6)
+</code></pre><p>输出结果如下：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160613_cprofile_analyze.png" alt=""></p>
+<p>如果觉得 pstas 使用不方便，还可以使用一些图形化工具，比如 <a href="https://github.com/jrfonseca/gprof2dot" target="_blank" rel="external">gprof2dot</a> 来可视化分析 cProfile 的诊断结果。</p>
+<h3 id="vprof"><a href="#vprof" class="headerlink" title="vprof"></a>vprof</h3><p><a href="https://github.com/nvdv/vprof" target="_blank" rel="external">vprof</a> 也是一个不错的可视化工具，可以用来分析 Python 程序运行时间情况。如下图：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160613_vprof_analyze.png" alt=""></p>
+<h1 id="line-profiler"><a href="#line-profiler" class="headerlink" title="line_profiler"></a><a href="https://github.com/rkern/line_profiler" target="_blank" rel="external">line_profiler</a></h1><p>上面的测试最多统计到函数的执行时间，很多时候我们想知道函数里面每一行代码的执行效率，这时候就可以用到 line_profiler 了。</p>
+<p>line_profiler 的使用特别简单，在需要监控的函数前面加上 <code>@profile</code> 装饰器。然后用它提供的 <code>kernprof -l -v [source_code.py]</code> 行进行诊断。下面是一个简单的测试程序 line_profile.py：</p>
+<pre><code>from time_profile import slow_replace, slowest_replace
+
+for i in xrange(10000):
+    slow_replace()
+    slowest_replace()
+</code></pre><p>运行后结果如下：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160613_line_analyze.png" alt=""></p>
+<p>输出每列的含义如下：</p>
+<ul>
+<li>Line #: 行号</li>
+<li>Hits: 当前行执行的次数.</li>
+<li>Time: 当前行执行耗费的时间，单位为 “Timer unit:” </li>
+<li>Per Hit: 平均执行一次耗费的时间.</li>
+<li>% Time: 当前行执行时间占总时间的比例.</li>
+<li>Line Contents: 当前行的代码</li>
+</ul>
+<p>line_profiler 执行时间的估计不是特别精确，不过可以用来分析当前函数中哪些行是瓶颈。</p>
+<h1 id="更多阅读"><a href="#更多阅读" class="headerlink" title="更多阅读"></a>更多阅读</h1><p><a href="https://www.huyng.com/posts/python-performance-analysis" target="_blank" rel="external">A guide to analyzing Python performance</a><br><a href="https://pymotw.com/2/timeit/" target="_blank" rel="external">timeit – Time the execution of small bits of Python code</a><br><a href="https://julien.danjou.info/blog/2015/guide-to-python-profiling-cprofile-concrete-case-carbonara" target="_blank" rel="external">Profiling Python using cProfile: a concrete case</a><br><a href="https://pymotw.com/2/profile/" target="_blank" rel="external">profile, cProfile, and pstats – Performance analysis of Python programs.</a><br><a href="https://stackoverflow.com/questions/582336/how-can-you-profile-a-python-script" target="_blank" rel="external">How can you profile a Python script?</a><br><a href="http://python.jobbole.com/80754/" target="_blank" rel="external">检测Python程序执行效率及内存和CPU使用的7种方法</a><br><a href="http://coolshell.cn/articles/2967.html" target="_blank" rel="external">代码优化概要</a><br><a href="https://segmentfault.com/a/1190000000666603" target="_blank" rel="external">Python性能优化的20条建议</a>  </p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;虽然运行速度慢是 Python 与生俱来的特点，大多数时候我们用 Python 就意味着放弃对性能的追求。但是，就算是用纯 Python 完成同一个任务，老手写出来的代码可能会比菜鸟写的代码块几倍，甚至是几十倍（这里不考虑算法的因素，只考虑语言方面的因素）。很多时候，我们将自己的代码运行缓慢地原因归结于python本来就很慢，从而心安理得地放弃深入探究。&lt;/p&gt;
+&lt;p&gt;但是，事实真的是这样吗？面对python代码，你有分析下面这些问题吗：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;程序运行的速度如何？&lt;/li&gt;
+&lt;li&gt;程序运行时间的瓶颈在哪里？&lt;/li&gt;
+&lt;li&gt;能否稍加改进以提高运行速度呢？&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;为了更好了解python程序，我们需要一套工具，能够记录代码运行时间，生成一个性能分析报告，方便彻底了解代码，从而进行针对性的优化（本篇侧重于代码性能分析，不关注如何优化）。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="程序设计" scheme="http://selfboot.cn/categories/%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1/"/>
+    
+    
+      <category term="总结" scheme="http://selfboot.cn/tags/%E6%80%BB%E7%BB%93/"/>
+    
+      <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>由 sort 中 key 的用法浅谈 python</title>
+    <link href="http://selfboot.cn/2016/05/04/pythonic/"/>
+    <id>http://selfboot.cn/2016/05/04/pythonic/</id>
+    <published>2016-05-04T14:54:01.000Z</published>
+    <updated>2016-05-23T14:40:44.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>用 Python 时间也算不短了，但总感觉自己在用写 C++ 代码的思维写 Python，没有真正用到其作为脚本语言的优势。之前刷 LeetCode 时，自己的 Python 代码总是很长，很像披着 Python 外衣的 C++ 代码（放在<a href="https://github.com/xuelangZF/LeetCode" target="_blank" rel="external">这里</a>，不断重构中）。</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160504_pythonic_cpp.png" alt=""></p>
+<p>想来大概是因为觉得python简单，平时只是零零碎碎的学习，也没有去读别人的代码，导致掌握的不够深入。回想起前段时间的面试，面试官看我简历写熟悉Python，就问了两个Python的问题：</p>
+<ol>
+<li>Python 中常用的优化技巧（能够提升 Python 执行效率的，除了算法层面）</li>
+<li>按照 value 从小到大输出 dict 中的 key-value值。</li>
+</ol>
+<p>我支支吾吾半天，就是没有答到点上，直接导致被拒（后来整理的内容放在<a href="https://github.com/xuelangZF/CS_Offer/blob/master/Python.md" target="_blank" rel="external">这里</a>）。所谓知耻而后勇，经过一段时间对 Python 的重新学习，才慢慢发现 Python 的一些强大与美妙之处。</p>
+<a id="more"></a>
+<h1 id="从排序说起！"><a href="#从排序说起！" class="headerlink" title="从排序说起！"></a>从排序说起！</h1><p>程序中经常用到排序函数，Python 提供了 sort 和 sorted 函数，一个原地排序，一个返回排序后的新结果，函数原型很简单：</p>
+<pre><code>sort([cmp[, key[, reverse]]])
+</code></pre><p>自己用的最多的类似下面的语句：</p>
+<pre><code>&gt;&gt;&gt; l = [43, 12, 4, 6]
+&gt;&gt;&gt; l.sort()
+&gt;&gt;&gt; l
+[4, 6, 12, 43]
+</code></pre><p>曾经窃以为这就体现了 Python 的简单优雅，不像 C++ STL中那样还需要指定迭代器范围，然后对 sort 的理解也就止步于此。后来遇到稍微复杂一点的排序场景，自己就 <a href="http://blog.csdn.net/foruok/article/details/44870749" target="_blank" rel="external">Google-Stackoverflow-Copy</a>，解决了眼前的问题，但是从来没有去深挖（这也就导致那次面试中中没有回答出来上面的第二个问题）。</p>
+<h2 id="sort-之美"><a href="#sort-之美" class="headerlink" title="sort 之美"></a>sort 之美</h2><p>后来去看了下 sort 的函数说明，包括 cmp, key, reverse 参数究竟怎么去用，又写了几个例子，以为这下子对 sort 可谓是理解透彻了。比如要要根据值的大小输出字典内容，那么就可以像下面这样优雅地解决：</p>
+<pre><code>&gt;&gt;&gt; d = {1: &apos;z&apos;, 2:&apos;y&apos;, 3: &apos;x&apos;}
+&gt;&gt;&gt; print sorted(d.items(), key=lambda x: x[1])
+[(3, &apos;x&apos;), (2, &apos;y&apos;), (1, &apos;z&apos;)]
+</code></pre><p>我甚至可以得到一个根据value排序的字典，只需要用 <code>collections.OrderedDict</code> 即可：</p>
+<pre><code>&gt;&gt;&gt; from collections import OrderedDict
+&gt;&gt;&gt; sorted_d = OrderedDict(sorted(d.items(), key=lambda x: x[1]))
+&gt;&gt;&gt; sorted_d
+OrderedDict([(3, &apos;x&apos;), (2, &apos;y&apos;), (1, &apos;z&apos;)])
+</code></pre><h2 id="sort-之魅"><a href="#sort-之魅" class="headerlink" title="sort 之魅"></a>sort 之魅</h2><p>我以为我对 sort 理解足够了，直到在 <a href="https://www.hackerrank.com" target="_blank" rel="external">hackerrank</a> 遇到这个<a href="https://www.hackerrank.com/challenges/ginorts" target="_blank" rel="external">题目</a>。</p>
+<p>给定一个只包含大小写字母，数字的字符串，对其进行排序，保证：</p>
+<ul>
+<li>所有的小写字母在大写字母前面</li>
+<li>所有的字母在数字前面</li>
+<li>所有的奇数在偶数前面</li>
+</ul>
+<p>考虑用 sort 函数来完成排序。开始之前，再来看看文档对sort函数中key的说明：</p>
+<blockquote>
+<p>key parameter to specify a function to be called on each list element prior to making comparisons.  The value of the key parameter should be a function that takes a single argument and returns a key to use for sorting purposes. </p>
+</blockquote>
+<p>通俗讲，<strong>key 用来决定在排序算法中 cmp 比较的内容，key 可以是任何可被比较的内容，比如元组（python 中元组是可被比较的）</strong>。所以上面的排序问题可以用下面的代码来解决：</p>
+<pre><code>&gt;&gt;&gt; s = &quot;Sorting1234&quot;
+&gt;&gt;&gt; &quot;&quot;.join(sorted(s, key=lambda x: (x.isdigit(), x.isdigit() and int(x) % 2 == 0, x.isupper(), x.islower(), x)))
+&apos;ginortS1324&apos;
+</code></pre><p>这里，lambda 函数将输入的字符转换为一个元组，然后 <code>sorted 函数将根据元组</code>（而不是字符）来进行比较，进而判断每个字符的前后顺序。</p>
+<p>如果同样的程序用 C++ 来写的话，可能需要一个复杂的仿函数，来定义排序的规则，远没有 Python 这般简洁优雅。</p>
+<h1 id="再探-Python"><a href="#再探-Python" class="headerlink" title="再探 Python"></a>再探 Python</h1><p>Python 是一门简单方便的语言，相信这是大部分人对 Python 的第一感觉。初学 Python，我们可能痴迷于 Python 的列表解析，list 切片，字典推导，或者是陶醉在各种强大的第三方库里，比如网络库 requests，科学计算库 numpy，web开发框架 Django 等。</p>
+<p>但是实际写程序中，我们经常会写出许多<code>繁杂的、丑陋的</code>Python代码。比如要<a href="https://leetcode.com/problems/palindrome-number/" target="_blank" rel="external">判断一个数字是否是回文数字</a>，可能会习惯性地写出下面这样的代码：</p>
+<pre><code>def isPalindrome(x):
+    if x &lt; 0:
+        return False
+    reversed_x = 0
+    original_x = x
+    while x &gt; 0:
+        reversed_x = reversed_x * 10 + x % 10
+        x /= 10
+    return reversed_x == original_x
+</code></pre><p>仔细一看，这简直就是 C++ 代码，完全没有 Python 的优雅与简单。那么，该怎样写才能够显的 Pythonic 呢？其实，用 Python 的话只要一行就可以啦（这里不考虑效率，如果考虑效率的话，C++会更加合适，单对这题来说，其实有比上面<a href="https://leetcode.com/discuss/33500/an-easy-lines-code-only-reversing-till-half-and-then-compare" target="_blank" rel="external">更高效的方法</a>）！</p>
+<pre><code>def isPalindrome(x):
+    return x &gt;= 0 and str(x) == str(x)[::-1]
+</code></pre><p>那么如何养成用 Pythonic 的思维解决问题呢？我觉得首先要对 Python 十分熟悉，精通大部分函数以及 Python 的特色：比如装饰器，迭代器，生成器以等，下面举几个简单的例子：</p>
+<pre><code># 函数式编程
+&gt;&gt;&gt; nums = map(int, &quot;123456789&quot; )
+&gt;&gt;&gt; nums
+[1, 2, 3, 4, 5, 6, 7, 8, 9]
+&gt;&gt;&gt; reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])
+15
+&gt;&gt;&gt; sum(nums)
+45
+# 生成器
+&gt;&gt;&gt; mygenerator = (x*x for x in range(3))
+&gt;&gt;&gt; for i in mygenerator:
+...     print i
+...
+0
+1
+4
+&gt;&gt;&gt; for i in mygenerator:
+...     print i
+...
+# lambda 匿名函数
+&gt;&gt;&gt; c = lambda *z: z
+&gt;&gt;&gt; c( 10, &apos;test&apos;)
+(10, &apos;test&apos;)
+# 迭代
+&gt;&gt;&gt; l = [i**2 for i in range(9)]
+&gt;&gt;&gt; l_iter = iter(l)
+&gt;&gt;&gt; next(l_iter)
+0
+&gt;&gt;&gt; next(l_iter)
+1
+&gt;&gt;&gt; next(l_iter)
+4
+# 数据结构 set
+&gt;&gt;&gt; set_a = set([i for i in range(1,9,2)])
+&gt;&gt;&gt; set_b = set([i for i in range(0,9,2)])
+&gt;&gt;&gt; print set_a | set_b
+set([0, 1, 2, 3, 4, 5, 6, 7, 8])
+</code></pre><p>其次，要多读一些 Pythonic 的代码，学习别人如何优雅地使用python。这里我推荐去看 Leetcode 的 Discuss，里面有许多惊才艳艳的代码。特别推荐 <a href="https://leetcode.com/discuss/user/StefanPochmann" target="_blank" rel="external">@StefanPochmann</a>，许多代码让我获益匪浅，比如这里对 <a href="https://leetcode.com/discuss/66147/recursive-preorder-python-and-c-o-n" target="_blank" rel="external">iter()</a> 的使用。</p>
+<p>再来看一个问题，按照二进制位<a href="https://leetcode.com/problems/reverse-bits/" target="_blank" rel="external">反转 32 位的一个整形无符号数字</a>。用 Python 可以写出很简单直观的代码，如下：</p>
+<pre><code>def reverseBits(n):
+    bit_str = &apos;{0:032b}&apos;.format(n)
+    reverse_str = bit_str[::-1]
+    return int(reverse_str, 2)
+</code></pre><p>当然，上面不考虑效率，<a href="https://leetcode.com/discuss/27405/o-1-bit-operation-c-solution-8ms" target="_blank" rel="external">这里</a>有一个利用分治法思想的高效的方法。</p>
+<p>Python 是一门高效、简单、方便的语言，但这并不意味你不花时间就可以用的很好。</p>
+<h1 id="更多阅读"><a href="#更多阅读" class="headerlink" title="更多阅读"></a>更多阅读</h1><p><a href="https://wiki.python.org/moin/HowTo/Sorting" target="_blank" rel="external">Sorting Mini-HOW TO</a><br><a href="https://segmentfault.com/q/1010000000405289" target="_blank" rel="external">sort()中cmp参数的用法</a><br><a href="https://www.hackerrank.com/challenges/ginorts/forum" target="_blank" rel="external">hackerrank: ginortS</a><br><a href="http://stackoverflow.com/questions/613183/sort-a-python-dictionary-by-value" target="_blank" rel="external">Sort a Python dictionary by value</a><br><a href="http://python.jobbole.com/61171/" target="_blank" rel="external">Python高级编程技巧</a><br><a href="http://wuzhiwei.net/be_pythonic/" target="_blank" rel="external">让你的Python代码更加pythonic</a>  </p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;用 Python 时间也算不短了，但总感觉自己在用写 C++ 代码的思维写 Python，没有真正用到其作为脚本语言的优势。之前刷 LeetCode 时，自己的 Python 代码总是很长，很像披着 Python 外衣的 C++ 代码（放在&lt;a href=&quot;https://github.com/xuelangZF/LeetCode&quot;&gt;这里&lt;/a&gt;，不断重构中）。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://xuelangzf-github.qiniudn.com/20160504_pythonic_cpp.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;想来大概是因为觉得python简单，平时只是零零碎碎的学习，也没有去读别人的代码，导致掌握的不够深入。回想起前段时间的面试，面试官看我简历写熟悉Python，就问了两个Python的问题：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Python 中常用的优化技巧（能够提升 Python 执行效率的，除了算法层面）&lt;/li&gt;
+&lt;li&gt;按照 value 从小到大输出 dict 中的 key-value值。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;我支支吾吾半天，就是没有答到点上，直接导致被拒（后来整理的内容放在&lt;a href=&quot;https://github.com/xuelangZF/CS_Offer/blob/master/Python.md&quot;&gt;这里&lt;/a&gt;）。所谓知耻而后勇，经过一段时间对 Python 的重新学习，才慢慢发现 Python 的一些强大与美妙之处。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="程序设计" scheme="http://selfboot.cn/categories/%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1/"/>
+    
+    
+      <category term="思考" scheme="http://selfboot.cn/tags/%E6%80%9D%E8%80%83/"/>
+    
+      <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>让我们一起愉快地逃课吧</title>
+    <link href="http://selfboot.cn/2015/11/25/skip_classes/"/>
+    <id>http://selfboot.cn/2015/11/25/skip_classes/</id>
+    <published>2015-11-25T06:03:24.000Z</published>
+    <updated>2016-05-01T07:59:26.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>逃课，在大多数人眼中都是“坏学生”的专利，一说起逃课，就会联想起逃课打游戏，逃课出去玩，逃课把妹等。然而，还可以为了学习而逃课，这里我们要说的就是逃课去学习的故事。</p>
+<h1 id="为什么我要逃掉算法课？"><a href="#为什么我要逃掉算法课？" class="headerlink" title="为什么我要逃掉算法课？"></a>为什么我要逃掉算法课？</h1><p>写这篇文章的时候我本来应该在教室上《算法分析与设计》这门课，算法对于学计算机的同学来说，重要性不言而喻。我们应该花费大量的时间去熟悉各种算法，同时了解<a href="http://selfboot.cn/2015/11/03/howto_find_algorithm/">算法背后的思想</a>。那么我为什么会逃掉这么重要的一门课呢？</p>
+<p>忘了在哪里看过一句话，大致意思是看一个人读过的书就知道这个人的品味。同样，我觉得看一个老师推荐的教材就知道这个老师的水平了。下面来看看老师推荐的算法教材吧，排名有先后（完全复制课件内容，排版未做更改）：</p>
+<a id="more"></a>
+<ol>
+<li>郑宗汉等，算法设计与分析，清华大学出版社</li>
+<li>王晓东等，计算机算法设计与分析，电子工业出版社</li>
+<li>Thomas H.Cormen;Charles E.Leiserson;Ronald L.Rivest;Clifford Stein. Introduction to Algorithms, 2th Ed. The MIT Press, 2001, ISBN 978-0-262-33293-3. 影印版: 《算法导论》(第二版),北京:高等教育出版社, 2007,ISBN 978-7-040-11050-0. 中译版:潘金贵等译, 《算法导论》(第2版),北京:机械工业出版社, 2006,ISBN 7-111-18777-6</li>
+<li>郭嵩山、李志业、金涛、梁锋.《国际大学生程序设计竞赛例题解(一)数论、计算几何、搜索算法专集》. 电子工业出版社, 2006.5</li>
+</ol>
+<p>推荐的书中只知道《算法导论》这本，不过早在2012年已经出了<a href="https://book.douban.com/subject/20432061/" target="_blank" rel="external">第三版</a>了，这里还是第二版，其中原因想必大家也猜的到。其他三本，真的没有听说过，也没有兴趣去看，国内写的计算机教材，可以看的寥寥可数，这几本当然不在其中。</p>
+<p>本来我也不用看这几本书的，直到碰见这么一道小组作业题（作业还是要做的，不然挂科了怎么办）：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151125_one_problem.png" alt="动态规划"></p>
+<p>我左看右看，上看下看，也不明白这道题什么意思（看了其他小组的作业题目，发现基本也没有能看懂的）。于是，Google之，果真被我找到了原题，原来就是郑宗汉《算法设计与分析》里面的课后题，再一看，原来我们的全部作业题都是这本书的课后题。这里的资源最优分配问题，在书中给过解释，终于可以写作业了。</p>
+<p>其实只看推荐的书就确定这门课不值得上，当然是不科学的，不去听听你永远不知道这门课到底怎么样。第一节课，我当然没有错过，并且坐到前排，洗耳恭听（前排人挺多，基本很少人坐后面）。然后，不好意思，我已经忘了那节课讲的啥了。后面还连续去了几次，发现根本听不下去，为了讲一个算法思想，比如递归，老师给出一个又一个的例子，然后“深入浅出”用递归搞定问题。整节课感觉就是在听例子，听解法，让我想起了高中时代的题海战术与填鸭式教育。</p>
+<p>其实，除了第一节课大家都在前面，后面几次课，几乎所有人都坐在后排，前排已经空了。然后去上课的人要不自己看书，要不睡觉，很少有人听老师讲了。</p>
+<h1 id="该逃掉哪些课"><a href="#该逃掉哪些课" class="headerlink" title="该逃掉哪些课"></a>该逃掉哪些课</h1><p>前面就是我逃掉算法课的主要理由了，其实我现在逃掉了大部分课，那么我如何决定某一门课是不是可以逃掉呢？其实自己也没有刻意去找理由，很多时候就是一种感觉。不过我猜测潜意识里可能会经过下面一番思考。</p>
+<p>1、我是真的想去认真上这门课吗？有时候，我们选择一门课只是为了拿学分而已，这种课完全没有必要在课堂上花费时间，应该毫不犹豫地逃掉。</p>
+<p>2、这门课需要花费时间去学习，但是老师讲的太没水平了，还不如自己看书。上面的算法课就是这种情况了，对我来说大多数的逃课都是因为老师讲的没水平（你必须面对这个残酷的现实）。</p>
+<p>其实想讲好一门课还是很难的，特别是理工科专业性比较强的课。需要老师自己有深厚的专业素养，同时还要有很好的授课技巧，确保能够清晰明了、又不枯燥无味地传达知识，能做到这一点的老师真的是屈指可数。</p>
+<p>或许正是因为讲好一门课是如此之难，所以部分老师干脆就不负责任地糊弄大家。于是，我遇到过、听说过下面这些奇葩事：</p>
+<ol>
+<li>老师完全“照本宣科”，但是读着读着发现自己都读不懂了</li>
+<li>课件是 N 多年前的，内容十分陈旧</li>
+<li>课上一直在吹水，讲自己的一些经历或者其它和课程完全无关的事</li>
+<li>给我们把一个介绍技术概念的视频连续播放了三遍</li>
+<li>考试试题是前一年的，年份、年级都没改</li>
+<li>给我们演示一个简单的实验时，不知道怎么安装一个常用工具</li>
+<li>教C++时，一个 Hello World 编译不通过，调试了半天才找到问题所在</li>
+</ol>
+<p>上面的比较极端也不常见。然而大多数课堂也好不到哪里去，常常是台上“高谈阔论”，台下漠不关心，台上问题一出，台下寂寥无声。总之，如果你在上一门课时，总是精神奕奕地走进教室，然后听着听着就萎了，那么可以考虑逃掉这门课了。</p>
+<h1 id="如何说服自己逃课"><a href="#如何说服自己逃课" class="headerlink" title="如何说服自己逃课"></a>如何说服自己逃课</h1><p>其实好多同学都知道在教室里听课并不能学到什么，但是还有许多“好学生”作为老师的“忠实”听众，老老实实坐在台下（听课？）。</p>
+<p>刚上大学时，我也是从不逃课，并且有点鄙视那些逃课的人。那时候天真地认为<strong>学生怎么可以逃课呢？课堂是那么神圣庄严的地方，是我们学习科学文化知识的天堂啊</strong>（好幼稚的想法啊），在这种想法的激励下，不论什么课我都逼自己认真听讲，好好消化。</p>
+<p>然而渐渐发现，有的老师照本宣科（最典型的是当时的数学分析这门课了），有的老师讲的不明不白，有的课特别没意思。逼了自己一个学期后，实在太累，上课再也不能坚持认真听讲了，于是上课基本就是听着听着就困了，睡了。或者是，干脆不听老师讲，自己拿本书在看。</p>
+<p>那时，虽然在获取知识上，去上课已经失去了意义。但是从小到大养成的不逃课“好习惯”以及“要想学习好就得认真听讲”的观念仍旧像一个无形牢笼，把我束缚在无聊的课堂上。</p>
+<p>后来遇到了中特、毛概这两门全国统一、全球唯一的课程，本来就十分讨厌这些在初、高中必须背诵的东西，加上老师讲的又太不精彩，一怒之下就不去上课。然后发现逃课也不是多么坏的事情，于是渐渐地逃掉越来越多无关紧要的课。现在看来，应该感谢这两门课，让我认识到不是所有的课都需要去学，那些无关紧要的课甚至逃掉了也没有关系。</p>
+<p>但是，那些重要的专业课，即使老师讲的很差，自己也不敢逃掉。生怕逃掉这些课，就失去了学好这门课的机会（虽然知道课堂上学不到什么，但是当时还是这样想）。后来，发现系里面好多大牛都不怎么去上课，但他们的专业素质不是一般的强。一个偶然的机会，听一个大牛说，老师讲的那么差，干嘛要去上课，自己想学好一个东西，就去找书找资料学啊。这道理自己也懂，但是听大牛说出来完全是不一样的感觉，并最终促使我把这种想法转变为实践，并开始了逃课之旅。如果你还害怕逃掉重要的课，那么请默念<strong>不去上课也能成为大牛，成不成为大牛和上不上课没有关系</strong>！</p>
+<p>挣脱了“必须去上课才能成为大牛”这个枷锁，其实你可以学的更多更快。此外，逃课不仅可以让学生学得更好，也有可能刺激老师好好讲课呢。毕竟，台下没人听课对老师来说也是一种打击吧。（希望不是我在 YY）</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151125_free_learning.png" alt="挣脱束缚"></p>
+<h1 id="逃课是为了更好地学习"><a href="#逃课是为了更好地学习" class="headerlink" title="逃课是为了更好地学习"></a>逃课是为了更好地学习</h1><p>现在，我们不需要按时上课，坐在教室一味听老师啦。我们可以找本经典的书，坐在一个安静的地方，按照自己的节奏去理解书中的内容。其实这样的学习效率，比在教室听老师讲好太多了。算法这门课，我买了 Robert Sedgewick，Kevin Wayne 写的 <a href="https://book.douban.com/subject/19952400/" target="_blank" rel="external">算法（第4版）</a>，感觉写的还不错。另外，也顺便刷一刷 LeetCode 上面的算法题，收获也是颇丰的。</p>
+<p>除了看书外，还可以选修一些经典的<a href="http://mooc.guokr.com/course/" target="_blank" rel="external">开放式网络课程</a>，然后认真听讲，做作业，考试，拿证书。同样是课程，为什么要逃掉传统的课堂教室，去参加虚拟的网络课程呢？因为网络课程有着许多无可比拟的优点：</p>
+<ol>
+<li>老师水平普遍较高，讲授内容质量高。这里的老师好多来自世界名校，内容准备的也特别用心；这点是最重要的。</li>
+<li>完善的在线作业系统，作业得到很好的反馈。传统课堂中作业更多是用来给定平时成绩，交上作业就完事了，没有一个反馈，你甚至不知道老师有没有去看你的作业；</li>
+<li>活跃的课程论坛。每一个课程都有一个供学生讨论的板块，在这里可以和全世界各地的学生交流学习心得，讨论作业题目；</li>
+<li>弹性的学习时间，学习地点。没有说你必须在什么时候上课，你只要在 Deadline 前听完课，写完作业就可以了。</li>
+<li>顺着大脑学习的规律教学，每次讲一小段时间就会穿插一些测试之类的，不会让你感到消化不了。想想传统课堂，一下子两节课，大脑早疲劳了。</li>
+</ol>
+<p>还不知道MOOC（大规模在线开放课程）？看看下面这些文章吧：</p>
+<ul>
+<li><a href="http://mooc.guokr.com/post/610535/" target="_blank" rel="external">大学已死，大学永存</a></li>
+<li><a href="http://mooc.guokr.com/post/610592/" target="_blank" rel="external">中国MOOC先行者：在家里上常春藤</a></li>
+<li><a href="http://mooc.guokr.com/post/384608/" target="_blank" rel="external">Coursera，Udacity，edX：MOOC的三座大山</a></li>
+<li><a href="http://mooc.guokr.com/post/610557/" target="_blank" rel="external">塞巴斯蒂安.特隆，重塑在线大学课程</a></li>
+</ul>
+<p>哦，对了，亲测上面的“三座大山”都没有挂掉，所以你访问不了的话，一定是你的问题。</p>
+<p>最后问一个问题，今天你逃课去学习了吗？</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;逃课，在大多数人眼中都是“坏学生”的专利，一说起逃课，就会联想起逃课打游戏，逃课出去玩，逃课把妹等。然而，还可以为了学习而逃课，这里我们要说的就是逃课去学习的故事。&lt;/p&gt;
+&lt;h1 id=&quot;为什么我要逃掉算法课？&quot;&gt;&lt;a href=&quot;#为什么我要逃掉算法课？&quot; class=&quot;headerlink&quot; title=&quot;为什么我要逃掉算法课？&quot;&gt;&lt;/a&gt;为什么我要逃掉算法课？&lt;/h1&gt;&lt;p&gt;写这篇文章的时候我本来应该在教室上《算法分析与设计》这门课，算法对于学计算机的同学来说，重要性不言而喻。我们应该花费大量的时间去熟悉各种算法，同时了解&lt;a href=&quot;http://selfboot.cn/2015/11/03/howto_find_algorithm/&quot;&gt;算法背后的思想&lt;/a&gt;。那么我为什么会逃掉这么重要的一门课呢？&lt;/p&gt;
+&lt;p&gt;忘了在哪里看过一句话，大致意思是看一个人读过的书就知道这个人的品味。同样，我觉得看一个老师推荐的教材就知道这个老师的水平了。下面来看看老师推荐的算法教材吧，排名有先后（完全复制课件内容，排版未做更改）：&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="算法" scheme="http://selfboot.cn/categories/%E7%AE%97%E6%B3%95/"/>
+    
+    
+      <category term="思考" scheme="http://selfboot.cn/tags/%E6%80%9D%E8%80%83/"/>
+    
+      <category term="方法论" scheme="http://selfboot.cn/tags/%E6%96%B9%E6%B3%95%E8%AE%BA/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>从理论到实践，全方位认识DNS（实践篇）</title>
+    <link href="http://selfboot.cn/2015/11/14/dns_practice/"/>
+    <id>http://selfboot.cn/2015/11/14/dns_practice/</id>
+    <published>2015-11-13T16:00:00.000Z</published>
+    <updated>2015-11-14T03:44:53.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>在<a href="http://selfboot.cn/2015/11/05/dns_theory/">理论篇</a>我们基本了解了DNS的整个协议原理，但是可能还会有着下面的疑问：</p>
+<ol>
+<li>为什么我想申请的域名都没了？</li>
+<li>DNS 域名还要备案，这是为什么啊？</li>
+<li>如何将刚申请的域名绑定到自己的网站呢？</li>
+<li>怎么才能看到那些在背后默默给我解析的域名服务器呢？</li>
+<li>他们说用一个什么文件就可以访问好多好多<code>不存在的</code>网站，是真的吗？</li>
+<li>可信任的域名服务器是怎么一回事，难道有些域名服务器会做坏事？</li>
+<li>怎么知道我现在用的域名服务器有没有使坏呢？</li>
+<li>……    </li>
+</ol>
+<p>我不准备一个一个地去回答这些问题，不过相信我，读完本文，对于上面问题的答案你会有一个清晰的认识，并且可以解决其他各种各样关于 DNS 方面的问题。</p>
+<a id="more"></a>
+<h1 id="域名注册、绑定"><a href="#域名注册、绑定" class="headerlink" title="域名注册、绑定"></a>域名注册、绑定</h1><p>首先明确一点，每个人都可以去注册域名。大多数时候我们希望去注册一个顶级域名（比如selfboot.cn, google.com等），那些二级域名毕竟不够好记（比如github托管博客的域名：username.github.io）。有的顶级域名（比如<a href="http://www.dot.tk/zh/index.html?lang=zh" target="_blank" rel="external">.tk</a>域名）提供免费的一年域名试用，不过绝大多时候还是要为自己的域名付费的（一般是按年付费，也不是很贵）。要想去注册域名，首先得找到域名注册商，国内的比较著名的有<a href="https://domains.dnspod.cn" target="_blank" rel="external">DNSpod</a>等，国外的有<a href="https://www.godaddy.com" target="_blank" rel="external">godaddy</a>等。相信注册过域名的人都知道绝大多数我们能想到的自己喜欢的域名都已名花有主了，只剩那些不是那么惹人关注的域名供我们选择。所以，注册域名时，发现自己每想到一个域名都显示被人注册后，那太正常不过了，说明你的品味比较正常。</p>
+<p>这里一点个人建议，选中一个域名后不要轻易去改了，因为换域名成本挺高的（我猜现在就算给淘宝一千万，它也不会换另成一个域名吧）。所以，最好不要去用免费的域名，因为指不定啥时候就不让你用了。你应该相信这么一个观点：<strong>天下没有免费的午餐</strong>。拓展一下就是，掏钱买服务，心里踏实。</p>
+<p>接下来你可能会希望将自己的站点或者博客挂在自己选中的域名下，这其实很简单，只需要找到一个提供域名解析的服务商，然后填写相应的域名解析记录。大多时候，你注册域名的服务商都会免费提供域名解析服务。</p>
+<p>现实中，大部分人可能会拥有个人博客，以前我们都是依赖一个博客平台（如CSDN），或者是买一台VPS托管自己的博客。不过自从Github推出了Blog服务，好多程序员都转而将博客托管在上面。Github Blog支持绑定个人域名，并提供了详细的绑定文档：<a href="https://help.github.com/articles/adding-a-cname-file-to-your-repository/" target="_blank" rel="external">Adding a CNAME file to your repository</a>。假设你的博客已经可以通过 username.github.io 访问，接下来只需要用 CNAME 告诉Github你的博客绑定了哪个域名（比如说是 selfboot.cn），然后在域名解析商那里添加解析记录即可，下图是我个人博客在DNSpod的解析记录：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151114_github_record.png" alt=""></p>
+<p>现在当我们访问 selfboot.cn 时，DNSpod就会将请求解析到 Github 提供的 IP 地址上。之后 Github 上面的博客托管服务器在所有用户的 CNAME 记录中，找到本次请求的域名对应的博客项目地址，比如说是 xuelangZF.github.io，然后返回博客内容。</p>
+<h1 id="域名解析"><a href="#域名解析" class="headerlink" title="域名解析"></a>域名解析</h1><p>我们都知道一个域名的解析过程中，可能会有多台域名服务器给我们帮助，那么我们怎么能看到这些背后的功臣呢？先介绍两个常用的关于DNS的命令。</p>
+<h2 id="dig-nslookup"><a href="#dig-nslookup" class="headerlink" title="dig, nslookup"></a>dig, nslookup</h2><p><code>dig</code>(Domain Information Groper), 是 UNIX/BSD 系统自带的 DNS 诊断工具，使用十分灵活、方便。</p>
+<p>查询 selfboot.cn 的A记录，并返回简短的结果：</p>
+<pre><code>$ dig selfboot.cn -t A +short
+192.30.252.153
+192.30.252.154
+</code></pre><p>用 dig 还可以查询某一 ip 对应的域名，如下：</p>
+<pre><code>$ dig -x 192.30.252.153 +short
+pages.github.com.
+</code></pre><p>这里返回的是pages.github.com，因为当你访问博客地址 selfboot.cn 时，其实是Github的pages 服务器（域名是：pages.github.com）在后台返回该博客内容的（根据 CNAME 确定返回哪个博客）。 </p>
+<p>nslookup 也是一个 DNS 诊断工具，几乎所有平台都自带该工具，使用也很简答，可以用 man 查询手册。</p>
+<h2 id="解析路径查询"><a href="#解析路径查询" class="headerlink" title="解析路径查询"></a>解析路径查询</h2><p>接下来用 dig 命令查看从根域名到指定域名中间可能经过的所有域名服务器，使用 <code>+trace</code> 选项即可。</p>
+<pre><code>dig selfboot.cn +trace @8.8.8.8
+
+; &lt;&lt;&gt;&gt; DiG 9.8.3-P1 &lt;&lt;&gt;&gt; selfboot.cn +trace @8.8.8.8
+;; global options: +cmd
+.            474418    IN    NS    j.root-servers.net.
+.            474418    IN    NS    g.root-servers.net.
+......
+.            474418    IN    NS    l.root-servers.net.
+.            474418    IN    NS    m.root-servers.net.
+;; Received 496 bytes from 8.8.8.8#53(8.8.8.8) in 12 ms
+
+cn.            172800    IN    NS    a.dns.cn.
+......
+cn.            172800    IN    NS    e.dns.cn.
+cn.            172800    IN    NS    ns.cernet.net.
+;; Received 292 bytes from 2001:500:1::803f:235#53(2001:500:1::803f:235) in 382 ms
+
+selfboot.cn.        86400    IN    NS    f1g1ns2.dnspod.net.
+selfboot.cn.        86400    IN    NS    f1g1ns1.dnspod.net.
+;; Received 83 bytes from 203.119.25.1#53(203.119.25.1) in 816 ms
+
+selfboot.cn.        14400    IN    A    192.30.252.153
+selfboot.cn.        14400    IN    A    192.30.252.154
+selfboot.cn.        600    IN    NS    f1g1ns1.dnspod.net.
+selfboot.cn.        600    IN    NS    f1g1ns2.dnspod.net.
+;; Received 125 bytes from 115.236.137.40#53(115.236.137.40) in 31 ms
+</code></pre><p>可以看到最开始是13台顶级域名服务器的NS记录（中间省去一些记录减少行数，方便观察更清楚），接下来是顶级域名 cn. 的权威域名服务器（省略一些输出），然后是 selfboot.cn 的 NS 记录，即 DNSpod 的两条 NS 记录，最后从 f1g1ns2.dnspod.net 找到 selfboot.cn 的 A 记录。</p>
+<p><a href="https://github.com/seveas" target="_blank" rel="external">seveas</a> 提供了一个可视化的路径查询工具：<a href="http://ip.seveas.net/dnsgraph/" target="_blank" rel="external">dnsgraph</a>，可以在线绘制跟域名到指定域名的所有可能路径。</p>
+<p>当然，实际查询过程中，大多时候我们在本地缓存或者本地域名服务器缓存就能直接找到需要的域名记录，不需要每次都向根域名服务器发起请求，然后重复迭代或者递归查询过程。</p>
+<h1 id="DNS-缺陷"><a href="#DNS-缺陷" class="headerlink" title="DNS 缺陷"></a>DNS 缺陷</h1><p>域名系统设计的很理想很美好，然而仍有一些小的瑕疵，可能会给我们带来些许困扰。</p>
+<h2 id="域名抢注"><a href="#域名抢注" class="headerlink" title="域名抢注"></a>域名抢注</h2><p>首先，有些域名对注册人没有限制，而另外一些域名则对谁可以得到一个域名空间中的名字有限制。比如pro域名是分配给合适的专业人员，但问题是谁才是专业的呢？显然医生、工程师是专业人员，但理发师、管道工呢？</p>
+<p>此外，域名也可以被倒卖。黄牛们会批量注册大量域名（据说com域名下几乎每一个普通词都被人尝试注册了域名），然后转身就以高价转卖给那些对该域名感兴趣的人，这就是所谓的域名抢注。所以，现在你想注册一个符合自己网站特点的域名是很难的。</p>
+<p>这个问题其实还不算严重，更要命的是下面两个问题。</p>
+<h2 id="DNS-劫持"><a href="#DNS-劫持" class="headerlink" title="DNS 劫持"></a>DNS 劫持</h2><p>我们知道一个域名服务器对其区域内的用户解析请求负责，但是并没有一个机制去监督它有没有真地负责。也就是说域名服务器的权力并没有被关在笼子里，所以它既可以认真地“为人民服务”，也可以“<strong>指鹿为马</strong>”。于是有些流氓的域名服务器故意更改一些域名的解析结果，将用户引向一个错误的目标地址。这就叫作 DNS 劫持，主要用来阻止用户访问某些特定的网站，或者是将用户引导到广告页面。</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151114_dns_hijacking.png" alt=""></p>
+<p>下面验证下我所用的域名服务器有没有干这种坏事，只需要一条简单的命令即可：</p>
+<pre><code>➜  ~  nslookup google.com
+Server:        10.8.4.4
+Address:    10.8.4.4#53
+
+Non-authoritative answer:
+Name:    google.com
+Address: 120.196.0.5
+</code></pre><p>我的DNS服务器地址为10.8.4.4，他告诉我google.com的地址是120.196.0.5，我才不信呢。于是用<code>whois 120.196.0.5</code>一看，果真不是Google的地址。针对DNS劫持，我们可以简单地更换域名服务器，比较靠谱的一个是Google提供的8.8.8.8。下面用 8.8.8.8 来解析一下 www.google.com 就能看到正确的地址了。</p>
+<pre><code>$ nslookup www.google.com 8.8.8.8
+Server:        8.8.8.8
+Address:    8.8.8.8#53
+
+Non-authoritative answer:
+Name:    www.google.com
+Address: 216.58.221.68
+</code></pre><h2 id="DNS-欺骗"><a href="#DNS-欺骗" class="headerlink" title="DNS 欺骗"></a>DNS 欺骗</h2><p>DNS 劫持通过简单的切换域名服务器就可以绕过，不过一旦你遇上了 <code>DNS 欺骗</code>，就无法简单地绕过了。下面我们用不同的域名服务器来查看 fb 的 IP 地址，结果都返回了同一个地址，看起来好像是真的一样，不过也仅仅是看起来而已。</p>
+<pre><code>$ nslookup facebook.com
+Server:        10.8.4.4
+Address:    10.8.4.4#53
+
+Non-authoritative answer:
+Name:    facebook.com
+Address: 159.106.121.75
+
+$ nslookup facebook.com 8.8.8.8
+Server:        8.8.8.8
+Address:    8.8.8.8#53
+
+Non-authoritative answer:
+Name:    facebook.com
+Address: 159.106.121.75
+</code></pre><p>这个地址并不是 fb 的服务器地址（可以在 <a href="http://viewdns.info/dnsrecord/" target="_blank" rel="external">ViewDNS</a> 查询所有域名<strong>真实的</strong>域名资源记录，ViewDNS是个很好玩的网站，里面有许多有意思的工具）。其实我Google了一下这个地址，竟然发现了一篇不错的<a href="http://ichuan.net/post/7/dns-cache-poisoning-in-china/" target="_blank" rel="external">译文</a>，看来这个地址早在 2011 年就有了特殊的含义（英文原文是相关阅读第一个）。</p>
+<p>DNS 欺骗简单来说就是用一个假的 DNS 应答来欺骗用户计算机，让其相信这个假的地址，并且抛弃真正的 DNS 应答。在一台主机发出 DNS 请求后，它就开始等待应答，如果此时有一个看起来正确（拥有和DNS请求一样的序列号）的应答包，它就会信以为真，并且丢弃稍晚一点到达的应答。</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151114_dns_spoofing.png" alt=""></p>
+<p>实施 DNS 欺骗的关键在于伪造一个有特定序列号的应答包，并且让其抢先一步到达发起请求的主机。这对于个人来说还有点难度，但是对于拥有骨干网节点的组织来说，实在是易如反掌，所以这么多网站都已沦陷。不过使用网上流传的那些 hosts文件，就可以在本机缓存许多网站的ip地址，进而可以和部分网站通信。但是通过hosts文件并不能完全 Cross the Great FireWall，因为人家还有很多其他手段。 </p>
+<p><strong>相关阅读</strong></p>
+<p><a href="http://viewdns.info/research/dns-cache-poisoning-in-the-peoples-republic-of-china/" target="_blank" rel="external">DNS cache poisoning</a><br><a href="http://security.stackexchange.com/questions/33257/dns-spoofing-vs-dns-cache-poisoning" target="_blank" rel="external">DNS Spoofing vs DNS Cache Poisoning</a><br><a href="https://support.apple.com/en-us/HT202516" target="_blank" rel="external">Reset the DNS cache in OS X</a><br><a href="http://www.williamlong.info/archives/2195.html" target="_blank" rel="external">人为网络故障</a><br><a href="http://blog.csdn.net/zhaqiwen/article/details/10108667" target="_blank" rel="external">DNS欺骗原理及工作工程分析</a><br><a href="http://www.wildlee.org/2010_08_965.html" target="_blank" rel="external">DNS污染与劫持之个人小见</a></p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;在&lt;a href=&quot;http://selfboot.cn/2015/11/05/dns_theory/&quot;&gt;理论篇&lt;/a&gt;我们基本了解了DNS的整个协议原理，但是可能还会有着下面的疑问：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;为什么我想申请的域名都没了？&lt;/li&gt;
+&lt;li&gt;DNS 域名还要备案，这是为什么啊？&lt;/li&gt;
+&lt;li&gt;如何将刚申请的域名绑定到自己的网站呢？&lt;/li&gt;
+&lt;li&gt;怎么才能看到那些在背后默默给我解析的域名服务器呢？&lt;/li&gt;
+&lt;li&gt;他们说用一个什么文件就可以访问好多好多&lt;code&gt;不存在的&lt;/code&gt;网站，是真的吗？&lt;/li&gt;
+&lt;li&gt;可信任的域名服务器是怎么一回事，难道有些域名服务器会做坏事？&lt;/li&gt;
+&lt;li&gt;怎么知道我现在用的域名服务器有没有使坏呢？&lt;/li&gt;
+&lt;li&gt;……    &lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;我不准备一个一个地去回答这些问题，不过相信我，读完本文，对于上面问题的答案你会有一个清晰的认识，并且可以解决其他各种各样关于 DNS 方面的问题。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="计算机基础" scheme="http://selfboot.cn/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/"/>
+    
+    
+      <category term="总结" scheme="http://selfboot.cn/tags/%E6%80%BB%E7%BB%93/"/>
+    
+      <category term="网络" scheme="http://selfboot.cn/tags/%E7%BD%91%E7%BB%9C/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>从理论到实践，全方位认识DNS（理论篇）</title>
+    <link href="http://selfboot.cn/2015/11/05/dns_theory/"/>
+    <id>http://selfboot.cn/2015/11/05/dns_theory/</id>
+    <published>2015-11-04T16:00:00.000Z</published>
+    <updated>2015-11-05T13:04:41.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>对于 <a href="https://en.wikipedia.org/wiki/Domain_Name_System" target="_blank" rel="external">DNS(Domain Name System)</a> 大家肯定不陌生，不就是用来将一个网站的域名转换为对应的IP吗。当我们发现可以上QQ但不能浏览网页时，我们会想到可能是域名服务器挂掉了；当我们用别人提供的hosts文件浏览到一个“<code>不存在</code>”的网页时，我们会了解到域名解析系统的脆弱。</p>
+<p>然而关于DNS还有一大堆故事值得我们去倾听，去思考。</p>
+<h1 id="DNS-源起"><a href="#DNS-源起" class="headerlink" title="DNS 源起"></a>DNS 源起</h1><p>要想访问网络上的一台计算机，我们必须要知道它的IP地址，但是这些地址（比如243.185.187.39）只是一串数字，没有规律，因此我们很难记住。并且如果一台计算机变更IP后，它必须通知所有的人。</p>
+<p>显然，直接使用IP地址是一个愚蠢的方案。于是人们想出了一个替代的方法，即为每一台计算机起一个名字，然后建立计算机名字到地址的一个映射关系。我们访问计算机的名字，剩下的名字到地址的转换过程则由计算机自动完成。</p>
+<h2 id="hosts映射"><a href="#hosts映射" class="headerlink" title="hosts映射"></a>hosts映射</h2><p>早期，名字到地址的转换过程十分简单。每台计算机保存一个<code>hosts</code>文件，里面列出所有计算机名字和对应的IP地址，然后定期从一个维护此文件的站点更新里面的记录。当我们访问某个计算机名字时，先在hosts文件找到对应的IP，然后就可以建立连接。</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151105_hosts_local.png" alt=""></p>
+<a id="more"></a>
+<p>早期的<a href="https://en.wikipedia.org/wiki/ARPANET" target="_blank" rel="external">ARPANET</a>就是这样做的，但是随着网络规模的扩大，这种方法渐渐吃不消了。主要有以下三个原因：</p>
+<ol>
+<li>hosts文件变得非常大；</li>
+<li>主机名字会冲突；</li>
+<li>集中的维护站点会不堪重负（需要给几百万机器提供hosts文件，想想就可怕）。</li>
+</ol>
+<h2 id="域名系统"><a href="#域名系统" class="headerlink" title="域名系统"></a>域名系统</h2><p>为了解决上面的问题，1983年<a href="https://en.wikipedia.org/wiki/Paul_Mockapetris" target="_blank" rel="external">Paul Mockapetris</a>提出了域名系统（DNS, Domain Name System)，这是一种<strong>层次的、基于域</strong>的命名方案，并且用一个分布式数据库系统加以实现。当我们需要访问一个域名（其实就是前面说的计算机的名字）时，应用程序会向DNS服务器发起一个DNS请求，DNS服务器返回该域名对应的IP地址。通过下面三种手段解决了上面的问题：</p>
+<ol>
+<li>用户计算机上并没有存储所有的名字到IP的映射，这样避免了hosts文件过于庞大（现在各操作系统中hosts文件默认都是空的）。</li>
+<li>规定了域名的命名规则，保证主机名字不会重复。</li>
+<li>DNS服务器不再是单一的一台机器，而是一个层次的、合理组织的服务器集群。</li>
+</ol>
+<p>这样访问一个域名的过程可以简化为下图：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151105_dns_concept.png" alt=""></p>
+<h1 id="DNS-协议"><a href="#DNS-协议" class="headerlink" title="DNS 协议"></a>DNS 协议</h1><p>那么如何具体实现这个所谓的域名系统呢，要知道管理一个超大型并且不断变化的域名到IP的映射集合可不是一个简单的事，况且还要去应付成千上万的DNS查询请求。人们最终想出了一套不错的协议，规定如何来实现这个系统，下面我们一起来看看吧。</p>
+<h2 id="域名空间"><a href="#域名空间" class="headerlink" title="域名空间"></a>域名空间</h2><p>首先我们需要制定一套命名规则，防止域名出现重复。DNS关于域名的规则和我们生活中的快递系统类似，使用层次的地址结构。快递系统中要给某人邮寄物品，地址可能是这样：中国、广东省、广州市、番禺区、中山西路12号 XXX。而一个域名看起来则是这样的groups.google.com（为什么不是com.google.groups？我猜可能和老外写地址的习惯有关）。</p>
+<p>对于Internet来说，域名层次结构的顶级（相当于国际快递地址中的国家部分）由<a href="https://www.icann.org" target="_blank" rel="external">ICANN</a>（互联网名称与数字地址分配机构）负责管理。目前，已经有超过250个顶级域名，每个顶级域名可以进一步划为一些子域（二级域名），这些子域可被再次划分（三级域名），依此类推。所有这些域名可以组织成一棵树，如下图所示（图片来自Computer Networks: 7-1 ）：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151105_domain_tree.png" alt=""></p>
+<h2 id="域名资源记录"><a href="#域名资源记录" class="headerlink" title="域名资源记录"></a>域名资源记录</h2><p>DNS设计之初是用来建立域名到IP地址的映射，理论上对于每一个域名我们只需要在域名服务器上保存一条记录即可。这里的记录一般叫作域名资源记录，它是一个五元组，可以用以下格式表示：</p>
+<p><code>Domain_name Time_to_live Class Type Value</code></p>
+<p>其中：</p>
+<ol>
+<li>Domain_name: 指出这条记录适用于哪个域名；</li>
+<li><code>Time_to_live</code>: 用来表明记录的生存周期，也就是说最多可以缓存该记录多长时间（后面会讲到缓存机制）；</li>
+<li>Class: 一般总是IN；</li>
+<li>Type: 记录的类型；</li>
+<li>Value: 记录的值，如果是A记录，则value是一个IPv4地址。</li>
+</ol>
+<p>我们看到域名资源记录有一个Type字段，用来表明记录的类型。这是为什么呢？因为对于一个域名来说，通常并非只记录其IP地址，还可能需要一些其他种类的记录，一些常见的记录类型如下：</p>
+<table>
+<thead>
+<tr>
+<th>记录类型</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>主机的IPv4地址</td>
+</tr>
+<tr>
+<td>AAAA</td>
+<td>主机的IPv6地址</td>
+</tr>
+<tr>
+<td>NS</td>
+<td>该域名所在域的权威域名服务器</td>
+</tr>
+<tr>
+<td>MX</td>
+<td>接受特定域名电子邮件的服务器域名</td>
+</tr>
+<tr>
+<td>CNAME</td>
+<td>当前域名的一个别名</td>
+</tr>
+</tbody>
+</table>
+<p>关于这些域名资源记录的实例我们将在下一篇文章（实践篇）看到。</p>
+<h2 id="域名服务器"><a href="#域名服务器" class="headerlink" title="域名服务器"></a>域名服务器</h2><p>我们知道不能只用一台域名服务器来响应所有的DNS查询，因为没有一台机器能够给全球的用户提供查询服务，计算能力、存储、带宽都不允许。只能合理组织一个域名服务器集群，使他们协同工作，共同提供域名解析服务。接下来首先要面对的一个问题是<strong>如何合理地将所有的域名资源记录存储到不同的域名服务器上。</strong></p>
+<p>前面说过域名的名字空间可以组织为一棵树，这里我们可以进一步将其划分为不重叠的区域（<a href="https://en.wikipedia.org/wiki/DNS_zone" target="_blank" rel="external">DNS zone</a>），针对上图的域名空间，一种可能的域名划分如下图：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151105_domain_zone.png" alt=""></p>
+<p>然后将每个区域与多个域名服务器（其中一个是master，其他slave服务器则用来提供数据备份、加快解析速度、保证服务可用性）关联起来，称这些域名服务器为该区域的<code>权威域名服务器(Authoritative Name Servers )</code>，它保存两类域名资源记录：</p>
+<ol>
+<li>该区域内所有域名的域名资源记录。</li>
+<li>父区域和子区域的域名服务器对应的域名资源记录（主要是NS记录）。</li>
+</ol>
+<p>这样，所有的域名资源记录都保存在多个域名服务器中，并且所有的域名服务器也组成了一个层次的索引结构，便于我们后面进行域名解析。下面以一个简化的域名空间为例子，说明域名资源记录是如何保存在域名服务器中的，如下图a：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151105_name_servers.png" alt=""></p>
+<p>图中域名空间划分为A, B, C, D, E, F, G七个DNS区域，每个DNS区域都有多个权威域名服务器，这些域名服务器里面保存了许多域名解析记录。对于上图的NDS区域E来说，它的权威域名服务器里面保存的记录如图中表格所示。</p>
+<p>仔细观察上图你可能会发现区域A、B并没有父区域，他们之间并没有一条路径连在一起。这将导致一个很麻烦的问题，那就是区域A的权威域名服务器可能根本不知道区域B的存在。认识到这一点后，你可能会想出一个很自然的解决方案，就是在A中记录B域名服务器的地址，同时在B中记录A的，这样它们两个就联系起来了。但是考虑到我们有超过250个顶级域名，这样做并不是很恰当。</p>
+<p>而我们使用的域名系统则采用了一种更加聪明的方法，那就是引入<a href="https://en.wikipedia.org/wiki/Root_name_server" target="_blank" rel="external">根域名服务器</a>，它保存了所有顶级区域的权威域名服务器记录。现在通过根域名服务器，我们可以找到所有的顶级区域的权威域名服务器，然后就可以往下一级一级找下去了。下图为全球根域名服务器的分布图，可以在<a href="http://www.root-servers.org" target="_blank" rel="external">这里</a>找到。</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151105_root_servers.png" alt=""></p>
+<p>现在为止，我们的权威域名服务器和根域名服务器其实组成了一个树，树根为根域名服务器，下面每个节点都是一个区域的权威域名服务器，对于图a中各个DNS区域的权威域名服务器，它们组成了下面这棵树（<em>实际中，一个权威域名服务器可能保存有多个DNS区域的记录，因此权威域名服务器之间的联系并不构成一棵树。这部分的详细内容可以参考RFC 1034: 4. NAME SERVERS。下面为了容易理解，将其简化为一棵树</em>）：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151105_servers_tree.png" alt=""></p>
+<h2 id="域名解析"><a href="#域名解析" class="headerlink" title="域名解析"></a>域名解析</h2><p>我们已经有了一个域名服务器集群，该集群合理地保存了域名空间和域名资源记录的对应关系。现在我们要做的就是发送一个DNS请求给域名服务器，然后坐等它返回正确的域名资源记录，这个过程叫作域名解析。</p>
+<p>严格来说，域名解析的过程最早要追溯到建立网络连接。因为每当连接上网络之后，计算机会自动获得一个默认的DNS服务器，当然你也可以用自己信任的DNS服务器，比如8.8.8.8（DNS服务器也有信任不信任之分，是的，实践篇会讲到），我们把这个域名服务器也叫作<code>本地域名服务器</code>。接下来当我们需要知道一个域名对应的资源记录时，会向本地域名服务器发起请求，如果该域名恰好在本地域名服务器所辖属的域名区域（DNS zone）内，那么可以直接返回记录。</p>
+<p>如果在本地域名服务器没有发现该域名的资源记录，就需要在整个域名空间搜索该域名。而整个域名空间的资源记录存储在一个分层的、树状联系的一系列域名服务器上，所以本地域名服务器首先要从根域名服务器开始往下搜索。这里有一个问题就是<strong>本地域名服务器如何找到根域名服务器在哪里呢？</strong>其实域名服务器启动的时候，就会加载一个配置文件，里面保存了根域名服务器的NS记录（要知道根域名服务器地址一般非常稳定，不会轻易改变，并且数量很少，所以这个配置文件会很小）。找到根域名服务器之后，就可以一级一级地往下查找啦。</p>
+<p>仍然以我们的图a为例，现在假设区域E内的某个用户想访问math.sysu.edu.cn，那么请求的过程如下：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151105_name_resolution.png" alt=""></p>
+<p>用语言简单描述如下：</p>
+<ol>
+<li>用户：喂，本地域名服务器，告诉我math.sysu.edu.cn的地址；</li>
+<li>本地域名服务器：哎呀，我不知道啊，不在我的辖区，容我去问问老大哥吧。root老大，能告诉我math.sysu.edu.cn的地址吗；</li>
+<li>根域名服务器：忙着呢，你去问B（.cn）；</li>
+<li>本地域名服务器：喂，B，告诉我math.sysu.edu.cn的地址；</li>
+<li>B：你去问D（.edu.cn）；</li>
+<li>本地域名服务器：喂，D，告诉我math.sysu.edu.cn的地址；</li>
+<li>D：你去问F（sysu.edu.cn）；</li>
+<li>本地域名服务器：喂，F，告诉我math.sysu.edu.cn的地址；</li>
+<li>F：容老衲看看，哎呀，找到了，是X.X.X.X；</li>
+<li>本地域名服务器：踏破铁鞋终于找到啦，喂用户，出来啊，我找到了，是X.X.X.X</li>
+</ol>
+<p>仔细想想，这和我们邮寄快递实在是如出一辙啊，假设你从美国邮东西到广州市番禺区，首先快递送到中国（不过这里没有一个类似根域名服务器的中转站而已），然后往下到广东省，接下来是广州市，再往下是番禺了。</p>
+<p>上面的是本地域名服务器的迭代解析过程，其实也可以递归查询，这里就不说了，道理差不多。</p>
+<h1 id="缓存机制"><a href="#缓存机制" class="headerlink" title="缓存机制"></a>缓存机制</h1><p>现在整个域名系统已经可以为我们提供域名解析服务了，当我们输入域名，计算机发送DNS请求，然后DNS服务器返回给我们解析的结果，一切看起来很完美。然而是不是可以更完美呢？</p>
+<p>回顾一下平时浏览网站的情况，我们会发现两个比较有意思的结论：</p>
+<ol>
+<li>80%的时间我们都在看那些20%的网站，这就是大名鼎鼎的<a href="https://en.wikipedia.org/wiki/Pareto_principle" target="_blank" rel="external">80/20 Rule</a>；</li>
+<li>我们会在一个网站的不同网页之间跳转，也就是不断地访问同一个域名，类似程序访问的局部性原理。</li>
+</ol>
+<p>这两条结论很容易让我们联想到<code>缓存机制</code>。如果我们将已经访问过的那些域名的解析结果缓存在自己的计算机上，那么下次访问的时候可以直接读取结果，不用再次重复DNS查询过程，给自己和域名服务器都节省了麻烦。</p>
+<p>当然，这样做的一个前提是要缓存的解析结果不会频繁更改，也就是说我十分钟后解析一个域名的结果和现在解析的结果是一样的。对大多数域名来说，这都是一个不争的事实。但是难免有一些“善变”的域名，他们可能会频繁更改自己的解析结果。为了使缓存机制适应这两类情况，我们在域名资源记录里面添加一个<code>Time_to_live</code>字段，表明这条记录最多可以缓存多久。对于那些“稳如泰山”的域名，给一个比较大的值，而那些“朝三暮四”的域名，则可以给定一个小的值。</p>
+<p>我们既然可以在本机利用缓存，那么可不可以在域名服务器上也利用缓存机制呢，答案当然是可以的。因为对于域名服务器来说，上面的两条有意思的结论仍然有效。所以，域名服务器可以将那些访问过的域名资源记录缓存，用户再次发起请求时，可以直接返回缓存结果，不用去迭代或者递归解析。</p>
+<p>关于DNS理论部分，更多内容还可以参考这两个文本：</p>
+<ul>
+<li><a href="https://tools.ietf.org/html/rfc1034" target="_blank" rel="external">RFC 1034: Domain Names - Concepts and Facilities</a></li>
+</ul>
+<h1 id="并没有结束"><a href="#并没有结束" class="headerlink" title="并没有结束"></a>并没有结束</h1><p>上面一大堆理论，看上去有点不明所以是吧，没事，接下来会结合实践来更加清晰地认识DNS这一最基础的系统。</p>
+<p>其实不止是DNS，还有HTTPS、TCP、UDP这些很基础的协议，都值得我们静下心去好好认识它们。因为，写DNS之前，我以为我已经完全搞明白了它，但是写的过程发现好多地方自己根本就不知道，之前完全是停留在一个很浮夸的层面上。所以，是时候找时间好好把这些协议过一遍，用自己的语言，从<code>解决问题</code>的角度，记录下这些经典协议的故事了。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;对于 &lt;a href=&quot;https://en.wikipedia.org/wiki/Domain_Name_System&quot;&gt;DNS(Domain Name System)&lt;/a&gt; 大家肯定不陌生，不就是用来将一个网站的域名转换为对应的IP吗。当我们发现可以上QQ但不能浏览网页时，我们会想到可能是域名服务器挂掉了；当我们用别人提供的hosts文件浏览到一个“&lt;code&gt;不存在&lt;/code&gt;”的网页时，我们会了解到域名解析系统的脆弱。&lt;/p&gt;
+&lt;p&gt;然而关于DNS还有一大堆故事值得我们去倾听，去思考。&lt;/p&gt;
+&lt;h1 id=&quot;DNS-源起&quot;&gt;&lt;a href=&quot;#DNS-源起&quot; class=&quot;headerlink&quot; title=&quot;DNS 源起&quot;&gt;&lt;/a&gt;DNS 源起&lt;/h1&gt;&lt;p&gt;要想访问网络上的一台计算机，我们必须要知道它的IP地址，但是这些地址（比如243.185.187.39）只是一串数字，没有规律，因此我们很难记住。并且如果一台计算机变更IP后，它必须通知所有的人。&lt;/p&gt;
+&lt;p&gt;显然，直接使用IP地址是一个愚蠢的方案。于是人们想出了一个替代的方法，即为每一台计算机起一个名字，然后建立计算机名字到地址的一个映射关系。我们访问计算机的名字，剩下的名字到地址的转换过程则由计算机自动完成。&lt;/p&gt;
+&lt;h2 id=&quot;hosts映射&quot;&gt;&lt;a href=&quot;#hosts映射&quot; class=&quot;headerlink&quot; title=&quot;hosts映射&quot;&gt;&lt;/a&gt;hosts映射&lt;/h2&gt;&lt;p&gt;早期，名字到地址的转换过程十分简单。每台计算机保存一个&lt;code&gt;hosts&lt;/code&gt;文件，里面列出所有计算机名字和对应的IP地址，然后定期从一个维护此文件的站点更新里面的记录。当我们访问某个计算机名字时，先在hosts文件找到对应的IP，然后就可以建立连接。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://xuelangzf-github.qiniudn.com/20151105_hosts_local.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="计算机基础" scheme="http://selfboot.cn/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/"/>
+    
+    
+      <category term="总结" scheme="http://selfboot.cn/tags/%E6%80%BB%E7%BB%93/"/>
+    
+      <category term="网络" scheme="http://selfboot.cn/tags/%E7%BD%91%E7%BB%9C/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>知其所以然之永不遗忘的算法</title>
+    <link href="http://selfboot.cn/2015/11/03/howto_find_algorithm/"/>
+    <id>http://selfboot.cn/2015/11/03/howto_find_algorithm/</id>
+    <published>2015-11-02T16:00:00.000Z</published>
+    <updated>2015-11-04T10:51:49.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>相信大部分同学曾经都学习过快速排序、Huffman、KMP、Dijkstra等经典算法，初次学习时我们惊叹于算法的巧妙，同时被设计者的智慧所折服。于是，我们仔细研读算法的每一步，甚至去证明算法的正确性，或者是去尝试优雅地实现这些算法。总之，我们会花费很大的时间精力去理解这些智慧的结晶。</p>
+<p>然而，现在对于这些经典的算法你仍然了然于胸吗？就算现在你仍然记得这些算法的步骤，你敢确保一年后、十年后自己不会忘记？我想没有多少人敢保证吧。</p>
+<p>我们当然希望自己掌握一个算法后，就永远不会忘记，最好还能举一反三，利用算法中的思想去解决新的问题。然而，现实与美好的愿景往往是背道而驰，不要说举一反三，我们甚至经常忘记那些算法本身。</p>
+<h1 id="背算法与设计算法"><a href="#背算法与设计算法" class="headerlink" title="背算法与设计算法"></a>背算法与设计算法</h1><p>为什么会这样？简单来说，因为我们从来就没有真正掌握过这些算法，我们只不过是在<strong>背诵</strong>别人发明的算法，就像我们背诵历史书上的那些历史事件一样，时间久了自然会慢慢遗忘。</p>
+<a id="more"></a>
+<p>我们接触到某个算法时，看到的只是对算法过程的讲解，对其正确性的证明，或者对其效率的分析（想想大名鼎鼎的<a href="https://book.douban.com/subject/20432061/" target="_blank" rel="external">《算法导论》</a>，<a href="https://book.douban.com/subject/19952400/" target="_blank" rel="external">《算法》</a>是如何讲解某一算法的），我们不会看到那些牛人是如何“<strong>灵机一动</strong>”设计出了这惊天地泣鬼神的算法。也就是说我们只是知其然，并没有知其所以然。当我们不知道一个算法的来龙去脉，不知道设计它经历的那些思维历程时，就很容易忘记它的具体内容。相反，那些牛人就不会忘记自己设计的算法。</p>
+<p>所以，当看到别人牛逼的闪闪发光的算法后，我们一定要探寻算法背后那“曲径通幽”的思维之路。只有经历了思维之路的磨难，才配得上永远占有一个算法，并有可能举一反三，或者是设计一个巧妙算法。刘未鹏在<a href="http://mindhacks.cn/2011/07/10/the-importance-of-knowing-why-part3/" target="_blank" rel="external">知其所以然（三）：为什么算法这么难？</a>中探索了Huffman编码的思维历程，值得一看。顺便说一下，探索算法背后的思维历程不是件容易的事，要知道就是霍夫曼本人也是花了一个学期才想出它的编码算法。</p>
+<p>下面我们以LeetCode上一个<code>好问题</code>，来探索这个问题的算法背后的思维之路。关于什么是好问题，刘未鹏在<a href="http://mindhacks.cn/2008/04/18/learning-from-polya/" target="_blank" rel="external">跟波利亚学解题</a>上有一个不错的观点：<strong>好问题即测试一个人思维的习惯的题目</strong>，通常考察你的联想能力、类比能力、抽象能力、演绎能力、归纳能力、观察能力、发散能力等。</p>
+<h1 id="一个好问题"><a href="#一个好问题" class="headerlink" title="一个好问题"></a>一个好问题</h1><p>LeetCode 84题：<a href="https://leetcode.com/problems/largest-rectangle-in-histogram/" target="_blank" rel="external">Largest Rectangle in Histogram</a>，给定一个直方图（下图a），求直方图中能够组成的所有矩形中，面积最大为多少。对于图a来说，我们很容易看出来面积最大的矩形为高度为5和6的直方图组成的矩形（图b隐形部分），其面积为5 * 2 = 10。</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151103_histogram_area.png" alt=""></p>
+<p>其实这个题稍微加以变化，就是另一个相当有趣的问题：<a href="https://leetcode.com/problems/maximal-rectangle/" target="_blank" rel="external">Maximal Rectangle</a>.</p>
+<p>这道题目一个显而易见的解决方法就是<code>暴力搜索</code>：找出所有可能的矩形，然后求出面积最大的那个。要找出所有可能的矩形，只需要从左到右扫描每个立柱，然后以这个立柱为矩形的左边界（假设为第i个），再向右扫面，分别以（i+1, i+2, n）为右边界确定矩形的形状。</p>
+<p>这符合我们本能的思考过程：要找出最大的一个，就先列出所有的可能，比较大小后求出最大的那个。然而不幸的是，本能的思考过程通常是简单粗暴而又低效的，就这个题目来说，时间复杂度为N^2 。那么有没有一种更加高效的解决办法呢？</p>
+<h1 id="一个好算法"><a href="#一个好算法" class="headerlink" title="一个好算法"></a>一个好算法</h1><p>我第一次面对这个题时，并没有想出一个漂亮的解决方案。因为从给定的条件来看，似乎找不到一个约束条件使得满足这个条件的矩形面积最大，也就是说无法缩减问题的规模，因此必须找出所有可能的矩形，这样的话效率肯定是N^2 。</p>
+<p>然而去Google了一下，立即发现了一个时间复杂度O(n)的算法，当时就被这神奇的解法所震撼到。它的代码十分简单，简单到一开始我根本就看不懂，不明白为什么这样子求出的就是最大的矩形。网上好多所谓的解题报告里面只是人云亦云地给出了算法的步骤，没有算法正确性的证明，更没有我们最想要的关于解题思路。</p>
+<p>我也先给出算法步骤和代码，看看你是不是同样一头雾水。在程序中维护一个栈，栈中元素为直方图中bar的下标，然后从头开始扫描每个bar：</p>
+<ol>
+<li>如果当前bar的高度大于栈顶bar的高度，则将当前bar的下标入栈；</li>
+<li>否则执行出栈操作，记录弹出下标对应的bar的高度，并计算出一个面积，然后用这个面积更新最大面积。</li>
+</ol>
+<p>代码也是相当简洁，python源码如下：</p>
+<pre><code>def largestRectangleArea(self, height):
+    height.append(0)
+    size = len(height)
+    no_decrease_stack = [0]
+    max_size = height[0]
+
+    i = 0
+    while i &lt; size:
+        cur_num = height[i]
+        if (not no_decrease_stack or
+                cur_num &gt; height[no_decrease_stack[-1]]):
+            no_decrease_stack.append(i)
+            i += 1
+        else:
+            index = no_decrease_stack.pop()
+            if no_decrease_stack:
+                width = i - no_decrease_stack[-1] - 1
+            else:
+                width = i
+            max_size = max(max_size, width * height[index])
+
+    return max_size
+</code></pre><p>高效而难以理解，这就是那些神奇算法的共性。</p>
+<h1 id="一个思维历程"><a href="#一个思维历程" class="headerlink" title="一个思维历程"></a>一个思维历程</h1><p>那么这个算法真的就是我等凡夫俗子不能想出来的？难道我们只能仰望高山，恨自己智商不高？我还真不服气呢，于是又静下心去思考这个问题。</p>
+<p>这次我们不从已知条件推结果，而直接从结论入手，就是说假设现在已经找到了面积最大的那个矩形。接着我们来分析该矩形有什么特征，然后可以用下面两种方法之一来缩减问题的规模（因为这两种方法都不用找出所有的矩形一一比较）。</p>
+<ol>
+<li>找出满足这些特征的矩形，面积最大的矩形肯定是其中之一；</li>
+<li>排除那些不满足这些特征的矩形，面积最大的矩形在剩下的那些矩形里面。</li>
+</ol>
+<p>为了使考虑情况尽可能全面，画了许多直方图，防止使用原题目图片可能存在的一些特定假设，其中一个直方图如下图：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151103_histogram.png" alt=""></p>
+<p>通过不断地对多个直方图的观察，发现面积最大的那个矩形好像都包含至少一个完整的bar，那么这条规律适用于所有的直方图吗？我们用反证法来证明，假设某个最大矩形中每个竖直块都是所在的bar的一小段，那么这个矩形高度增加1后仍然是一个合法的矩形，但新的矩形面积更大，与假设矛盾，所以面积最大的矩形必须至少有一个竖直块是整个bar。</p>
+<p>至此我们找到了面积最大矩形的一个特性：<code>各组成竖直块中至少有一个是完整的Bar</code>。有了这条特性，我们再找面积最大的矩形时，就有了一个比较小的范围。具体来说就是针对每个bar，我们找出包含这个bar的面积最大的矩形，然后只需要比较这N个矩形即可（N为bar的个数）。</p>
+<p>那么问题又来了，如何找出“<strong>包含某个bar的面积最大的矩形呢</strong>”？对于上面的直方图，包含下标为4的bar的最大矩形如下图橘黄色部分：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151103_histogram_more.png" alt=""></p>
+<p>简单观察一下，就会发现要找到包含某个bar的最大矩形其实很简答，只需要找到高度小于该bar的左、右边界即可，上图中分别是下标为1的bar和下标为10的bar。 </p>
+<p>至此问题已经变为<strong>“对于给定的bar，如何确定高度比它小的左、右边界”</strong>。其实求左边界和右边界是同样的求法，下面我们考虑求每个bar的左边界。最直接的思路是对于每个bar，扫面其前面所有的bar，找出最后一个高度小于它的bar，这样的话时间复杂度明显又是N^2 ，Holy Shit。</p>
+<p>到这里似乎没有路可走了，但如果我们继续绞尽脑汁地去想，<strong>可能</strong>（或许你对栈理解的很深入，或许是你在一个类似的问题中用到了栈，当然你也可能想到动态规划的思想，那也是可行的）会<strong>联想</strong>到<code>栈</code>这一数据结构。<strong>用栈维护一个高度递增的bar的集合，也就是说栈底到栈顶部对应的bar的高度越来越大</strong>。那么对应一个刚读入的bar，我们只需要比较它的高度和栈顶对应bar的高度，如果当前bar比较高，则弹出栈顶元素继续比较，直到栈顶bar比它低或者栈为空。之后，将当前bar入栈，更新栈内的递增序列。</p>
+<p>我们从左到右扫一遍得到每个bar对应的左边界，然后从右到左扫一遍得到bar的右边界。两次扫描过程中，每个bar都只有出栈、入栈操作，所以时间复杂度为O(N)。通过这样的预处理，即可以O(N)的时间复杂度得到每个bar的左右边界。之后对于每个bar求出包含它的最大面积，也即是由左右边界和bar的高度围起来的矩形的面积。再做N次比较，即可得出最终的结果。</p>
+<p>这里先预处理用两个栈扫描两次得到左、右边界，再计算面积，是按照推导过程一步一步来的。当我们写完程序后，再综合看这个问题，可能会发现其实没必要这样分开来做，我们可以在扫描的同时，维护一个递增的栈，同时在“合适的”时候计算面积，然后更新最大面积。具体实现方法就是前面给出的那个神奇的算法，不过现在看来一点也不神奇了，我们已经探索到了它背后的思维历程。</p>
+<p>当然，条条道路通罗马，上面思维过程只是其中一条通往解决方案的路径，你可能以另一种思维过程找到了答案。不过，我们上面的整个推导过程没有涉及一些类似“神谕”的启发，只是一些简单的方法：比如从结论推导、反证法、归纳总结、联想（可能联想到栈有点难）等，因此每个人都可以学会，并且很容易被大脑记住。值得注意的是，我们的整个思考过程并不简简单单地跟上面写的那样是线性的，它更可能是树形的，只是我们剪去了那些后来证明行不通的枝。</p>
+<h1 id="解题的万能思考法则"><a href="#解题的万能思考法则" class="headerlink" title="解题的万能思考法则?"></a>解题的万能思考法则?</h1><p>人类在漫长的进化史中，解决了各种各样的问题。例如</p>
+<ul>
+<li>如何度过一条湍急的河流</li>
+<li>如何保留火种</li>
+<li>如何治愈天花</li>
+<li>如何制造一个会飞的机器</li>
+<li>…</li>
+</ul>
+<p>同时也对自己的思维方式进行总结和反思，笛卡尔曾经试图将人类思维的规则总结为36条（最终完成了<a href="https://en.wikisource.org/wiki/Rules_for_the_Direction_of_the_Mind" target="_blank" rel="external">21条</a>）。</p>
+<p>那么有没有一个解题的万能思考法则，按照这个法则去思考，最终能解决所有的问题或者是证明某个问题不可解？目前看来是没有这样的思考法则的，不然我们就可以制造出真正的会思考的机器了。</p>
+<p>不过还是有许多思维方法值得我们去学习强化，波利亚在《How To Solve It》上总结了这些方法，如果想培养良好的思维习惯，那么这本书是必不可少的。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;相信大部分同学曾经都学习过快速排序、Huffman、KMP、Dijkstra等经典算法，初次学习时我们惊叹于算法的巧妙，同时被设计者的智慧所折服。于是，我们仔细研读算法的每一步，甚至去证明算法的正确性，或者是去尝试优雅地实现这些算法。总之，我们会花费很大的时间精力去理解这些智慧的结晶。&lt;/p&gt;
+&lt;p&gt;然而，现在对于这些经典的算法你仍然了然于胸吗？就算现在你仍然记得这些算法的步骤，你敢确保一年后、十年后自己不会忘记？我想没有多少人敢保证吧。&lt;/p&gt;
+&lt;p&gt;我们当然希望自己掌握一个算法后，就永远不会忘记，最好还能举一反三，利用算法中的思想去解决新的问题。然而，现实与美好的愿景往往是背道而驰，不要说举一反三，我们甚至经常忘记那些算法本身。&lt;/p&gt;
+&lt;h1 id=&quot;背算法与设计算法&quot;&gt;&lt;a href=&quot;#背算法与设计算法&quot; class=&quot;headerlink&quot; title=&quot;背算法与设计算法&quot;&gt;&lt;/a&gt;背算法与设计算法&lt;/h1&gt;&lt;p&gt;为什么会这样？简单来说，因为我们从来就没有真正掌握过这些算法，我们只不过是在&lt;strong&gt;背诵&lt;/strong&gt;别人发明的算法，就像我们背诵历史书上的那些历史事件一样，时间久了自然会慢慢遗忘。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="算法" scheme="http://selfboot.cn/categories/%E7%AE%97%E6%B3%95/"/>
+    
+    
+      <category term="思考" scheme="http://selfboot.cn/tags/%E6%80%9D%E8%80%83/"/>
+    
+      <category term="python" scheme="http://selfboot.cn/tags/python/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>别惊讶，这只是营销！</title>
+    <link href="http://selfboot.cn/2015/10/23/marketing/"/>
+    <id>http://selfboot.cn/2015/10/23/marketing/</id>
+    <published>2015-10-22T16:00:00.000Z</published>
+    <updated>2015-10-27T11:43:19.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>说到营销，你可能会想起街头派发的传单，想起地铁里的各种宣传海报，想起优酷视频开始前漫长的无聊的广告，想起史玉柱的脑残广告台词（敢问有谁没听过？！）：</p>
+<blockquote>
+<p>今年过节不收礼啊不收礼，收礼只收脑白金脑白金！</p>
+</blockquote>
+<p>虽然我们很厌烦这些强迫式、入侵式的宣传，但不得不说它们的效果真的是不一般。想想一下，当你面对眼花缭乱的纷杂商品时，你是会买（<strong>被</strong>）听过的那些，还是那些根本没听人说过的无名之物呢？亦或者，你根本不知道买什么时，会不会被那些浮夸的宣传俘获，抱着试试的心态去体验下呢。</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151023_market.png" alt="强迫式、入侵式的营销"></p>
+<a id="more"></a>
+<p>如果你以为所有的营销都是这么简单粗暴，那么你就太小看人民群众（真的是人民群众，不一定要是营销大师哦）的智慧啦。话说天下之势合久必分，分久必合，正如月有圆有缺、人有聚有散。所以，有强迫式营销，也就有“诱惑式”营销了。不过如何施展诱惑式营销，可谓是“八仙过海，各显神通”了。</p>
+<h1 id="福利：快来占我便宜"><a href="#福利：快来占我便宜" class="headerlink" title="福利：快来占我便宜"></a>福利：快来占我便宜</h1><p>脑补一个画面：</p>
+<blockquote>
+<p>我注视着“静静”的电脑，一直在思考到底哪里有问题？月亮高高的挂着，风透过玻璃缝隙细细地吹着。静静给我端了杯咖啡，香气伴随着黄莺般的声音弥漫在我充满0、1的头脑里：“天很晚了，明天再修吧，今晚就先住我这里吧”。</p>
+</blockquote>
+<p>接下来发生了什么不在我们谈论的范围内了，但是我还是想说要是我，我就扔下电脑了，不再理会那烦人的Bug，毕竟有比Bug更美的妹子。</p>
+<p>然而Bug有时候也是十分有吸引力的！一些技术男可能会想，你这不是废话吗，我要知道支付宝的Bug，我就能买我所想买了；要知道微信的Bug，就能看女神的位置了。你说的很对，但请注意我们只谈营销，我们要用Bug来优雅地营销。有点难度，不是吗？来看看人家百度是怎样做的吧！</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151023_baidu_bug.png" alt="百度网盘出Bug了？"></p>
+<p>2013年，人们在各大论坛，微博，QQ群疯传<code>百度云网盘的支付系统疑似出现重大Bug，所有付费套餐的价格变成了原来的1/1000，1毛钱就可以买一年会员！</code>一时间，百度云盘红极一时，风靡网络，以前不知道什么是云盘的人都去抢云盘（<strong>便宜</strong>）啦。</p>
+<p>高潮过后，大家冷静下来反思一下，这场抢购风潮会不会是百度一手策划的呢？我给大家一些分析依据，来便于你们推出自己的结论：</p>
+<ol>
+<li>百度对这次的Bug态度暧昧，过了几十小时后“低调”修复（百度可是媲美腾讯、阿里的巨头，保证支付系统的安全可靠完全没有技术难度）；</li>
+<li>几天过后，百度开心地宣布云盘用户量突破7千万人，并持续高速增长。</li>
+<li>一周后，迅雷也以类似的支付页面Bug出了一个卖萌的微博，大意是你们1分钱抢了我的会员卡，好狠心啊）。</li>
+</ol>
+<h1 id="玩耍：我们来谈游戏吧"><a href="#玩耍：我们来谈游戏吧" class="headerlink" title="玩耍：我们来谈游戏吧"></a>玩耍：我们来谈游戏吧</h1><p>如果从小到大，你没有玩过游戏，那么我给你一个建议，玩玩游戏吧！游戏不是洪水猛兽，不是毒品，不是赌博，游戏只是很单纯、很有趣而已。</p>
+<p>有人用游戏赚钱，有人用游戏放松，有人用游戏挥霍青春，有人用游戏交朋友，这些你或多或少见过听过，但你知道游戏也可以拿来营销吗。</p>
+<p>你肯定见过微信朋友圈里面的类似下面的游戏：</p>
+<ul>
+<li>围住神经猫</li>
+<li>哈佛心理系情感分析检测</li>
+<li>你心爱的人的名字是？</li>
+<li>你上一辈子的职业是什么？</li>
+</ul>
+<p>通常出一款新的这种小游戏后，会有很多人去尝鲜。然后玩完后就会看到快来试用X X的广告，似乎不是很高明，和优酷前面的广告没太大差别。那么下面这种呢？</p>
+<p>百度魔图为了抢占美图秀秀的市场，在应用里面添加了“PK大咖”这个小游戏性质的功能，用户上传一张本人的照片后，系统便会在0.1秒内告诉你与哪位明星最为相像。于是乎，大家为了看自己与哪个明星长得像，就下载百度魔图来玩。这款应用也连续10天蝉联苹果App Store中国区免费总榜第一名，真的是赚足了名声。</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151023_pk.png" alt="PK 大咖"></p>
+<h1 id="情怀：对不起，我只过1-的生活"><a href="#情怀：对不起，我只过1-的生活" class="headerlink" title="情怀：对不起，我只过1%的生活"></a>情怀：对不起，我只过1%的生活</h1><p>曾经，伟大的安妮以一篇<a href="http://weibo.com/1854627907/BAGsq9rbJ?type=comment#_rnd1445582370930" target="_blank" rel="external">对不起，我只过1%的生活</a>红遍漫画界，红遍文艺界，红遍社会各界（有点夸张）。结果就是，她的<code>快看漫画</code>也火了起来。</p>
+<p>你看，人家安妮多聪明，不到处贴广告劝大家赶快来用我的“快看漫画”（相信没多少人会去用的），人家先给我们讲人生，讲理想，讲情怀。讲她小时候的梦想，讲她如何坚持自己的梦想，讲她怎么实现自己的梦想。虽然自己的目的是宣传“快看漫画”，但人家就是轻描淡写地提了一下，却让我们流连忘返，三日不绝。 最后，人家真的翻山越岭，触摸到云了。</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151023_anni.png" alt="伟大的安妮"></p>
+<p>还有人家老罗，一直在强调自己的情怀，强调自己的认真与工匠精神，发布会最后还来一张段文艺的话。</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151023_laoluo.png" alt="我不是为了输赢，我就是认真"></p>
+<p>不管锤子手机卖的如何，老罗当年营销的效果真的是很好，毕竟有这么多人知道锤子了。</p>
+<h1 id="万变不离其宗"><a href="#万变不离其宗" class="headerlink" title="万变不离其宗"></a>万变不离其宗</h1><p>不管是强迫式还是诱惑式的营销，都必须要抓住人们的心理，投其所好。<a href="https://book.douban.com/subject/26541801/" target="_blank" rel="external">《增长黑客》</a>里面很好地总结了营销中需要把握的用户心理。</p>
+<ol>
+<li>喜爱：抓住你的爱好，就抓住了你！</li>
+<li>逐利：天下熙熙皆为利来，…</li>
+<li>互惠：互惠才能长久；</li>
+<li>求助：求助也是一种美德（给别人表现的机会）；</li>
+<li>炫耀：谁不希望站在舞台中央，…</li>
+<li>稀缺：物以稀为贵；</li>
+<li>害怕失去或错过：曾经有一份真挚的爱情放在我眼前，…</li>
+<li>懒惰：能点一下鼠标，我不会点两下。</li>
+</ol>
+<p>推荐一下《增长黑客》，名字有黑客，但不是讲计算机上的黑客的，不需要任何技术底子，完全可以拿来当小说看的一本书。内容很有趣，好多地方让人忍不住拍案叫绝的，谁不看谁吃亏。（看我像不像在给《增长黑客》做营销，诱惑式的营销哦）</p>
+<p><em>图片来自网络，如有侵权，立即删除</em></p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;说到营销，你可能会想起街头派发的传单，想起地铁里的各种宣传海报，想起优酷视频开始前漫长的无聊的广告，想起史玉柱的脑残广告台词（敢问有谁没听过？！）：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;今年过节不收礼啊不收礼，收礼只收脑白金脑白金！&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;虽然我们很厌烦这些强迫式、入侵式的宣传，但不得不说它们的效果真的是不一般。想想一下，当你面对眼花缭乱的纷杂商品时，你是会买（&lt;strong&gt;被&lt;/strong&gt;）听过的那些，还是那些根本没听人说过的无名之物呢？亦或者，你根本不知道买什么时，会不会被那些浮夸的宣传俘获，抱着试试的心态去体验下呢。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://xuelangzf-github.qiniudn.com/20151023_market.png&quot; alt=&quot;强迫式、入侵式的营销&quot;&gt;&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="社会百态" scheme="http://selfboot.cn/categories/%E7%A4%BE%E4%BC%9A%E7%99%BE%E6%80%81/"/>
+    
+    
+      <category term="见闻" scheme="http://selfboot.cn/tags/%E8%A7%81%E9%97%BB/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>轻量级桌面应用开发的捷径——nw.js</title>
+    <link href="http://selfboot.cn/2015/10/15/lightweight-GUI/"/>
+    <id>http://selfboot.cn/2015/10/15/lightweight-GUI/</id>
+    <published>2015-10-15T15:33:29.000Z</published>
+    <updated>2015-11-04T10:53:14.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>每个程序员都希望用自己喜欢的语言，自己喜欢的平台、工具，写自己喜欢的程序。于是我们会看到有人在Win下用Visual Studio愉快地coding，也会看到有人在OS X下用Xcode来开发，或者是用Sublime Text不受平台限制地玩。</p>
+<p>当然了，愿望往往是美好的，然而事与愿违的情况时有发生。如果你基本都是用OS X，却有人让你写一个带有简单界面的小程序，保证在他的Win系统上一定可以运行，那么你是不是有点抓狂。</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151015_Win_OSX.png" alt=""></p>
+<a id="more"></a>
+<h1 id="选择哪条路？"><a href="#选择哪条路？" class="headerlink" title="选择哪条路？"></a>选择哪条路？</h1><p>当然，我可以在Visual Studio（已经有<a href="https://www.visualstudio.com/zh-cn/visual-studio-homepage-vs.aspx" target="_blank" rel="external">Mac OS X版</a>）下用MFC或者其他框架来写，但是总感觉有点重量级，并且不能移植到其他平台（万一哪天让我写个OS X下的界面呢，想想都不寒而栗啊！）</p>
+<p>所以我想找的就是一个可以跨平台的、轻量级的图形界面开发的库，于是想到了喜欢的Python，然后发现它下面的GUI开发框架还真不少：<a href="http://www.wxpython.org/" target="_blank" rel="external">wxPython</a>, <a href="https://wiki.python.org/moin/TkInter" target="_blank" rel="external">tkInter</a>, PyGtk, PyQt。</p>
+<ul>
+<li>wxPython: 首先官网相当简洁（丑陋），然后快速浏览了一下文档，发现有这块：<a href="http://docs.wxwidgets.org/stable/page_multiplatform.html" target="_blank" rel="external">Cross-Platform Development Tips</a>，告诉你跨平台要注意哪些东东，看来不是我心中想的那样只需要写一份代码，在不同平台编译一下就可以，于是放弃。</li>
+<li>TkInter: 也在其他地方看到有人推荐这个，但是感觉文档特别乱，网上一些教程也相当简陋，里面界面丑的掉渣，也放弃了。</li>
+</ul>
+<p>后面两个我甚至都没耐心继续看下去了，因为我不经意看到了<a href="https://github.com/nwjs/nw.js" target="_blank" rel="external">nw.js</a>，他就像一座灯塔，冥冥之中照亮了前进的方向啊。</p>
+<h1 id="nwjs——前进的方向！"><a href="#nwjs——前进的方向！" class="headerlink" title="nwjs——前进的方向！"></a>nwjs——前进的方向！</h1><p>Github上nw.js有两万多Star和接近3000的Fork，说明它已经相当成熟，不会是某个人随兴放的一个并不成熟的技术。并且在Github项目的最后面，显示Intel有赞助这个项目，看起来很牛的样子。而且关于nw.js的资料也特别齐全，首先来看看它的特点：</p>
+<ul>
+<li>支持用HTML5, CSS3, JS和WebGL来写应用程序，包括桌面端和移动端；</li>
+<li>完全支持<a href="http://nodejs.org/api/" target="_blank" rel="external">Node.js APIs</a>和所有的第三方模块；</li>
+<li>性能也不会很差，对于轻量级的应用足够了；</li>
+<li>对应用进行打包和发布十分简单，也就是说写一份代码很容易移植到不同的平台（包括主流的Linux, Mac OS X 和 Windows）；</li>
+</ul>
+<p>然后作者怕你认为它很难打交道，进而“知难而退”，就在项目主页里用许多slides来介绍它。</p>
+<ul>
+<li><a href="https://speakerdeck.com/zcbenz/node-webkit-app-runtime-based-on-chromium-and-node-dot-js" target="_blank" rel="external">Introduction to node-webkit (slides)</a></li>
+<li><a href="http://oldgeeksguide.github.io/presentations/html5devconf2013/wtod.html" target="_blank" rel="external">WebApp to DesktopApp with node-webkit (slides)</a></li>
+</ul>
+<p>下面这张slide解决了“nw.js能做什么？”的问题，简单来说nw.js就是使HTML, CSS, JavaScript写的原本在浏览器上运行的程序，也可以在桌面端运行。</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151015_what_is_nw.png" alt=""></p>
+<p>下面这张slide解决了“怎么用nw.js完成任务？”的问题，</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151015_how_package.png" alt=""></p>
+<p>最后，开发者怕你怀疑nw.js的强大，又提供了<a href="https://github.com/zcbenz/nw-sample-apps" target="_blank" rel="external">几个Demo</a>和<a href="https://github.com/nwjs/nw.js/wiki/List-of-apps-and-companies-using-nw.js" target="_blank" rel="external">许多成功的案例</a>来打消我们的顾虑。</p>
+<h1 id="nwjs——拿下助攻！"><a href="#nwjs——拿下助攻！" class="headerlink" title="nwjs——拿下助攻！"></a>nwjs——拿下助攻！</h1><p>决定用nw.js之后，就开始补充相应的知识啦。首先自己没有怎么去学过JavaScript, HTML, CSS这类web方面的语言，不过想来也不会比C++难。学习的成本也应该比学习MFC, wxPython低很多，并且这些语言太基础、使用场景太多了，所以早晚都得了解一下，干脆借这个机会一边学一边做具体的东西。于是买了<a href="https://book.douban.com/subject/6038371/" target="_blank" rel="external">《JavaScript DOM编程艺术(第2版)</a>》这本书拿来入门。</p>
+<p>讲了这么多，还没说我具体要做什么呢，其实要做的事情特别简单，就是统计一本书的页码中一共有多少个0，1，2，3，4，5，6，7，8，9。关于这个问题，详细看前面的那篇博客：<a href="http://zhaofei.tk/2015/10/13/pages_count/" target="_blank" rel="external">讲得明白，但写的明白吗？</a>。</p>
+<p>我要实现的目标很简单，在输入正确的数字时，给出统计结果；输入错误的数字时，则给出错误提示，重置输入框和统计结果。如下：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151015_input.png" alt=""></p>
+<p>实现过程相当简单，特别是对于那些做过web开发的，详细过程就不在这里给出了，只提供一个简单的程序逻辑图吧。</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151015_nwjs_process.png" alt=""></p>
+<p>源码十分简单，可以在<a href="https://gist.github.com/xuelangZF/ce8a570a8e7453c76fd7" target="_blank" rel="external">这里</a>找到，结构如下：</p>
+<pre><code> tree
+.
+├── index.html
+├── main.js
+├── package.json
+└── style.css
+
+0 directories, 4 files
+</code></pre><p>打包到各个平台也有<a href="https://github.com/nwjs/nw.js/wiki/how-to-package-and-distribute-your-apps" target="_blank" rel="external">详细的文档</a>。以Win为例，只需要三步即可：</p>
+<ol>
+<li>将所有工程文件，放在一个文件夹下，确保<code>package.json</code>在根目录，然后压缩为.zip格式，并将压缩文件的后缀由<code>.zip</code>改为<code>.nw</code>；</li>
+<li>在nw.js的环境目录下执行<code>copy /b nw.exe+you_nw_name.nw you_app_name.exe</code> （这一步之后，就可以在生成的目录中直接运行<code>you_app_name.exe</code>，它依赖同目录下的一些其他库）；</li>
+<li>用<a href="http://enigmaprotector.com/en/aboutvb.html" target="_blank" rel="external">Enigma Virtual Box</a>将<code>you_app_name.exe</code>和依赖的库打包到单个exe文件中，这样我们的应用在没有任何编程环境的win机器上都可以运行。</li>
+</ol>
+<h1 id="nwjs——你值得拥有！"><a href="#nwjs——你值得拥有！" class="headerlink" title="nwjs——你值得拥有！"></a>nwjs——你值得拥有！</h1><p>不得不提nw.js开发出的应用已经涵盖了许多领域：</p>
+<ol>
+<li><a href="https://web.whatsapp.com/" target="_blank" rel="external">WhatsApp</a> 经典的聊天应用，还有<a href="http://messengerfordesktop.com/" target="_blank" rel="external">Messenger</a>；</li>
+<li><a href="https://github.com/jaruba/PowderPlayer" target="_blank" rel="external">Powder Player</a> 种子下载，以及视频播放器；</li>
+<li><a href="https://github.com/isdampe/BosonEditorExperimental" target="_blank" rel="external">Boson Editor</a> 代码编辑器，甚至还有一款Markdown编辑器叫<a href="http://soft.xiaoshujiang.com/" target="_blank" rel="external">Story-writer</a>；</li>
+<li><a href="https://github.com/leanote/desktop-app" target="_blank" rel="external">Leanote Desktop App</a> 类似Evernote的笔记类应用程序；</li>
+<li><a href="http://www.litixsoft.de/english/mms/" target="_blank" rel="external">Mongo Management Studio</a> 数据库管理应用。</li>
+</ol>
+<p>来欣赏一下一些应用的截图吧，不得不说nw.js开发出的应用一点不比原生的丑陋啊。</p>
+<p><a href="http://www.litixsoft.de/english/mms/" target="_blank" rel="external"><strong>Mongo Management Studio</strong></a><br><img src="http://xuelangzf-github.qiniudn.com/20151015_apps_mongo.png" alt=""></p>
+<p><a href="http://www.soundnodeapp.com/" target="_blank" rel="external"><strong>Soundnode App</strong></a><br><img src="http://xuelangzf-github.qiniudn.com/20151015_apps_soundnode.png" alt=""></p>
+<p>看来nw.js赢得了很多青睐，那么还有什么能阻止我们拥抱nw.js呢？。</p>
+<hr>
+<p>ps：如果有的链接打不开，先检查打开的姿势对不对。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;每个程序员都希望用自己喜欢的语言，自己喜欢的平台、工具，写自己喜欢的程序。于是我们会看到有人在Win下用Visual Studio愉快地coding，也会看到有人在OS X下用Xcode来开发，或者是用Sublime Text不受平台限制地玩。&lt;/p&gt;
+&lt;p&gt;当然了，愿望往往是美好的，然而事与愿违的情况时有发生。如果你基本都是用OS X，却有人让你写一个带有简单界面的小程序，保证在他的Win系统上一定可以运行，那么你是不是有点抓狂。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://xuelangzf-github.qiniudn.com/20151015_Win_OSX.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="程序设计" scheme="http://selfboot.cn/categories/%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1/"/>
+    
+    
+      <category term="JavaScript" scheme="http://selfboot.cn/tags/JavaScript/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>讲的明白，但写的明白吗？</title>
+    <link href="http://selfboot.cn/2015/10/13/pages_count/"/>
+    <id>http://selfboot.cn/2015/10/13/pages_count/</id>
+    <published>2015-10-13T06:34:57.000Z</published>
+    <updated>2015-10-27T09:43:43.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>算法作业有一个小的题目：</p>
+<blockquote>
+<p>一本书的页码从自然数1开始编码直到自然数n，按照通常的习惯，每个页码都不包含多余的前导数字0，例如第6页用数字6而不是06或者006表示。现在给定表示书的总页码的十进制整数n(1 =&lt; n &lt;= 10^9)，编程计算书的全部页码中分别用到多少次数字0, 1, 2, 3, 4, 5, 6, 7, 8, 9。</p>
+</blockquote>
+<p>比如一本数有123页，那么各数字出现次数如下图：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151013_page_count_result.png" alt=""></p>
+<p>解题思路不是很难想到，但是在写作业报告，发现很难清楚地把这个算法过程给写出来。于是就认真组织了语言，配上几幅图片，希望能把算法讲明白。（<code>好多内容自己会但不一定讲的明白，讲的明白也不一定写的明白</code>）</p>
+<a id="more"></a>
+<h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>对于任意的一个页码数，将其分为两部分：个位数部分数字和其他部分数字。那么对于总页码为N的书本，其所有的页码可以放在如下的一个表格中，绿色表格代表页码，里面的任意数字X[i][j] = i * 10 + j(方便我们理解，这里假设N-3==0)：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151013_pages_table.png" alt=""></p>
+<p>现在要做的就是统计所有绿色表格中数字0到9出现的次数，绿色表格（也即任意一个页码）中数字组成其实可以拆分为对应的行和列的数字组成。例如对于页码123，其中1、2、3各出现1次，它对应的行的是123/10=12，列为123%10=3，12和3中1、2、3也是各出现一次。</p>
+<p>要计算所有的页码中0到9出现的总次数，可以转换为所有行中0到9出现的次数和所有列中0到9出现的次数。对于每一个绿色表格，其对应的行和列中数字各出现一次。因此我们可以先统计每一行和每一列绿色方格的数目，然后就可以得出每一行和每一列中0数字出现的次数。如下图：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151013_pages_count.png" alt=""></p>
+<ul>
+<li>行的计数：注意由于页码没有01页、02页这一说法，所以行[0]中0出现0次，行[1]中1出现10次，行[2]中2出现10次…行[11]中11出现10次…；</li>
+<li>列的计数：列[0]中0出现N/10次，列[1]中1出现N/10+1次…列[9]中9出现N/10次。</li>
+</ul>
+<p>看上去每行每列数字出现的次数有点凌乱，其实稍微划分一下组成部分就可以了，如下分为五部分来计算（这里假设N-3==0，方便我们讲解）：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151013_alghorithm.png" alt=""></p>
+<ul>
+<li>第一部分：第一行[0]中各列数字均出现1次；</li>
+<li>第二部分：最后一行[N/10]中列[0]、列[1]、列[2]、列[3]中数字0、1、2、3各出现1次；</li>
+<li>第三部分：列[0]到列[9]中0、1、2…9每个数字都出现N/10 - 1次。</li>
+<li>第四部分：行[1]到行[N/10-1]中每个数字出现的次数（<code>也就是总页码为N/10 - 1时各个数字出现的次数--这里要递归哦</code>）乘以10。</li>
+<li>第五部分：行[N/10]中每个数字均出现4次。</li>
+</ul>
+<h2 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h2><p>Python实现如下：</p>
+<pre><code>def count_num(num):
+    nums = [0 for x in range(10)]
+
+    if num &lt; 10:
+        for i in range(1, num + 1):
+            nums[i] = 1
+        return nums
+
+    # Part 1
+    for i in range(1, 10):
+        nums[i] += 1
+
+    # Part 2
+    units = num % 10
+    for i in range(0, units + 1):
+        nums[i] += 1
+
+    # Part 3
+    others = num / 10 - 1
+    for i in range(0, 10):
+        nums[i] += others
+
+    # Part4
+    count_others = count_num(others)
+    for i in range(10):
+        times_i = count_others[i] * 10
+        nums[i] += times_i
+
+    # Part 5
+    digit_keep = []
+    while num &gt; 0:
+        digit_keep.append(num % 10)
+        num = num / 10
+    times_units = digit_keep[0] + 1
+    for digit in digit_keep[1:]:
+        nums[digit] += times_units
+
+    return nums
+</code></pre><p>这篇文章没有什么技术干货，纯粹逼自己试着去把一些算法写的明白，大家觉得那块讲的不明白，我可以持续改进哈。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;算法作业有一个小的题目：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;一本书的页码从自然数1开始编码直到自然数n，按照通常的习惯，每个页码都不包含多余的前导数字0，例如第6页用数字6而不是06或者006表示。现在给定表示书的总页码的十进制整数n(1 =&amp;lt; n &amp;lt;= 10^9)，编程计算书的全部页码中分别用到多少次数字0, 1, 2, 3, 4, 5, 6, 7, 8, 9。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;比如一本数有123页，那么各数字出现次数如下图：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://xuelangzf-github.qiniudn.com/20151013_page_count_result.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;解题思路不是很难想到，但是在写作业报告，发现很难清楚地把这个算法过程给写出来。于是就认真组织了语言，配上几幅图片，希望能把算法讲明白。（&lt;code&gt;好多内容自己会但不一定讲的明白，讲的明白也不一定写的明白&lt;/code&gt;）&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="算法" scheme="http://selfboot.cn/categories/%E7%AE%97%E6%B3%95/"/>
+    
+    
+      <category term="python" scheme="http://selfboot.cn/tags/python/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>你不知道的按位运算</title>
+    <link href="http://selfboot.cn/2015/09/23/something_about_bit_operation/"/>
+    <id>http://selfboot.cn/2015/09/23/something_about_bit_operation/</id>
+    <published>2015-09-22T16:00:00.000Z</published>
+    <updated>2015-11-27T11:35:16.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>先来看<a href="https://leetcode.com" target="_blank" rel="external">LeetCode</a>上的<a href="https://leetcode.com/problems/divide-two-integers/" target="_blank" rel="external">Divide Two Integers</a>题目要求：</p>
+<blockquote>
+<p>Divide two integers without using multiplication, division and mod operator.</p>
+</blockquote>
+<p>就是说不用<code>乘法，除法，求模运算</code>来实现两个整数相除，看起来很简单，我可以用除数减去被除数，直到除数小于被除数，记录减法操作的次数即可。假设是计算m/n，那么时间复杂度为O(m/n)。用Python实现后，<code>Time Limit Exceeded</code>。我们考虑有没有更加优化的算法呢？</p>
+<p>如果很难想得到，那就先来回忆下二进制数按位运算的一些知识。</p>
+<a id="more"></a>
+<h1 id="二进制数按位运算"><a href="#二进制数按位运算" class="headerlink" title="二进制数按位运算"></a>二进制数按位运算</h1><p>计算机里面所有数据都存储为0，1串，所有的运算归根到底都转为二进制数的运算。相信大家都知道二进制数按位运算的规则：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20150923_bit_operator.png" alt="二进制位运算规则"></p>
+<p>来看一些简单的例子：</p>
+<pre><code>1010 &amp; 1100 = 1000
+1010 | 1100 = 1110
+1010 ^ 1100 = 0110
+1010 &lt;&lt; 2   = 101000
+1010 &gt;&gt; 2   = 10
+~1010       = 0101
+</code></pre><p>单纯的二进制位之间的这些运算相当简单，但对我们实际编程并没有直接帮助，因为编程过程中需要的经常是数字间的运算，比如 5*(2^4) 。真的是这样吗？接着往下看！</p>
+<h1 id="计算机中数字的存储方式"><a href="#计算机中数字的存储方式" class="headerlink" title="计算机中数字的存储方式"></a>计算机中数字的存储方式</h1><p>我们都知道计算机中万物皆为0、1，将万物变为0、1的过程叫做编码，这里我们只讨论将数字编码为0、1的过程。</p>
+<p>计算机中对数字的表示有三种方式：原码，反码，补码：</p>
+<ul>
+<li>原码表示法在数值前面增加了一位符号位（即最高位为符号位）：正数该位为0，负数该位为1。比如十进制3如果用8个二进制位来表示就是 00000011， -3就是 10000011。</li>
+<li>反码表示方法：正数的反码是其本身；负数的反码是在其原码的基础上，符号位不变，其余各个位取反。</li>
+<li>补码表示方法：正数的补码是其本身；负数的补码是在其原码的基础上，符号位不变，其余各位取反，最后+1。 (即在反码的基础上+1)</li>
+</ul>
+<p>原码容易被人脑直接识别并用于计算，但是对于计算机来说并不友好。所以在计算机系统中，数值一律用补码来表示、运算和存储。使用补码，可以将符号位和数值域统一处理，将加法和减法统一处理。此外，补码与原码相互转换，其运算过程是相同的，不需要额外的硬件电路。详细的解释可以参考<a href="http://www.cnblogs.com/zhangziqiu/archive/2011/03/30/computercode.html" target="_blank" rel="external">原码, 反码, 补码详解</a>。</p>
+<h1 id="数字的按位运算"><a href="#数字的按位运算" class="headerlink" title="数字的按位运算"></a>数字的按位运算</h1><p>计算机中数字存储为补码形式，各个数之间的运算也是对它们的补码做运算，而且得到的结果也是补码，如下图：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20150923_two&#39;s_complement.png" alt="补码运算"></p>
+<p>各种编程语言都提供了对补码的二进制位直接进行运算的方法。以Python为例：</p>
+<pre><code>&gt;&gt;&gt; 0b1010 &amp; 0b1100
+8   #1000
+&gt;&gt;&gt; 0b1010 | 0b1100
+14  #1110
+&gt;&gt;&gt; 0b1010 ^ 0b1100
+6   #0110
+&gt;&gt;&gt; 0b1010 &lt;&lt; 2
+40  #101000
+&gt;&gt;&gt; 0b1010 &gt;&gt; 2
+2   #10
+&gt;&gt;&gt; ~0b1010
+-11 #10000000 00000000 00000000 00001011
+&gt;&gt;&gt; type(0b1010)
+&lt;type &apos;int&apos;&gt;
+</code></pre><p>上面0b开头的0、1串表示整型数字，在32位操作系统中，Python中int类型一般占32个二进制位，以最后一个求反运算为例子，1010的补码为</p>
+<blockquote>
+<p>00000000 00000000 00000000 00001010</p>
+</blockquote>
+<p>求反操作后为：</p>
+<blockquote>
+<p>11111111 11111111 11111111 11110101</p>
+</blockquote>
+<p>即为-11(原码为：<code>10000000 00000000 00000000 00001011</code>)的补码。（对一个数的补码求补码即可得到该数的原码）</p>
+<h1 id="另辟蹊径的按位运算"><a href="#另辟蹊径的按位运算" class="headerlink" title="另辟蹊径的按位运算"></a>另辟蹊径的按位运算</h1><p>那么按位运算在实际编程中可以扮演哪些角色呢？简单点地，可以用来判断奇、偶数：<code>num &amp; 0x1</code>，或者对一个数变换符号：<code>~num + 1</code>；复杂点的可以用来交换两个数，求绝对值等等。</p>
+<ol>
+<li><p>不用额外的变量实现两个数字互换。</p>
+<pre><code>def swap(num_1, num_2):
+    num_1 ^= num_2
+    num_2 ^= num_1
+    num_1 ^= num_2
+    return num_1, num_2
+</code></pre><p> 证明很简单，我们只需要明白异或运算满足下面规律：</p>
+<ul>
+<li>0^a = a; </li>
+<li>a^a = 0;</li>
+<li><p>a^b^c = a^c^b;</p>
+<p>巧妙运用异或可以高效解决很多问题，比如 <strong>找出数组中只出现了一次的数（除了一个数只出现一次外，其他数都是出现两次）</strong>，以及它的升级版：<a href="http://blog.csdn.net/morewindows/article/details/8214003" target="_blank" rel="external">数组中只出现1次的两个数字(百度面试题)</a>。</p>
+</li>
+</ul>
+</li>
+<li><p>不用判断语句来实现求绝对值。</p>
+<pre><code>def bit_abs(num):
+    negative = num &gt;&gt; 31
+    return (num ^ negative) - negative
+</code></pre><p> 这里假设程序运行环境中操作系统为32位，int型整数(不考虑整数溢出)用32位存储，因此可以用 <code>num&gt;&gt;31</code> 取出符号位，后面的部分留给大伙证明。</p>
+</li>
+<li><p><a href="https://leetcode.com/problems/subsets/" target="_blank" rel="external">生成一个集合的所有子集合</a>。</p>
+<p> 比如说我们有一个集合{2,3,4}，那么它的子集合即为{}, {2}, {3}, {4}, {2,3}, {2,4}, {3,4}, {2,3,4}，一共有2 ** 3 = 8个。如何用程序生成所有的子集合呢？用位操作来做的话就相当简单，只需要将0到7中的每个数字转为二进制，如果第i位为0，则表示子集中不包含有原集中第i位；如果为1，则包含第i位。LeetCode上面有<a href="https://leetcode.com/tag/bit-manipulation/" target="_blank" rel="external">许多题目</a>都可以用位操作的思想去解决。</p>
+<pre><code>subsets = []
+n = len(nums)
+sum_sets = 2 ** n
+for i in range(sum_sets):
+    cur_set = []
+    for j in range(n):
+        power = 2 ** j
+        if i &amp; power == power:
+            cur_set.append(nums[j])
+
+    subsets.append(cur_set)
+
+return subsets
+</code></pre></li>
+</ol>
+<h1 id="Leetcode-题目思路"><a href="#Leetcode-题目思路" class="headerlink" title="Leetcode 题目思路"></a>Leetcode 题目思路</h1><p>回到文章开始提到的题目中，我们对除数减去被除数的过程稍作改进。假设求m/n，我们不一次次的 m-n，而是找到n的一个倍数，使得m-x*n尽可能小，这样能减少循环减法的次数，进而提高效率。我们知道在按位操作中，n << k相当于 n * 2^k，因此可以用2^k 来找合适的x。</p>
+<p>我们需要这样的一个数字k，它使得n * 2^k < m < n* 2^(k+1)， 然后用m - n*2^k，得到新的m'。再找相应的k'，做减法，如此循环即可。代码放在<a href="https://gist.github.com/xuelangZF/32b1ccc98b8dd4ce67e9#file-leetcode_29-py" target="_blank" rel="external">这里</a>。</p>
+<p><strong>相关阅读</strong><br><a href="https://wiki.python.org/moin/BitwiseOperators" target="_blank" rel="external">Pyhon wiki: BitwiseOperators</a><br><a href="http://blog.csdn.net/morewindows/article/details/7354571" target="_blank" rel="external">位操作基础篇之位操作全面总结</a>  </p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;先来看&lt;a href=&quot;https://leetcode.com&quot;&gt;LeetCode&lt;/a&gt;上的&lt;a href=&quot;https://leetcode.com/problems/divide-two-integers/&quot;&gt;Divide Two Integers&lt;/a&gt;题目要求：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Divide two integers without using multiplication, division and mod operator.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;就是说不用&lt;code&gt;乘法，除法，求模运算&lt;/code&gt;来实现两个整数相除，看起来很简单，我可以用除数减去被除数，直到除数小于被除数，记录减法操作的次数即可。假设是计算m/n，那么时间复杂度为O(m/n)。用Python实现后，&lt;code&gt;Time Limit Exceeded&lt;/code&gt;。我们考虑有没有更加优化的算法呢？&lt;/p&gt;
+&lt;p&gt;如果很难想得到，那就先来回忆下二进制数按位运算的一些知识。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="计算机基础" scheme="http://selfboot.cn/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/"/>
+    
+    
+      <category term="总结" scheme="http://selfboot.cn/tags/%E6%80%BB%E7%BB%93/"/>
+    
+      <category term="python" scheme="http://selfboot.cn/tags/python/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>两篇文章帮你入门Django(下)</title>
+    <link href="http://selfboot.cn/2015/01/11/django_start(2)/"/>
+    <id>http://selfboot.cn/2015/01/11/django_start(2)/</id>
+    <published>2015-01-10T16:00:00.000Z</published>
+    <updated>2015-11-09T14:07:19.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>在<a href="http://selfboot.cn/2014/12/26/django_start/">两篇文章帮你入门Django(上)</a>一文中，我们已经做了一个简单的小网站，实现了保存用户数据到数据库，以及从后台数据库读取数据显示到网页上这两个功能。</p>
+<p>看上去没有什么问题了，不过我们可以让它变得更加完美，比如说为它添加一个简单的后台，用来管理我们的Question数据库，或者是写点测试单元来看看我们的程序有没有什么Bug。</p>
+<h1 id="后台管理"><a href="#后台管理" class="headerlink" title="后台管理"></a>后台管理</h1><p>首先需要添加后台管理员账号，只需要简单的 <code>createsuperuser</code> 命令，如下：</p>
+<pre><code>$ python manage.py createsuperuser
+Username (leave blank to use &apos;feizhao&apos;): happy
+Email address:
+Password:
+Password (again):
+Superuser created successfully.
+</code></pre><a id="more"></a>
+<p>然后就可以通过 <a href="http://127.0.0.1:8000/admin/" target="_blank" rel="external">http://127.0.0.1:8000/admin/</a> 进入管理员登录页面。我们用刚才创建的管理员账号登录成功后就会看到<code>Groups</code>和<code>Users</code>两个可以编辑的内容，它们是Django内置的认证模块<code>django.contrib.auth</code>提供的数据库，进入Users就会看到刚刚创建的管理员用户happy了。</p>
+<p>目前后台还看不到我们的Question数据库，因为还没告诉后台它的存在。我们可以在questions应用下的<code>admin.py</code>文件里面注册该数据库的存在，注册的语句非常简单，如下：</p>
+<pre><code>from django.contrib import admin
+from questions.models import Question
+
+admin.site.register(Question)
+</code></pre><p>这样我们刷新后台之后，就能看到Question数据库了，如下图：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20150111_admin_question.png" alt="Question数据库"></p>
+<p>进入Question数据库后，我们会看到每一条记录，不过这里显示的结果可能是这样子：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20150111_question_object.png" alt="数据库记录"></p>
+<p>这是因为默认情况下，每条记录显示的是<code>str()</code>返回的内容，而我们没有在<code>class Question(models.Model)</code>中覆盖该方法。不过我们可以在这里指定数据库记录显示某个字段，方法也特别简单，修改admin.py如下：</p>
+<pre><code>class QuestionAdmin(admin.ModelAdmin):
+    list_display = (&apos;context&apos;,)
+
+admin.site.register(Question, QuestionAdmin)
+</code></pre><p>这样每条记录显示的就是context内容了，我们进去某条记录后，会看到所有的字段，并且可以进行更新、删除、添加等操作。Django后台的可定制性还是非常高的，我们可以按照自己爱好打造属于自己的后台。</p>
+<h1 id="自动化测试"><a href="#自动化测试" class="headerlink" title="自动化测试"></a>自动化测试</h1><p>Django另一个比较不错的地方就是提供了完整的自动化测试机制，方便开发人员进行测试。仍然以我们前面的questions这个应用为例，我们会发现在问题描述框没有输入任何内容时点击提交，仍然会跳转到添加成功页面，也就是说我们添加了一个空的问题，这当然不是我们想要的，我们可以写一个程序来测试我们的添加问题的功能。</p>
+<p>Django中，实现测试非常简单，我们可以在questions应用中新建<code>tests.py</code>文件，在里面写好测试逻辑，然后用django的测试系统完成测试。下面即为我们的测试程序questions/tests.py：</p>
+<pre><code>from django.test import TestCase
+from django.test import Client
+
+
+class QuestionMethodTests(TestCase):
+    def test_add(self):
+        client = Client()
+        response = client.post(&apos;/add_done/&apos;, {&apos;content&apos;: &quot;&quot;})
+        self.assertNotEqual(response.status_code, 200)
+</code></pre><p>我们模拟了一个客户端client，将空字符串传给content字段，然后发起一个post请求到<code>/add_done/</code>页面(默认情况下测试时并不检查CSRF字段)，然后断言post请求不成功(也就是返回包的状态码不为200)。下面运行测试程序：</p>
+<pre><code>$ python manage.py test questions
+Creating test database for alias &apos;default&apos;...
+F
+======================================================================
+FAIL: test_add (questions.tests.QuestionMethodTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File &quot;/Users/feizhao/Documents/python_demo/mysite/questions/tests.py&quot;, line 10, in test_add
+    self.assertNotEqual(response.status_code, 200)
+AssertionError: 200 == 200
+
+----------------------------------------------------------------------
+Ran 1 test in 0.009s
+
+FAILED (failures=1)
+Destroying test database for alias &apos;default&apos;...
+</code></pre><p>测试没通过，说明确实插入了空白问题。注意测试时并不需要运行web服务，这样能节省HTTP服务的开销，提高测试的速度。现在对views中的add_done稍作改动，如下：</p>
+<pre><code>def add_done(request):
+    content = request.POST[&apos;content&apos;]
+    if content != &quot;&quot;:
+        add_question = Question()
+        add_question.context = content
+        add_question.save()
+        return render(
+            request,
+            &quot;questions/add_done.html&quot;,
+            {&apos;question&apos;: content},
+        )
+    else:
+        return redirect(&quot;/add/&quot;)
+</code></pre><p>首先检查字符串是否为空，为空的话重定向页面到<code>/add/</code>，不为空则添加问题成功。再次运行测试程序，则通过测试，结果如下：</p>
+<pre><code>$ python manage.py test questions
+Creating test database for alias &apos;default&apos;...
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.007s
+
+OK
+Destroying test database for alias &apos;default&apos;...
+</code></pre><p>其实这个应用还有bug就是一个问题可能重复提交多次，这里不详细阐述。</p>
+<h1 id="命令行交互"><a href="#命令行交互" class="headerlink" title="命令行交互"></a>命令行交互</h1><p>有时候我们想验证下某条语句是否符合预期，或者是输出某个变量观察一下值，这时候直接在项目里实现可能会非常麻烦。这种情况可以使用python解释器的交互模式，为了避免手动导入django的配置环境，可以运行 <code>python manage.py shell</code>，然后就可以使用django的API，并且在当前项目目录进行交互，如下例：</p>
+<pre><code>$ python manage.py shell
+Python 2.7.5 (default, Mar  9 2014, 22:15:05)
+[GCC 4.2.1 Compatible Apple LLVM 5.0 (clang-500.0.68)] on darwin
+Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.
+(InteractiveConsole)
+&gt;&gt;&gt; from questions.models import Question
+&gt;&gt;&gt; null_question = Question()
+&gt;&gt;&gt; null_question.save()
+&gt;&gt;&gt; for question in Question.objects.all():
+...     print question.context
+...
+as
+as
+程序员为什么最帅
+程序为什么老出bug
+
+&gt;&gt;&gt;
+</code></pre><p>交互模式使用起来可能事半功倍，所以不要忘了哦。</p>
+<h1 id="深入学习"><a href="#深入学习" class="headerlink" title="深入学习"></a>深入学习</h1><p>好了，前面就是django的一些重要的特点了，下面来看看有哪些资源可以帮我们更好地学习django。</p>
+<p><a href="http://django-china.cn/" target="_blank" rel="external">Django中国社区</a>是国内的Django开发社区，人气不是很旺，不过也能在里面找到有用的东西。比如@evilbinary在这里<a href="http://django-china.cn/topic/840/" target="_blank" rel="external">一个博客，兼容wp，代码高亮功能支持</a> 提供了一个用Django搭建的博客，并给出了源码，我们可以学习。还有一些不错的Django开源项目，比如这个小的BBS论坛<a href="http://fairybbs.com/" target="_blank" rel="external">fairybbs</a>，还有这个登录的应用<a href="https://github.com/yueyoum/django-siteuser" target="_blank" rel="external">django-siteuser</a>。</p>
+<p>中文的教程目前有<a href="http://djangobook.py3k.cn/" target="_blank" rel="external">djangobook 2.0</a>，但是书中使用的Django版本太低，因此不推荐使用。英文的资料还是挺丰富，不过还是推荐读文档，虽然文档有时候特别坑人(被坑了好多次)。</p>
+<p>此外，除了<strong>Stackoverflow(这个太喜欢了，谁用谁知道，不用担心英语太烂，放代码和错误提示，实在不行用Google翻译加一点描述就行。总而言之，SO就是程序员的天堂啊)</strong>, Segmentfault这些问答网站，很多Django用户在<a href="http://www.djangoproject.com/r/django-users" target="_blank" rel="external">邮件列表</a>(邮件列表是<code>groups.google.com</code>，所以你懂的)里提问题、回答问题，这里的氛围非常不错，各种问题都有人来帮你。比如这种中二的问题<a href="https://groups.google.com/forum/#!topic/django-users/xUmPe4xnuH8" target="_blank" rel="external">Serving static files and media in Django 1.7.1</a>也是有人十分认真的作答的。所以，不要害羞，有问题大胆问吧。</p>
+<p>如果你决定好好玩Django了，那么先看一下<a href="https://docs.djangoproject.com/en/1.7/faq/" target="_blank" rel="external">Django FAQ</a>，可能会解决关于Django的一些疑问。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;在&lt;a href=&quot;http://selfboot.cn/2014/12/26/django_start/&quot;&gt;两篇文章帮你入门Django(上)&lt;/a&gt;一文中，我们已经做了一个简单的小网站，实现了保存用户数据到数据库，以及从后台数据库读取数据显示到网页上这两个功能。&lt;/p&gt;
+&lt;p&gt;看上去没有什么问题了，不过我们可以让它变得更加完美，比如说为它添加一个简单的后台，用来管理我们的Question数据库，或者是写点测试单元来看看我们的程序有没有什么Bug。&lt;/p&gt;
+&lt;h1 id=&quot;后台管理&quot;&gt;&lt;a href=&quot;#后台管理&quot; class=&quot;headerlink&quot; title=&quot;后台管理&quot;&gt;&lt;/a&gt;后台管理&lt;/h1&gt;&lt;p&gt;首先需要添加后台管理员账号，只需要简单的 &lt;code&gt;createsuperuser&lt;/code&gt; 命令，如下：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ python manage.py createsuperuser
+Username (leave blank to use &amp;apos;feizhao&amp;apos;): happy
+Email address:
+Password:
+Password (again):
+Superuser created successfully.
+&lt;/code&gt;&lt;/pre&gt;
+    
+    </summary>
+    
+      <category term="程序设计" scheme="http://selfboot.cn/categories/%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1/"/>
+    
+    
+      <category term="教程" scheme="http://selfboot.cn/tags/%E6%95%99%E7%A8%8B/"/>
+    
+      <category term="python" scheme="http://selfboot.cn/tags/python/"/>
+    
+      <category term="Django" scheme="http://selfboot.cn/tags/Django/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>记一次被骗的过程</title>
+    <link href="http://selfboot.cn/2015/01/02/realworld_fish/"/>
+    <id>http://selfboot.cn/2015/01/02/realworld_fish/</id>
+    <published>2015-01-01T16:00:00.000Z</published>
+    <updated>2015-09-23T05:10:40.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>先来看一个段子：</p>
+<blockquote>
+<p>小明： 给你出一道简答的题目<br>小红： 好啊<br>小明： 从前有两个人，一个叫“我爱你”，一个叫“我不爱你”，后来“我不爱你”死了，那剩下谁？<br>小红： 我爱你啊<br>小明： <code>我也爱你</code>！  </p>
+</blockquote>
+<p>小红就这样不知不觉地说出了小明想让她说的话，小明可真是一个伟大的骗子！不过小明小红之间的骗与被骗可能造就了一段美满的姻缘，而最近朋友的被骗却导致他银行卡里的钱全部没了。</p>
+<a id="more"></a>
+<p>故事的经过大概是这样的：朋友接到“公安”电话，被告知涉嫌洗钱，不配合调查的话会被逮捕。然后警官说他相信朋友是清白的，不过需要他将银行卡的钱转入到公安的办案专用账号，配合公安的调查。于是，为了证明清白，朋友就把银行卡里的所有钱汇到神秘的办案安全账号里了。</p>
+<p>整个过程看着很简单，你可能会觉得这种把戏自己肯定不会上当。不过先不要这么自信，我们看看有多少人被这种手段骗过吧。Google了一下 <code>洗钱 骗子 公安</code>，一共有 <strong>7,080,000</strong> 条结果，随便打开了几条，发现都是货真价实的被骗记录啊，下面列出几个吧：</p>
+<ul>
+<li><a href="http://ga.lasa.gov.cn/jingqingtongbao/F38AADDE-74A6-4F7D-A2B1-767146E0D784.html" target="_blank" rel="external">假借“查洗钱案”诈骗市民被骗走80余万</a></li>
+<li><a href="http://news.enorth.com.cn/system/2013/07/24/011169092.shtml" target="_blank" rel="external">骗子冒充警察打电话 “洗钱恐吓”骗了市民48万</a></li>
+<li><a href="http://hn.rednet.cn/c/2013/04/07/2963614.htm" target="_blank" rel="external">“公安”来电称调查一起洗钱案 银行老员工被骗2.6万元</a></li>
+</ul>
+<p>现在有没有庆幸这些骗子当初没有找到你呢？有的话，就让我们来好好“品味”下骗子的歪门邪道吧。</p>
+<h1 id="从身边下手"><a href="#从身边下手" class="headerlink" title="从身边下手"></a>从身边下手</h1><p>行骗的第一步当然是接近你，并促使你放下戒备。不过专业的骗子可不会像那些讨厌的销售一样，上来就问你有没有兴趣买东西。毕竟当我们接到陌生电话时，一般都会有高度的戒备，如果不是什么非常重要的事没人会和陌生人聊下去的。</p>
+<p>骗子们物竞天择，早就进化的“世事洞明”了。他们会精心准备，把话题切入到你的生活中去，引起你的足够重视。</p>
+<p>朋友就是接到电话说有EMS快递，是工商银行邮的什么账单，需要签收。然后朋友自然就进入“状态”，和骗子交流起来，不带任何戒备！在<a href="http://ga.lasa.gov.cn/jingqingtongbao/F38AADDE-74A6-4F7D-A2B1-767146E0D784.html" target="_blank" rel="external">假借“查洗钱案”诈骗市民被骗走80余万</a>案例中，受害者在家里的座机上接到一个电话，自称北京医保局的工作人员和她就攀谈起来。</p>
+<p>骗子们就是用这些看似无关紧要，却又和我们密不可分的琐事让我们放下戒备心，进而走向他们已经设好的圈套。</p>
+<h1 id="相信他你就完了"><a href="#相信他你就完了" class="headerlink" title="相信他你就完了"></a>相信他你就完了</h1><p>在朋友被骗的这次经历中，假冒邮局的人让朋友放下戒备，然后将电话转接到“公安局”，由“阿Sir”来获取朋友的信任。“阿Sir”首先表明身份，说是什么什么公安局的，还说可以让朋友去查电话号码验证他的身份。朋友验证号码确实是某某公安局的，因此基本相信了“阿Sir”的身份。</p>
+<p>接下来“阿Sir”告诉朋友说他的身份证号码被用来注册了23张银行卡，这些银行卡被拿来洗钱，涉案金额高达170多万。现在上海那边的公安局已经从检察院拿到了拘捕令，准备抓捕。朋友一听，就被吓到了，好端端的就犯了法，还要被逮捕！于是，就给“阿Sir”说我没洗钱，你们弄错了吧。</p>
+<p>然后好心的“阿Sir”说也可能是别人盗用了朋友的身份信息办的银行卡，然后让他背黑锅。朋友虽然无辜，不过得配合调查，告诉阿“Sir”银行卡的详细信息，并且将钱转入到公安的办案安全账号里。</p>
+<p>这里骗子先是用电话号码来表明自己的身份，然后用些内行(涉嫌洗钱，拘捕令)、精确(23张银行卡，170多万)的话来彻底取得朋友信任。当然，这里文字的效果肯定没有骗子带有情感说出来的话语的欺骗效果更好。不和骗子说话，你就体会不到骗子高超的演技。(朋友被骗清醒过来后，骗子还打电话过来，朋友让我骂一骂骗子，我接到电话就开骂。不过骗子演戏特别投入，俨然一个警官的样子啊，我明知是骗子骂起来都感到有点心虚。)</p>
+<p>骗子行骗过程中心思也十分缜密，为了防止朋友向其他人求助，他告诉朋友案件正在秘密调查，可能就是你身边的人拿你的身份信息去洗钱的，因此不要向任何人说这件事。还有朋友转账完毕之后，他还说为了保证案件的秘密性，需要销毁转账打印的凭条，要朋友当场撕毁转账凭条，他要隔着电话听到“嘶”的一声。</p>
+<h1 id="如何识破骗局"><a href="#如何识破骗局" class="headerlink" title="如何识破骗局"></a>如何识破骗局</h1><p>亡羊补牢，为时不晚，我们来看看怎样识破这个骗局。识破骗局的前提是<code>不要相信</code>对方，时刻保持戒备。这次被骗经历中，建立信任的原因是骗子的电话号码和高超的演技。</p>
+<ul>
+<li>要想不被演技欺骗，只能多接触些形形色色的人，阅人上百之后就不会轻易相信陌生人了。</li>
+<li>电话号码是我们知道电话那头是谁的重要依据，不过这个依据并不可靠，现有的技术很容易伪造一个任意的手机号码来拨打电话，具体原理可以看<a href="http://lcx.cc/?i=2484" target="_blank" rel="external">这篇文章</a>。</li>
+</ul>
+<p>如果在和“阿Sir”交谈过程中朋友能始终保持警戒，也是能发现许多破绽之处的。</p>
+<ol>
+<li>第一个比较大的破绽就是邮局帮忙转接到公安局，这个仔细想一想就不对劲，这么好心的邮局工作人员？一个小小的工作人员还能转接电话，况且是转接到公安局？</li>
+<li>第二个破绽就是别人盗用身份证办了23张银行卡，我们办银行卡的时候应该体验过办卡流程的严格，必须本人才能办卡。这里自己的身份证被拿去办了23张卡自己都不知情？</li>
+</ol>
+<p>当我们注意到这两个破绽后，应该就会有所警觉，不至于被欺骗了。当然，骗子的手段多种多样，让你完全信任他们的方法也是不尽相同，这里有两篇不错的分析骗子行骗的文章可以让我们长长见识：</p>
+<ul>
+<li><a href="http://zhuanlan.zhihu.com/huizi/19881276" target="_blank" rel="external">记一场江湖洗脑骗术</a>  </li>
+<li><a href="http://zhuanlan.zhihu.com/wooyun/19890065" target="_blank" rel="external">伪基站 + 钓鱼 = 完美黑产</a>   </li>
+</ul>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;先来看一个段子：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;小明： 给你出一道简答的题目&lt;br&gt;小红： 好啊&lt;br&gt;小明： 从前有两个人，一个叫“我爱你”，一个叫“我不爱你”，后来“我不爱你”死了，那剩下谁？&lt;br&gt;小红： 我爱你啊&lt;br&gt;小明： &lt;code&gt;我也爱你&lt;/code&gt;！  &lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;小红就这样不知不觉地说出了小明想让她说的话，小明可真是一个伟大的骗子！不过小明小红之间的骗与被骗可能造就了一段美满的姻缘，而最近朋友的被骗却导致他银行卡里的钱全部没了。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="社会百态" scheme="http://selfboot.cn/categories/%E7%A4%BE%E4%BC%9A%E7%99%BE%E6%80%81/"/>
+    
+    
+      <category term="见闻" scheme="http://selfboot.cn/tags/%E8%A7%81%E9%97%BB/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Gmail不死，Gmail永生</title>
+    <link href="http://selfboot.cn/2014/12/28/love_gmail/"/>
+    <id>http://selfboot.cn/2014/12/28/love_gmail/</id>
+    <published>2014-12-27T16:00:00.000Z</published>
+    <updated>2016-08-17T03:19:24.000Z</updated>
+    
+    <content type="html"><![CDATA[<blockquote>
+<p>2013年7月，我们深爱着的Google Reader走了，一去不复返。现在，我们形影不离的Gmail也要神秘失踪了吗？</p>
+</blockquote>
+<p>不知不觉Mail客户端中Gmail邮箱已经快一个月没有收到邮件了，往日那些烦人的邮件此刻也都销声匿迹了，连CSDN的邮件都没有了，直觉告诉我有点不正常。终于，在邮箱图标右边发现了一个小小的感叹号，原来连接有点问题，重连应该就可以了。我满怀信心的重新连接，可出现在我眼前的是从没见到过的错误提示。</p>
+<p>于是我诊断连接，可靠忠实的诊断程序提示我登录不到SMTP、IMAP服务器，可能是密码错误！</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20141229_mail_diagnosis.png" alt="诊断连接"></p>
+<p>难道是密码过期了，于是重新输入密码，可依然没有连接成功，该死的感叹号<code>屹立不倒</code>，只嘲讽般给我这样一条信息：<code>服务器或网络出现问题</code>。</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20141229_mail_disconnect.png" alt="重新连接"></p>
+<a id="more"></a>
+<h1 id="Gmail-已死-？"><a href="#Gmail-已死-？" class="headerlink" title="Gmail 已死 ？"></a>Gmail 已死 ？</h1><p>难道Gmail就这样死去了！我们还是来看看Google的<a href="https://www.google.com/transparencyreport/traffic/explorer/?r=CN&amp;l=GMAIL&amp;csd=1418939138793&amp;ced=1419753600000" target="_blank" rel="external">实时统计</a>吧：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20141229_gmail_traffic.png" alt="Gmail 流量统计"></p>
+<p>估计名声在外的<code>巨人</code>又一次伸出了邪恶之手，此时此刻，我只想说“放开Gmail，它只是个送邮件的！”那么这次恶魔是如何封锁Gmail的呢？咱们先从邮件的发送、接收说起！先来看下面的图片(来自Wikipedia)：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20141229_email_protocol.png" alt="Email 发送接收"></p>
+<p>话说Alice在自己的邮件客户端写好了邮件，指定了接收人Bob，然后开心地点了发送键，接下来我们分步来看邮件的发送与接收过程吧。</p>
+<ol>
+<li>本地邮件客户端<a href="https://en.wikipedia.org/wiki/E-mail_client" target="_blank" rel="external">mail user agent (MUA)</a>利用<a href="https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol" target="_blank" rel="external">Simple Mail Transfer Protocol</a>(SMTP)协议将邮件发送到由<a href="https://en.wikipedia.org/wiki/Internet_service_provider" target="_blank" rel="external">internet service provider</a>(ISP)运营的 <a href="https://en.wikipedia.org/wiki/Mail_submission_agent" target="_blank" rel="external">mail submission agent</a>(MSA)，也就是上图的 <code>smtp.a.org</code>；</li>
+<li>MSA 根据 SMTP 协议解析出邮件的目的地址，这里是<code>bob@b.org</code>，接下来MSA查询b.org的域名记录。(邮件地址的格式一般是 <code>localpart@exampledomain</code>， localpart是接收方(或发送方)的用户名，exampledomain是邮件服务商的域名)；</li>
+<li>DNS服务器返回给 MSA 查询结果：<code>mx.b.org</code>，它是Bob的ISP运营的<a href="https://en.wikipedia.org/wiki/Message_transfer_agent" target="_blank" rel="external">message transfer agent</a> (MTA)的地址。</li>
+<li>smtp.a.org将邮件发送给mx.b.org，也许还会发送给其他的MTA，直到邮件最终到达<a href="https://en.wikipedia.org/wiki/Message_delivery_agent" target="_blank" rel="external">message delivery agent</a>(MDA).</li>
+<li>MDA提醒Bob的邮件客户端收到一封邮件，然后客户端根据邮件接收协议 <a href="https://en.wikipedia.org/wiki/Post_Office_Protocol" target="_blank" rel="external">Post Office Protocol (POP3)</a>或者<a href="https://en.wikipedia.org/wiki/Internet_Message_Access_Protocol" target="_blank" rel="external"> Internet Message Access Protocol</a>(IMAP)获取邮件内容。</li>
+</ol>
+<p>好了，现在我们已经大致知道邮件是如何发送、接收的了，那么<code>巨人</code>是如何封锁掉Gmail的？难道是DNS劫持或者是DNS污染？我们先查看一下Gmail邮件发送服务器smtp.gmail.com的域名记录，如下：</p>
+<pre><code>$ nslookup smtp.gmail.com
+Server:        192.168.1.1
+Address:    192.168.1.1#53
+
+Non-authoritative answer:
+smtp.gmail.com    canonical name = gmail-smtp-msa.l.google.com.
+Name:    gmail-smtp-msa.l.google.com
+Address: 74.125.203.108
+Name:    gmail-smtp-msa.l.google.com
+Address: 74.125.203.109
+</code></pre><p>地址没问题，看来不是DNS的问题了，那么应该就是直接封了Gmail的SMTP、POP3、IMAP服务器的IP了，证据如下(以POP3为例)：</p>
+<pre><code>$ ping pop.gmail.com
+PING gmail-pop.l.google.com (74.125.31.109): 56 data bytes
+Request timeout for icmp_seq 0
+Request timeout for icmp_seq 1
+Request timeout for icmp_seq 2
+^C
+--- gmail-pop.l.google.com ping statistics ---
+4 packets transmitted, 0 packets received, 100.0% packet loss
+</code></pre><p>于是我们上面的发送接收示意图变成了这个样子：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20141229_email_protocol_china.png" alt="意外中断"></p>
+<p>至此，国内版的邮件客户端已然不能发送、接收Gmail邮件了。</p>
+<h1 id="Gmail-不死，Gmail-永生"><a href="#Gmail-不死，Gmail-永生" class="headerlink" title="Gmail 不死，Gmail 永生"></a>Gmail 不死，Gmail 永生</h1><p>不过我笑了，默默点击右上角那个类似<code>隧道</code>的图标，选择“连接美国”、还是“连接日本”好呢？我犹豫了一下，最终选择了美国，谁让Gmail在美国呢。</p>
+<p>于是，Gmail默默回来了，就像它从没消失过一样，只是它绕了点路而已，如下：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20141229_email_protocol_vpn.png" alt="Save Gmail"></p>
+<p>看，Gmail还活着，它代表的“隐私，安全”仍旧活着，它们又怎么会死去？！Gmail万岁！</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;blockquote&gt;
+&lt;p&gt;2013年7月，我们深爱着的Google Reader走了，一去不复返。现在，我们形影不离的Gmail也要神秘失踪了吗？&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;不知不觉Mail客户端中Gmail邮箱已经快一个月没有收到邮件了，往日那些烦人的邮件此刻也都销声匿迹了，连CSDN的邮件都没有了，直觉告诉我有点不正常。终于，在邮箱图标右边发现了一个小小的感叹号，原来连接有点问题，重连应该就可以了。我满怀信心的重新连接，可出现在我眼前的是从没见到过的错误提示。&lt;/p&gt;
+&lt;p&gt;于是我诊断连接，可靠忠实的诊断程序提示我登录不到SMTP、IMAP服务器，可能是密码错误！&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://xuelangzf-github.qiniudn.com/20141229_mail_diagnosis.png&quot; alt=&quot;诊断连接&quot;&gt;&lt;/p&gt;
+&lt;p&gt;难道是密码过期了，于是重新输入密码，可依然没有连接成功，该死的感叹号&lt;code&gt;屹立不倒&lt;/code&gt;，只嘲讽般给我这样一条信息：&lt;code&gt;服务器或网络出现问题&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://xuelangzf-github.qiniudn.com/20141229_mail_disconnect.png&quot; alt=&quot;重新连接&quot;&gt;&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="计算机基础" scheme="http://selfboot.cn/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/"/>
+    
+    
+      <category term="思考" scheme="http://selfboot.cn/tags/%E6%80%9D%E8%80%83/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>两篇文章帮你入门Django(上)</title>
+    <link href="http://selfboot.cn/2014/12/26/django_start/"/>
+    <id>http://selfboot.cn/2014/12/26/django_start/</id>
+    <published>2014-12-25T16:00:00.000Z</published>
+    <updated>2015-11-09T14:34:57.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>相信用过python的人都听过Django的大名，知道它是一个web框架，用来支持动态网站、网络应用程序以及网络服务的开发。那么为什么我们需要一个web框架，而不是直接用python来写web应用呢？其实简单来说，就是为了偷懒。</p>
+<p>如果不用框架的话，你可能需要连接数据库、查询数据库、关闭数据库，在python代码文件里掺杂html标签、css样式等。并且每次开始一个web应用，你都要从头开始写起，重复许多枯燥无味的代码。</p>
+<p>而web框架提供了通用web开发模式的高度抽象，使我们可以专注于编写清晰、易维护的代码。Django作为python下的web框架，从诞生到现在有着数以万计的用户和贡献者，有着丰富的文档，活跃的社区，是web开发很好的选择。</p>
+<p>本文结合 Django 官方文档 <code>First steps</code> 中的6个小教程，帮你了解Django。一共分上、下两篇文章，上篇主要来分析Django处理Http Request的机制，<a href="http://selfboot.cn/2015/01/11/django_start(2)/">下篇</a>来介绍下Django提供的后台管理，以及单元测试等强大的功能。</p>
+<a id="more"></a>
+<h1 id="Django-工作流程"><a href="#Django-工作流程" class="headerlink" title="Django 工作流程"></a>Django 工作流程</h1><p>在开始具体的代码之旅前，先来宏观地看下Django是如何处理Http Resquest的，如下图：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20141226_Django_process.png" alt="Django工作流程"></p>
+<p>假设你已经在浏览器输入了 <a href="http://127.0.0.1:8000/polls/" target="_blank" rel="external">http://127.0.0.1:8000/polls/</a>，接下来浏览器会把请求交给Django处理。根据上图，我们知道Django需要根据url来决定交给谁来处理请求，那么Django是如何完成这项工作呢？很简单，Django要求程序员提供urls.py文件，并且在该类文件中指定请求链接与处理函数之间的一一对应关系。</p>
+<p>这里请求链接是以正则表达式的方式指定，并且不用指定域名，比如说要精确匹配上面的例子, 只需要指定正则表达式为 <code>^polls/$</code> 即可。要匹配 <a href="127.0.0.1:8000/polls/12/" target="_blank" rel="external">http://127.0.0.1:8000/polls/12/</a>(这里polls后面只要是数字即可)，那么只需要 <code>^polls/\d+/$</code> 即可。回到上面的例子，Django中只需要在urls.py添加以下语句即可。</p>
+<pre><code>urlpatterns = patterns(
+    &apos;&apos;,
+    url(r&apos;^polls/$&apos;, views.index),
+)
+</code></pre><p>这样当请求链接为<a href="http://127.0.0.1:8000/polls/" target="_blank" rel="external">http://127.0.0.1:8000/polls/</a>时，就会用<code>views.py</code>中的函数<code>index()</code>来处理请求。现在Django知道由index来处理请求了，那么index需要做哪些工作呢？</p>
+<p>它需要加载返回内容的模板，这里比如说是<code>index.html</code>。</p>
+<pre><code>def index(request):
+    template = loader.get_template(&apos;polls/index.html&apos;)
+</code></pre><p>模板文件就是返回页面的一个骨架，我们可以在模板中指定需要的静态文件，也可以在模板中使用一些参数和简单的逻辑语句，这样就可以将其变为用户最终看到的丰满的页面了。</p>
+<p>要使用静态文件，比如说css、javascript等，只需要用 `{% load staticfiles %}`来声明一下，然后直接引用即可，比如说：</p>
+<pre><code>&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;{% raw %}{% static 'polls/style.css' %}{% endraw %}&quot; /&gt;
+</code></pre><p>参数和逻辑语句也很简单，比如说以下语句：</p>
+<pre><code>{% raw %}{% for question in latest_question_list %}{% endraw %}
+    &lt;li&gt;{{ question.question_text }}&lt;/a&gt;&lt;/li&gt;
+{% raw %}{% endfor %}{% endraw %}
+</code></pre><p>用for循环遍历latest_question_list，逐个输出内容question_text。这里我们用到了参数latest_question_list，它的值其实是在views.py中计算出来给模板文件的，我们这里假设是从数据库中取出最新的5个question，如下：</p>
+<pre><code>latest_question_list = Question.objects.order_by(&apos;-pub_date&apos;)[:5]
+</code></pre><p>这里用到了数据库，其实Django给我们封装了数据库的读写操作，我们不需要用SQL语句去查询、更新数据库等，我们要做的是用python的方式定义数据库结构(在model.py里面定义数据库)，然后用python的方式去读写内容。至于连接数据库、关闭数据库这些工作交给Django去替你完成吧。上面例子中，Question数据库结构的定义如下：</p>
+<pre><code>class Question(models.Model):
+    question_text = models.CharField(max_length=200)
+    pub_date = models.DateTimeField(&apos;date published&apos;)
+
+    def __str__(self):
+        return self.question_text
+</code></pre><p>好了，现在有了模板文件这个骨架，又有参数、逻辑语句、静态文件等血肉，一个丰满的页面就诞生了，来看一下完整的index函数吧：</p>
+<pre><code>def index(request):
+    latest_question_list = Question.objects.order_by(&apos;-pub_date&apos;)[:5]
+    template = loader.get_template(&apos;polls/index.html&apos;)
+    context = RequestContext(request, {
+        &apos;latest_question_list&apos;: latest_question_list,
+    })
+    return HttpResponse(template.render(context))
+</code></pre><h1 id="第一个Django项目"><a href="#第一个Django项目" class="headerlink" title="第一个Django项目"></a>第一个Django项目</h1><p>前面为了使大家了解Django处理HTTP Request的过程，我们简化了一些内容，下面我们将尽量还原Django真实的面貌。在开始具体的技术细节前，我们先来搞清楚Django中projects和apps的区别。App是专注于做某件事的web应用，比如说一个用户认证系统，或者是公开投票系统；而project则是一个web站点，可能包括许多app和一些配置。<strong>一个project可以包含许多app，一个app可以用于许多project中</strong>。</p>
+<p>使用Django时一般会先创建一个project，比如说是mysite，如下：</p>
+<pre><code>$ django-admin.py startproject mysite
+$ tree -L 2 mysite
+mysite
+├── manage.py
+└── mysite
+    ├── __init__.py
+    ├── settings.py
+    ├── urls.py
+    └── wsgi.py
+
+1 directory, 5 files
+</code></pre><p>然后我们可以在 <code>mysite/settings.py</code> 中进行项目的一些配置，比如配置时区，数据库连接的相关信息，或者是应用的添加、删除等。这里需要特别注意的是数据库设置，Django支持sqlite、mysql、oracle等数据库，使用前必须安装、启动相应的数据库，并建立相应的账户。这里为了简单，我们使用python内置的sqlite，settings里面的数据库配置不需要更改即可。</p>
+<p>项目创建成功之后，可以运行</p>
+<pre><code>$ python manage.py migrate
+</code></pre><p>生成相应的数据库表(migrate是Django 1.7引入的命令，较早的版本可以用其他的命令代替)。为什么新建的空项目里就会有数据库表呢？这是因为默认情况下，项目配置文件<code>settings.py</code>里面已经配置有Django自带的应用，如下：</p>
+<pre><code>INSTALLED_APPS = (
+    &apos;django.contrib.admin&apos;,
+    &apos;django.contrib.auth&apos;,
+    &apos;django.contrib.contenttypes&apos;,
+    &apos;django.contrib.sessions&apos;,
+    &apos;django.contrib.messages&apos;,
+    &apos;django.contrib.staticfiles&apos;,
+)
+</code></pre><p>这些应用需要和数据库交互。(通常情况下默认的应用很有用，不过你可以根据需求删减)</p>
+<p>到这里为止，我们的Django项目已经可以运行了，用下面简单的命令开启Django自带的<code>开发环境web服务</code>：</p>
+<pre><code>$ python manage.py runserver
+</code></pre><p>接下来，试试在浏览器打开 <a href="http://127.0.0.1:8000/" target="_blank" rel="external">http://127.0.0.1:8000/</a>，看看Django的 <code>It worked!</code> 页面吧。</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20141226_project_welcome.png" alt="Django 欢迎页面"></p>
+<p>现在我们的项目初具雏形，并且运行良好，这是个好的开端，不过我们可以让它变的更加实用，就让她完成以下任务吧：</p>
+<ul>
+<li>在一个问答系统中添加问题；  </li>
+<li>显示所有已经添加的问题。</li>
+</ul>
+<p>听起来很简单，不是吗？不过这个任务已经涉及到向后台写数据，从后台读取数据，作为一个例子而言，足够用了。就让我们新建一个名为questions的app来完成这项任务吧：</p>
+<pre><code>$ python manage.py startapp questions
+</code></pre><p>首先我们得设计好数据库字段，用来存储问题。上面的任务设计起来很简单，只需要建立一个名为Question的表格，然后里面有context字段。Django提供了models来方便我们设计数据库，因此我们的<code>questions/models.py</code>看起来可能是这样的：</p>
+<pre><code>from django.db import models
+
+class Question(models.Model):
+    context = models.CharField(max_length=200)
+</code></pre><p>现在将questions应用添加进项目的配置文件<code>mysite/settings</code>中：</p>
+<pre><code>INSTALLED_APPS = (
+    &apos;django.contrib.admin&apos;,
+    ...,
+    &apos;questions&apos;,
+)
+</code></pre><p>然后通过以下命令来生成Question数据库表格：</p>
+<pre><code>$ python manage.py makemigrations questions
+$ python manage.py migrate
+</code></pre><p>接下来设计三个URL地址<code>add/, add_done/, index/</code>(这里的地址并不包含域名) 分别用来展示填写问题页面，添加成功后页面，显示所有问题页面。然后在<code>mysite/urls.py</code>中指定相应的处理函数，如下：</p>
+<pre><code>from django.conf.urls import patterns, include, url
+from questions import views
+
+urlpatterns = patterns(
+    &apos;&apos;,
+    url(r&apos;^add/$&apos;, views.add),
+    url(r&apos;^index/$&apos;, views.index),
+    url(r&apos;^add_done/$&apos;, views.add_done),
+)
+</code></pre><p>当然了，我们需要在<code>questions/views.py</code>中实现 index, add 和 add_done：</p>
+<ul>
+<li>index: 获取当前所有问题，传给模板文件，返回Response；</li>
+<li>add: 直接返回添加问题表单页面即可；</li>
+<li>add_done: 获取POST得到的问题，将其添加到数据库，返回Response；</li>
+</ul>
+<p>代码如下：</p>
+<pre><code>def index(request):
+    question_list = Question.objects.all()
+
+    return render(
+        request,
+        &quot;questions/index.html&quot;,
+        {&apos;question_list&apos;: question_list},
+    )
+
+
+def add_done(request):
+    add_question = Question()
+    content = request.POST[&apos;content&apos;]
+    add_question.context = content
+    add_question.save()
+    return render(
+        request,
+        &quot;questions/add_done.html&quot;,
+        {&apos;question&apos;: content},
+    )
+
+
+def add(request):
+    return render(request, &quot;questions/add.html&quot;)
+</code></pre><p>这里render函数加载模板，并且以字典的形式传递参数，返回Response页面。模板文件内容不在这里给出，运行结果截图如下：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20141226_add.png" alt="添加问题"><br><img src="http://xuelangzf-github.qiniudn.com/20141226_add_done.png" alt="添加成功"><br><img src="http://xuelangzf-github.qiniudn.com/20141226_index.png" alt="列出问题"></p>
+<p>如果你读到这里，那么应该会知道Django处理Http Request的过程，并且能动手写一个简单的Django小项目了。不过Django作为一个优秀的Web框架，还提供了诸如后台管理，单元测试等强大的功能，我们会在<a href="http://selfboot.cn/2015/01/11/django_start(2)/">下一篇</a>文章来共同学习。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;相信用过python的人都听过Django的大名，知道它是一个web框架，用来支持动态网站、网络应用程序以及网络服务的开发。那么为什么我们需要一个web框架，而不是直接用python来写web应用呢？其实简单来说，就是为了偷懒。&lt;/p&gt;
+&lt;p&gt;如果不用框架的话，你可能需要连接数据库、查询数据库、关闭数据库，在python代码文件里掺杂html标签、css样式等。并且每次开始一个web应用，你都要从头开始写起，重复许多枯燥无味的代码。&lt;/p&gt;
+&lt;p&gt;而web框架提供了通用web开发模式的高度抽象，使我们可以专注于编写清晰、易维护的代码。Django作为python下的web框架，从诞生到现在有着数以万计的用户和贡献者，有着丰富的文档，活跃的社区，是web开发很好的选择。&lt;/p&gt;
+&lt;p&gt;本文结合 Django 官方文档 &lt;code&gt;First steps&lt;/code&gt; 中的6个小教程，帮你了解Django。一共分上、下两篇文章，上篇主要来分析Django处理Http Request的机制，&lt;a href=&quot;http://selfboot.cn/2015/01/11/django_start(2)/&quot;&gt;下篇&lt;/a&gt;来介绍下Django提供的后台管理，以及单元测试等强大的功能。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="程序设计" scheme="http://selfboot.cn/categories/%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1/"/>
+    
+    
+      <category term="教程" scheme="http://selfboot.cn/tags/%E6%95%99%E7%A8%8B/"/>
+    
+      <category term="python" scheme="http://selfboot.cn/tags/python/"/>
+    
+      <category term="Django" scheme="http://selfboot.cn/tags/Django/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>博客推广——提交搜索引擎</title>
+    <link href="http://selfboot.cn/2014/12/21/add_blog_to_google/"/>
+    <id>http://selfboot.cn/2014/12/21/add_blog_to_google/</id>
+    <published>2014-12-20T16:00:00.000Z</published>
+    <updated>2015-09-23T05:10:40.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>在<a href="http://zhaofei.tk/2014/11/30/jekyll_to_hexo/" target="_blank" rel="external">更换博客系统——从jekyll到hexo</a>中，我们已经搭建好了自己的博客，绑定了属于自己的域名，并且成功托管在Github上，这样其他人就可以通过域名看到我们的博客。看起来没什么问题了，接下来只需要我们坚持写原创文章，就应该能吸引到很多小伙伴来拜读了。</p>
+<p>不幸的是，我们的博客很可能会被遗忘在角落里、无人问津，只因为我们没有向Google等搜索引擎宣告博客的诞生。如果连搜索引擎都不知道我们博客的诞生，还有谁能知道它的存在呢？毕竟搜索引擎是向大众展示我们博客的最重要且几乎唯一的途径。</p>
+<p>下面给大家展示下我的博客之前是如何被Google抛弃的(为了尽量精确地匹配博客，用了inurl语法，图片是之前保存的)</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20141221_google_no_result.png" alt="搜索引擎未收录"></p>
+<a id="more"></a>
+<h1 id="提交搜索引擎"><a href="#提交搜索引擎" class="headerlink" title="提交搜索引擎"></a>提交搜索引擎</h1><p>每个搜索引擎都提供了<code>添加网站</code>的入口，比如：</p>
+<ul>
+<li><a href="https://www.google.com/webmasters/tools/home?hl=zh-CN" target="_blank" rel="external">Google搜索引擎提交入口</a></li>
+<li><a href="http://www.baidu.com/search/url_submit.htm" target="_blank" rel="external">百度搜索引擎入口</a></li>
+</ul>
+<p>下文以Google为例(<strong>百度提交之后也搜不到，不知道怎么回事</strong>)，在前面的入口链接中点击添加网站，输入自己博客的域名即可。之后，可以选择验证博客是属于我们的(也就是登录的Google账户)，验证后才能看到该博客站点的特定信息或者使用Google的一些站长工具。</p>
+<p>验证网站的方法特别简单，Google提供了详细的说明，推荐的方法是HTML文件上传，下面引用Google的说明：</p>
+<blockquote>
+<ol>
+<li>下载此 HTML 验证文件。 [google0b4c8a25b65d7c2a.html]  </li>
+<li>将该文件上传到 <a href="http://yoursite/" target="_blank" rel="external">http://yoursite/</a>  </li>
+<li>通过在浏览器中访问 <a href="http://yoursite/google0b4c8a25b65d7c2a.html，确认上传成功。" target="_blank" rel="external">http://yoursite/google0b4c8a25b65d7c2a.html，确认上传成功。</a>  </li>
+<li>点击下面的“验证”。<br>为保持已进行过验证的状态，即使成功通过了验证也请不要删除该 HTML 文件。  </li>
+</ol>
+</blockquote>
+<p>我们的博客系统使用了hexo，部署在Github上，因此下载Google的验证文件之后，需要在文件开头添加<code>layout: false</code>来取消hexo对其进行的转换，如下：</p>
+<pre><code>$ ls source/
+404.html    _posts    google0b4c8a25b65d7c2a.html
+CNAME    aboutme.md
+$ cat source/google0b4c8a25b65d7c2a.html
+layout: false
+---
+google-site-verification: google0b4c8a25b65d7c2a.html
+</code></pre><p>提交博客之后，需要等待一段时间才能在Google上搜到你的博客，因为Google需要时间来处理我们的请求、抓取相应网页并将其编入索引。此外，由于Google采用复杂的算法来更新已编入索引的资料，因此无法保证我们博客的所有更改都会被编入索引。</p>
+<p>我的博客已经提交了几周了，所以现在可以搜索到了，你可以试试：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20141221_google_result.png" alt="被Google收录"></p>
+<h1 id="站点地图"><a href="#站点地图" class="headerlink" title="站点地图"></a>站点地图</h1><p>验证博客所有权之后，就可以使用一些网站站长工具，比如设置站点地图，那么什么是站点地图呢？引用Google的解释如下：</p>
+<blockquote>
+<p>站点地图是一种文件，您可以通过该文件列出您网站上的网页，从而将您网站内容的组织架构告知Google和其他搜索引擎。Googlebot等搜索引擎网页抓取工具会读取此文件，以便更加智能地抓取您的网站。</p>
+</blockquote>
+<p>虽然使用站点地图并不能保证Google会抓取站点地图中列出的所有网页或将所有网页编入索引，但是大多数情况下，网站站长会因提交站点地图而受益，决不会为此受到处罚。</p>
+<p>对于使用Hexo写博客的小伙伴来说，可以使用 <a href="https://github.com/hexojs/hexo-generator-sitemap" target="_blank" rel="external">hexo-generator-sitemap</a> 插件来生成Sitemap。插件的使用很简单，只需要下载即可：</p>
+<pre><code>$ npm install hexo-generator-sitemap --save
+</code></pre><p>之后，当我们使用 <code>hexo generate</code> 时，会自动生成 <code>sitemap.xml</code> 文件。</p>
+<p>向<a href="https://www.google.com/webmasters/tools" target="_blank" rel="external">Google站长工具</a>提交sitemap也是很简单的过程，登录Google账号，选择站点，之后在<code>抓取</code>——<code>站点地图</code>中就能看到<code>添加/测试站点地图</code>，如下图：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20141221_sitemap.png" alt="站点地图"></p>
+<p>站长工具中还有其他一些不错的工具，比如<code>搜索流量</code>——<code>指向您网站的链接</code>里可以看到我们博客的外链情况，如下图</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20141221_webmaster.png" alt="外链"></p>
+<p>从外链中可以看到好多 segmentfault 和 jobbole 的外链，这是因为我几乎将每篇博客都同时投放在 segmenfault 和 jobbole 上，方便推广。</p>
+<p><strong>参考</strong><br><a href="https://support.google.com/webmasters/answer/156184?hl=zh-Hans" target="_blank" rel="external">了解站点地图</a><br><a href="http://fionat.github.io/blog/2013/10/23/sitemap/" target="_blank" rel="external">如何向google提交sitemap（详细）</a>  </p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;在&lt;a href=&quot;http://zhaofei.tk/2014/11/30/jekyll_to_hexo/&quot;&gt;更换博客系统——从jekyll到hexo&lt;/a&gt;中，我们已经搭建好了自己的博客，绑定了属于自己的域名，并且成功托管在Github上，这样其他人就可以通过域名看到我们的博客。看起来没什么问题了，接下来只需要我们坚持写原创文章，就应该能吸引到很多小伙伴来拜读了。&lt;/p&gt;
+&lt;p&gt;不幸的是，我们的博客很可能会被遗忘在角落里、无人问津，只因为我们没有向Google等搜索引擎宣告博客的诞生。如果连搜索引擎都不知道我们博客的诞生，还有谁能知道它的存在呢？毕竟搜索引擎是向大众展示我们博客的最重要且几乎唯一的途径。&lt;/p&gt;
+&lt;p&gt;下面给大家展示下我的博客之前是如何被Google抛弃的(为了尽量精确地匹配博客，用了inurl语法，图片是之前保存的)&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://xuelangzf-github.qiniudn.com/20141221_google_no_result.png&quot; alt=&quot;搜索引擎未收录&quot;&gt;&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="工具介绍" scheme="http://selfboot.cn/categories/%E5%B7%A5%E5%85%B7%E4%BB%8B%E7%BB%8D/"/>
+    
+    
+      <category term="教程" scheme="http://selfboot.cn/tags/%E6%95%99%E7%A8%8B/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>更换博客系统——从jekyll到hexo</title>
+    <link href="http://selfboot.cn/2014/11/30/jekyll_to_hexo/"/>
+    <id>http://selfboot.cn/2014/11/30/jekyll_to_hexo/</id>
+    <published>2014-11-29T16:00:00.000Z</published>
+    <updated>2015-10-27T09:35:11.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>之前用jekyll搭建博客，费了九牛二虎之力（自己没有学过前端的东西，完全就是改别人的样式，不知道的地方再问google老师）才做了一个不是那么丑的博客界面。过程中遇到了各样问题，包括如何让站点支持RSS订阅，如何添加评论系统等。</p>
+<p>后面使用起来大致也不算麻烦，在_posts里面创建指定格式的文件，然后写文章，然后在本地运行<code>jekyll server</code>看下效果，没问题的话就用git提交到github。</p>
+<p>虽然好多次看到自己那笨拙的博客界面都有想给她化妆的欲望，不过还是压抑了自己的冲动，毕竟对于不懂前端的我来说，只能越描越黑了。于是，看着别人那漂亮的界面，只有羡慕的份儿。</p>
+<p>然后，不小心就遇见了<a href="http://hexo.io/" target="_blank" rel="external">hexo</a>。开始只是对她的主题感兴趣，随便看了几个主题，发现比我那弱爆了的界面好太多。接下来又大致看了她的文档，感觉使用起来很简单，只用几条命令就行。</p>
+<pre><code>hexo init &lt;folder&gt;
+hexo new &quot;name&quot;
+hexo generate
+hexo server
+hexo deploy
+</code></pre><p>于是就准备试试看。</p>
+<a id="more"></a>
+<h1 id="Hexo简单部署"><a href="#Hexo简单部署" class="headerlink" title="Hexo简单部署"></a>Hexo简单部署</h1><p>hexo出自台湾大学生<a href="https://twitter.com/tommy351" target="_blank" rel="external">SkyArrow</a>之手，是一个基于Node.js的静态博客框架，编译上百篇文字只需要几秒。在已经有 Octopress 和 jekyll的情况下，SkyArrow为什么要自己造轮子呢，可以他的这篇文章：<a href="http://zespia.tw/blog/2012/10/11/hexo-debut/" target="_blank" rel="external">Hexo颯爽登場！</a></p>
+<p>官网强调了hexo的四大特点：</p>
+<ul>
+<li>极速生成静态页面</li>
+<li>支持Markdown</li>
+<li>一键部署博客</li>
+<li>丰富的插件支持</li>
+</ul>
+<p>下面就开始部署hexo，看看她到底有多牛吧。hexo依赖<code>Node.js</code>和<code>Git</code>，所以这两个必须已经安装，然后用下面命令安装hexo：</p>
+<pre><code>npm install hexo -g
+</code></pre><p>Mac用户安装hexo时还要确保安装了command line tools。然后用<code>hexo init</code>命令初始化博客目录，初始化完成之后，目录结构如下：</p>
+<pre><code>~  tree -L 1 demo
+demo
+├── _config.yml
+├── package.json
+├── scaffolds
+├── source
+└── themes
+
+3 directories, 2 files
+</code></pre><p>hexo的配置文件是<code>_config.yml</code>，可配置内容相当多，可以在官方文档<a href="http://hexo.io/docs/configuration.html" target="_blank" rel="external">Configuration</a>里查看详细解释。</p>
+<p>我将新建文章的名字格式改为和jekyll的类似，便于按照时间排序：</p>
+<blockquote>
+<p>new_post_name: :year-:month-:day-:title.md </p>
+</blockquote>
+<p>Disqus的名字必须要正确，不然是无法拿到你的评论的，可以登录disqus查看你的名称。</p>
+<h1 id="修改主题"><a href="#修改主题" class="headerlink" title="修改主题"></a>修改主题</h1><p>hexo默认主题不是特别好看，不过<a href="https://github.com/hexojs/hexo/wiki/Themes" target="_blank" rel="external">Themes</a>里面列出了相当多不错的主题，这里我选择了<a href="https://github.com/ken8203/hexo-theme-alberta" target="_blank" rel="external">alberta</a>，然后对其进行了进一步的简化。</p>
+<p>主题的安装、使用简单的不能再简单了，这里不再啰嗦，主要写一下我对主题的删减、修改部分吧：</p>
+<ol>
+<li>删去开始部分的图片（加载起来浪费时间）</li>
+<li>删掉页面底部的版权说明（这玩意儿没人看吧）</li>
+<li>删掉很炫的fancybox（这么炫，我不敢用）</li>
+<li>去掉分享文章的链接（又不是鸡汤文，没人会分享的）</li>
+<li>部署国内CND（jquery和google字体…丧心病狂！）</li>
+<li>修改了blockquote，code，table的样式。</li>
+</ol>
+<p>修改后的效果如图：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20141130_jekyll_to_hexo_theme.png" alt="博客效果图"></p>
+<p>你可以在<a href="https://github.com/xuelangZF/hexo-theme-alberta" target="_blank" rel="external">这里</a>fork哦。前面说过我不是很会前端的Css、JavaScript，但是仍然能对Theme进行删减，说明Theme这块可读性是多么的好，所以你可以放心去定制自己的Theme吧。</p>
+<p>顺便提一下，<a href="http://libs.useso.com/" target="_blank" rel="external">360的CDN</a>不错，算是做了一件好事啊！</p>
+<h1 id="强大的插件"><a href="#强大的插件" class="headerlink" title="强大的插件"></a>强大的插件</h1><p>之前用jekyll博客系统时，为了实现订阅功能，用google找到一段“神奇”的代码，可以生成feed.xml页面。但是要添加订阅，必须输入blog.com/feed.xml，只输入主页地址blog.com是不行的。然后困扰了许久，才找到<a href="http://www.rssboard.org/rss-autodiscovery" target="_blank" rel="external">RSS Auto-discovery</a>这篇文章，成功解决问题。</p>
+<p>我只是想实现订阅功能而已，jekyll却逼着我了解了许多RSS协议的内容，好吧，谁让自己不是全栈工程师呢。而hexo对我这种新手都很友好，我要实现订阅，只需要使用<a href="https://github.com/hexojs/hexo-generator-feed" target="_blank" rel="external">hexo-generator-feed</a>插件即可，我才懒得去了解你怎么实现订阅呢。</p>
+<p>插件的安装卸载一条命令就能搞定，详细的插件列表可以看<a href="https://github.com/hexojs/hexo/wiki/Plugins" target="_blank" rel="external">Plugins</a>。</p>
+<p>不过在这里被坑了一次，文档中并没有说<code>EJS, Stylus和Markdown renderer</code>被移出核心模块，所以按照文档方法安装hexo后，根本不能够生成静态文件，后来看到<a href="https://github.com/hexojs/hexo/pull/620" target="_blank" rel="external">Issue 620</a>才知道怎么回事。</p>
+<p>所以提醒一下，你需要手动安装EJS, Stylus和Markdown renderer：</p>
+<pre><code>$ npm install hexo-renderer-ejs --save
+$ npm install hexo-renderer-stylus --save
+$ npm install hexo-renderer-marked --save
+</code></pre><p>对了，还有<a href="http://hexo.io/docs/tag-plugins.html" target="_blank" rel="external">Tag Plugins</a>，可以允许你在博客里面引用其他站点的内容。比如要引用jsFiddle中的代码片段，只需要
+{% jsfiddle shorttag [tabs] [skin] [width] [height] %}，或者是用{% gist gist_id [filename] %} 引入gist中的内容。</p>
+<h1 id="开始优雅地写博客吧"><a href="#开始优雅地写博客吧" class="headerlink" title="开始优雅地写博客吧"></a>开始优雅地写博客吧</h1><p>可以用<code>hexo new &quot;blog_name&quot;</code>来新建一篇文章，文章藏在<code>source/_posts</code>里面。我们可以在<code>scaffolds</code>里面设置生成新博客的模板，比如文章(layout: post)的模板<code>post.md</code>可以改为如下内容：</p>
+<blockquote>
+<p>title: 更换博客系统——从jekyll到hexo<br>date: 1417276800000<br>tags:<br>category:<br>-–</p>
+</blockquote>
+<p>这里文章有两种layout，如下：</p>
+<table>
+<thead>
+<tr>
+<th>Layout</th>
+<th>Destination</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>post(Default)</td>
+<td>source/_posts</td>
+</tr>
+<tr>
+<td>page</td>
+<td>source</td>
+</tr>
+</tbody>
+</table>
+<p>post用来放文章，page可以用来放一些比如“关于我”，“友情链接”，“404页面”之类的页面。GitHub Pages <a href="http://help.github.com/articles/custom-404-pages" target="_blank" rel="external">自定义404页面</a>非常容易，直接在根目录下创建自己的404.html就可以。但是自定义404页面仅对绑定顶级域名的项目才起作用，GitHub默认分配的二级域名是不起作用的，使用hexo server在本机调试也是不起作用的。</p>
+<p>目前有如下几个公益404接入地址，我选择了腾讯的。404页面，每个人可以做的更多。</p>
+<ul>
+<li><a href="http://www.qq.com/404" target="_blank" rel="external">腾讯公益404</a></li>
+<li><a href="http://yibo.iyiyun.com/Index/web404" target="_blank" rel="external">404公益_益云(公益互联网)社会创新中心</a></li>
+<li><a href="http://404page.missingkids.org.tw/" target="_blank" rel="external">失蹤兒童少年資料管理中心404</a></li>
+</ul>
+<p>只需要在source目录添加<code>404.html</code>文件即可，文件内容为：</p>
+<pre><code>layout: false
+---
+&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;title&gt;宝贝，公益404带你们回家&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;script type=&quot;text/javascript&quot; src=&quot;http://www.qq.com/404/search_children.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre><p>一定要设置<code>layout:false</code>(还有三个短横线)，不然会被hexo解析。</p>
+<p>写完之后，可以用<code>hexo generate</code>生成静态文件，然后用<code>hexo server</code>运行本地服务器，查看效果。如果发现有问题，在md文件改了之后，刷新页面就可以看到更改的效果了（是不是比jekyll强大啊）。</p>
+<p>更多用hexo写文章的内容可以看官方文档：<a href="http://hexo.io/docs/writing.html" target="_blank" rel="external">Create a New Post</a>。</p>
+<p>自己之前写了十几篇文章，只需要将开头部分稍作改动即可直接迁移到hexo中，文章数目比较少，所以就手动更改文章头了。</p>
+<p>hexo中还提供了其他的命令，可以看<a href="http://hexo.io/docs/commands.html" target="_blank" rel="external">Commands</a>。</p>
+<h1 id="迁移Disqus评论"><a href="#迁移Disqus评论" class="headerlink" title="迁移Disqus评论"></a>迁移Disqus评论</h1><p>hexo生成的的文章url中时间格式为<code>/2013/11/22/</code>，而之前博客的url中时间为<code>2013-11-22</code>，导致之前文章的评论就消失了。</p>
+<p>好在Disqus允许我们迁移博客评论，具体方法可以看<a href="https://help.disqus.com/customer/portal/articles/286778-migration-tools" target="_blank" rel="external">Help: Migration Tools</a>。原理其实很简单，Disqus评论默认将文章url作为标识符，每个url对应该文章的评论，迁移时我们只需要建立起新旧文章地址的对应关系即可。</p>
+<h1 id="绑定域名"><a href="#绑定域名" class="headerlink" title="绑定域名"></a>绑定域名</h1><p>改了博客界面之后，顺便注册了一个域名，绑定github博客中。你可以在<a href="http://www.dot.tk/en/index.html?lang=en" target="_blank" rel="external">free domains域名免费注册</a>里选择自己喜欢的域名，然后申请（免费）。申请成功之后，添加两条域名解析A记录，如下图：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20141130_jekyll_to_hexo_domain.png" alt="域名解析A记录"></p>
+<p>然后可以用<code>dig</code>命令(当然也可以用nslookup)验证域名记录是否生效：</p>
+<pre><code>$ dig zhaofei.tk +nostats +nocomments +nocmd
+
+; &lt;&lt;&gt;&gt; DiG 9.8.3-P1 &lt;&lt;&gt;&gt; zhaofei.tk +nostats +nocomments +nocmd
+;; global options: +cmd
+;zhaofei.tk.            IN    A
+zhaofei.tk.        14439    IN    A    192.30.252.153
+zhaofei.tk.        14439    IN    A    192.30.252.154
+</code></pre><p>然后在自己的博客仓库根目录新建名为<code>CANME</code>的文件，里面内容为你的域名地址。</p>
+<p>如果没有绑定成功，可以看github的帮助文档：<a href="https://help.github.com/articles/my-custom-domain-isn-t-working/" target="_blank" rel="external">My custom domain isn’t working</a>。</p>
+<hr>
+<p>还有添加到搜索引擎，站点数据统计等，准备折腾完再记录一下。</p>
+<p><strong>参考</strong><br><a href="http://ibruce.info/2013/11/22/hexo-your-blog/" target="_blank" rel="external">hexo你的博客</a><br><a href="https://help.github.com/articles/tips-for-configuring-an-a-record-with-your-dns-provider/" target="_blank" rel="external">Tips for configuring an A record with your DNS provider</a><br><a href="http://www.foreverpx.cn/2014/09/23/hexo404/" target="_blank" rel="external">HEXO 指定404页面</a></p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;之前用jekyll搭建博客，费了九牛二虎之力（自己没有学过前端的东西，完全就是改别人的样式，不知道的地方再问google老师）才做了一个不是那么丑的博客界面。过程中遇到了各样问题，包括如何让站点支持RSS订阅，如何添加评论系统等。&lt;/p&gt;
+&lt;p&gt;后面使用起来大致也不算麻烦，在_posts里面创建指定格式的文件，然后写文章，然后在本地运行&lt;code&gt;jekyll server&lt;/code&gt;看下效果，没问题的话就用git提交到github。&lt;/p&gt;
+&lt;p&gt;虽然好多次看到自己那笨拙的博客界面都有想给她化妆的欲望，不过还是压抑了自己的冲动，毕竟对于不懂前端的我来说，只能越描越黑了。于是，看着别人那漂亮的界面，只有羡慕的份儿。&lt;/p&gt;
+&lt;p&gt;然后，不小心就遇见了&lt;a href=&quot;http://hexo.io/&quot;&gt;hexo&lt;/a&gt;。开始只是对她的主题感兴趣，随便看了几个主题，发现比我那弱爆了的界面好太多。接下来又大致看了她的文档，感觉使用起来很简单，只用几条命令就行。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;hexo init &amp;lt;folder&amp;gt;
+hexo new &amp;quot;name&amp;quot;
+hexo generate
+hexo server
+hexo deploy
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;于是就准备试试看。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="工具介绍" scheme="http://selfboot.cn/categories/%E5%B7%A5%E5%85%B7%E4%BB%8B%E7%BB%8D/"/>
+    
+    
+      <category term="教程" scheme="http://selfboot.cn/tags/%E6%95%99%E7%A8%8B/"/>
+    
+      <category term="JavaScript" scheme="http://selfboot.cn/tags/JavaScript/"/>
+    
+  </entry>
+  
+</feed>
