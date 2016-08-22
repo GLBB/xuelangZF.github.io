@@ -88,6 +88,65 @@ var _hmt = _hmt || [];
       <div class="outer">
         <section id="main">
   
+    <article id="post-threadlocal_overview" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/08/22/threadlocal_overview/" class="article-date">
+  <time datetime="2016-08-22T14:02:50.000Z" itemprop="datePublished">8月 22 2016</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/程序设计/">程序设计</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2016/08/22/threadlocal_overview/">ThreadLocal之应用篇</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>我们知道多线程环境下，每一个线程均可以使用所属进程的全局变量。如果一个线程对全局变量进行了修改，将会影响到其他所有的线程。为了避免多个线程同时对变量进行修改，引入了线程同步机制，通过互斥锁，条件变量或者读写锁来控制对全局变量的访问。</p>
+<p>只用全局变量并不能满足多线程环境的需求，很多时候线程还需要拥有自己的私有数据，这些数据对于其他线程来说不可见。因此线程中也可以使用局部变量，局部变量只有线程自身可以访问，同一个进程下的其他线程不可访问。</p>
+<p>有时候使用局部变量不太方便，因此 python 还提供了 ThreadLocal 变量，它本身是一个全局变量，但是每个线程却可以利用它来保存属于自己的私有数据，这些私有数据对其他线程也是不可见的。下图给出了线程中这几种变量的存在情况：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160822_threadlocal_overview_1.png" alt="线程变量"></p>
+        
+          <p class="article-more-link">
+            <a href="/2016/08/22/threadlocal_overview/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+
+    
+  
+    
+
+    <footer class="article-footer">
+      
+        <a href="http://selfboot.cn/2016/08/22/threadlocal_overview/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/python/">python</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/思考/">思考</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+
+
+
+  
     <article id="post-forum_design_wsgi" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2016/08/07/forum_design_wsgi/" class="article-date">
@@ -200,72 +259,6 @@ var _hmt = _hmt || [];
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Flask/">Flask</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/python/">python</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-
-
-
-
-  
-    <article id="post-leetcode_guide_why" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2016/07/24/leetcode_guide_why/" class="article-date">
-  <time datetime="2016-07-24T14:02:50.000Z" itemprop="datePublished">7月 24 2016</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/算法/">算法</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2016/07/24/leetcode_guide_why/">LeetCode 刷题指南（一）：为什么要刷题</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>虽然刷题一直饱受诟病，不过不可否认刷题确实能锻炼我们的编程能力，相信每个认真刷题的人都会有体会。现在提供在线编程评测的平台有很多，比较有名的有 <a href="http://hihocoder.com/">hihocoder</a>，<a href="http://www.lintcode.com/zh-cn/">LintCode</a>，以及这里我们关注的 <a href="https://LeetCode.com/">LeetCode</a>。</p>
-<p><img src="http://xuelangzf-github.qiniudn.com/20160724_leetcode_guide_1.png" alt=""></p>
-<p>LeetCode 是一个非常棒的 OJ（Online Judge）平台，收集了许多公司的面试题目。相对其他 OJ 平台而言，有着下面的几个优点：</p>
-<ul>
-<li>题目全部来自业内大公司的真实面试</li>
-<li>不用处理输入输出，精力全放在解决具体问题上</li>
-<li>题目有丰富的讨论，可以参考别人的思路</li>
-<li>精确了解自己代码在所有提交代码中运行效率的排名</li>
-<li>支持多种主流语言：C/C++，Python, Java</li>
-<li>可以在线进行测试，方便调试</li>
-</ul>
-        
-          <p class="article-more-link">
-            <a href="/2016/07/24/leetcode_guide_why/#more">Read More</a>
-          </p>
-        
-      
-    </div>
-
-    
-  
-    
-
-    <footer class="article-footer">
-      
-        <a href="http://selfboot.cn/2016/07/24/leetcode_guide_why/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/python/">python</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/思考/">思考</a></li></ul>
 
     </footer>
   </div>

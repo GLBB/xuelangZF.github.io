@@ -88,6 +88,71 @@ var _hmt = _hmt || [];
       <div class="outer">
         <section id="main">
   
+    <article id="post-django_start(2)" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/01/11/django_start(2)/" class="article-date">
+  <time datetime="2015-01-10T16:00:00.000Z" itemprop="datePublished">1月 11 2015</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/程序设计/">程序设计</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2015/01/11/django_start(2)/">两篇文章帮你入门Django(下)</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>在<a href="http://selfboot.cn/2014/12/26/django_start/">两篇文章帮你入门Django(上)</a>一文中，我们已经做了一个简单的小网站，实现了保存用户数据到数据库，以及从后台数据库读取数据显示到网页上这两个功能。</p>
+<p>看上去没有什么问题了，不过我们可以让它变得更加完美，比如说为它添加一个简单的后台，用来管理我们的Question数据库，或者是写点测试单元来看看我们的程序有没有什么Bug。</p>
+<h1 id="后台管理"><a href="#后台管理" class="headerlink" title="后台管理"></a>后台管理</h1><p>首先需要添加后台管理员账号，只需要简单的 <code>createsuperuser</code> 命令，如下：</p>
+<pre><code>$ python manage.py createsuperuser
+Username (leave blank to use &apos;feizhao&apos;): happy
+Email address:
+Password:
+Password (again):
+Superuser created successfully.
+</code></pre>
+        
+          <p class="article-more-link">
+            <a href="/2015/01/11/django_start(2)/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+
+    
+  
+    
+
+    <footer class="article-footer">
+      
+        <a href="http://selfboot.cn/2015/01/11/django_start(2)/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Django/">Django</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/python/">python</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/教程/">教程</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+
+
+
+  
     <article id="post-realworld_fish" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2015/01/02/realworld_fish/" class="article-date">
@@ -199,65 +264,6 @@ var _hmt = _hmt || [];
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/思考/">思考</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-
-
-
-
-  
-    <article id="post-django_start" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2014/12/26/django_start/" class="article-date">
-  <time datetime="2014-12-25T16:00:00.000Z" itemprop="datePublished">12月 26 2014</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/程序设计/">程序设计</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2014/12/26/django_start/">两篇文章帮你入门Django(上)</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>相信用过python的人都听过Django的大名，知道它是一个web框架，用来支持动态网站、网络应用程序以及网络服务的开发。那么为什么我们需要一个web框架，而不是直接用python来写web应用呢？其实简单来说，就是为了偷懒。</p>
-<p>如果不用框架的话，你可能需要连接数据库、查询数据库、关闭数据库，在python代码文件里掺杂html标签、css样式等。并且每次开始一个web应用，你都要从头开始写起，重复许多枯燥无味的代码。</p>
-<p>而web框架提供了通用web开发模式的高度抽象，使我们可以专注于编写清晰、易维护的代码。Django作为python下的web框架，从诞生到现在有着数以万计的用户和贡献者，有着丰富的文档，活跃的社区，是web开发很好的选择。</p>
-<p>本文结合 Django 官方文档 <code>First steps</code> 中的6个小教程，帮你了解Django。一共分上、下两篇文章，上篇主要来分析Django处理Http Request的机制，<a href="http://selfboot.cn/2015/01/11/django_start(2)/">下篇</a>来介绍下Django提供的后台管理，以及单元测试等强大的功能。</p>
-        
-          <p class="article-more-link">
-            <a href="/2014/12/26/django_start/#more">Read More</a>
-          </p>
-        
-      
-    </div>
-
-    
-  
-    
-
-    <footer class="article-footer">
-      
-        <a href="http://selfboot.cn/2014/12/26/django_start/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Django/">Django</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/python/">python</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/教程/">教程</a></li></ul>
 
     </footer>
   </div>

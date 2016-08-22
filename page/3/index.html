@@ -88,6 +88,69 @@ var _hmt = _hmt || [];
       <div class="outer">
         <section id="main">
   
+    <article id="post-pythonic" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/05/04/pythonic/" class="article-date">
+  <time datetime="2016-05-04T14:54:01.000Z" itemprop="datePublished">5月 4 2016</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/程序设计/">程序设计</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2016/05/04/pythonic/">由 sort 中 key 的用法浅谈 python</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>用 Python 时间也算不短了，但总感觉自己在用写 C++ 代码的思维写 Python，没有真正用到其作为脚本语言的优势。之前刷 LeetCode 时，自己的 Python 代码总是很长，很像披着 Python 外衣的 C++ 代码（放在<a href="https://github.com/xuelangZF/LeetCode">这里</a>，不断重构中）。</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160504_pythonic_cpp.png" alt=""></p>
+<p>想来大概是因为觉得python简单，平时只是零零碎碎的学习，也没有去读别人的代码，导致掌握的不够深入。回想起前段时间的面试，面试官看我简历写熟悉Python，就问了两个Python的问题：</p>
+<ol>
+<li>Python 中常用的优化技巧（能够提升 Python 执行效率的，除了算法层面）</li>
+<li>按照 value 从小到大输出 dict 中的 key-value值。</li>
+</ol>
+<p>我支支吾吾半天，就是没有答到点上，直接导致被拒（后来整理的内容放在<a href="https://github.com/xuelangZF/CS_Offer/blob/master/Python.md">这里</a>）。所谓知耻而后勇，经过一段时间对 Python 的重新学习，才慢慢发现 Python 的一些强大与美妙之处。</p>
+        
+          <p class="article-more-link">
+            <a href="/2016/05/04/pythonic/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+
+    
+  
+    
+
+    <footer class="article-footer">
+      
+        <a href="http://selfboot.cn/2016/05/04/pythonic/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Python/">Python</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/思考/">思考</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+
+
+
+  
     <article id="post-skip_classes" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2015/11/25/skip_classes/" class="article-date">
@@ -198,67 +261,6 @@ var _hmt = _hmt || [];
     <footer class="article-footer">
       
         <a href="http://selfboot.cn/2015/11/14/dns_practice/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/总结/">总结</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/网络/">网络</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-
-
-
-
-  
-    <article id="post-dns_theory" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2015/11/05/dns_theory/" class="article-date">
-  <time datetime="2015-11-04T16:00:00.000Z" itemprop="datePublished">11月 5 2015</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/计算机基础/">计算机基础</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2015/11/05/dns_theory/">从理论到实践，全方位认识DNS（理论篇）</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>对于 <a href="https://en.wikipedia.org/wiki/Domain_Name_System">DNS(Domain Name System)</a> 大家肯定不陌生，不就是用来将一个网站的域名转换为对应的IP吗。当我们发现可以上QQ但不能浏览网页时，我们会想到可能是域名服务器挂掉了；当我们用别人提供的hosts文件浏览到一个“<code>不存在</code>”的网页时，我们会了解到域名解析系统的脆弱。</p>
-<p>然而关于DNS还有一大堆故事值得我们去倾听，去思考。</p>
-<h1 id="DNS-源起"><a href="#DNS-源起" class="headerlink" title="DNS 源起"></a>DNS 源起</h1><p>要想访问网络上的一台计算机，我们必须要知道它的IP地址，但是这些地址（比如243.185.187.39）只是一串数字，没有规律，因此我们很难记住。并且如果一台计算机变更IP后，它必须通知所有的人。</p>
-<p>显然，直接使用IP地址是一个愚蠢的方案。于是人们想出了一个替代的方法，即为每一台计算机起一个名字，然后建立计算机名字到地址的一个映射关系。我们访问计算机的名字，剩下的名字到地址的转换过程则由计算机自动完成。</p>
-<h2 id="hosts映射"><a href="#hosts映射" class="headerlink" title="hosts映射"></a>hosts映射</h2><p>早期，名字到地址的转换过程十分简单。每台计算机保存一个<code>hosts</code>文件，里面列出所有计算机名字和对应的IP地址，然后定期从一个维护此文件的站点更新里面的记录。当我们访问某个计算机名字时，先在hosts文件找到对应的IP，然后就可以建立连接。</p>
-<p><img src="http://xuelangzf-github.qiniudn.com/20151105_hosts_local.png" alt=""></p>
-        
-          <p class="article-more-link">
-            <a href="/2015/11/05/dns_theory/#more">Read More</a>
-          </p>
-        
-      
-    </div>
-
-    
-  
-    
-
-    <footer class="article-footer">
-      
-        <a href="http://selfboot.cn/2015/11/05/dns_theory/#disqus_thread" class="article-comment-link">Comments</a>
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/总结/">总结</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/网络/">网络</a></li></ul>

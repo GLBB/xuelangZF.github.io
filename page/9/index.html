@@ -88,6 +88,72 @@ var _hmt = _hmt || [];
       <div class="outer">
         <section id="main">
   
+    <article id="post-html2dash" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2014/10/13/html2dash/" class="article-date">
+  <time datetime="2014-10-12T16:00:00.000Z" itemprop="datePublished">10月 13 2014</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/工具介绍/">工具介绍</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/10/13/html2dash/">Dash助手——任意html转换为Docset</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>作为一名程序员，最离不开的就是文档了，大多数情况下我们都是通过文档了解一个陌生的领域。想象一下，打开了一堆文档，在文档中跳来跳去，多么的不优雅！所以<a href="http://blog.kapeli.com/about">Bogdan Popescu</a>一怒之下开发了<a href="http://kapeli.com/dash">dash</a>，解放了太多在文档中跳来跳去的码农。</p>
+<p>dash主要有以下特点：</p>
+<ul>
+<li>自带大量常用文档(iOS/Mac/PHP/Python/Java等)</li>
+<li>支持用户自定义文档(scrapy/requests/beautifulsoup等)</li>
+<li>快速搜索文档及 API</li>
+<li>管理和搜索代码片段</li>
+<li>无缝插入众多第三方应用(Alfred/Xcode/Terminal等)</li>
+</ul>
+<p>dash界面左侧列出所有的文档，支持标签页和书签功能，在搜索框内通过输入关键字，可以查找相关的API、文档，并且响应速度非常快！下面先来一睹Dash芳容吧：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20141013_dash_overview.png" alt="Dash界面" title="dash主界面"></p>
+        
+          <p class="article-more-link">
+            <a href="/2014/10/13/html2dash/#more">Read More</a>
+          </p>
+        
+      
+    </div>
+
+    
+  
+    
+
+    <footer class="article-footer">
+      
+        <a href="http://selfboot.cn/2014/10/13/html2dash/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/python/">python</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+
+
+
+  
     <article id="post-chrome_DevTools_1" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2014/09/19/chrome_DevTools_1/" class="article-date">
@@ -192,70 +258,6 @@ var _hmt = _hmt || [];
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/JavaScript/">JavaScript</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/教程/">教程</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-
-
-
-
-  
-    <article id="post-how_to_crawl_coursera" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2014/09/03/how_to_crawl_coursera/" class="article-date">
-  <time datetime="2014-09-02T16:00:00.000Z" itemprop="datePublished">9月 3 2014</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/程序设计/">程序设计</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2014/09/03/how_to_crawl_coursera/">一步步爬取Coursera课程资源</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>有时候我们需要把一些经典的东西收藏起来，时时回味，而Coursera上的一些课程无疑就是经典之作。Coursera中的大部分完结课程都提供了完整的配套教学资源，包括ppt，视频以及字幕等，离线下来后会非常便于学习。很明显，我们不会去一个文件一个文件的下载，只有傻子才那么干，程序员都是聪明人！</p>
-<p>那我们聪明人准备怎么办呢？当然是写一个脚本来批量下载了。首先我们需要分析一下手工下载的流程：登录自己的Coursera账户(有的课程需要我们登录并选课后才能看到相应的资源)，在课程资源页面里，找到相应的文件链接，然后用喜欢的工具下载。</p>
-<p>很简单是吧？我们可以用程序来模仿以上的步骤，这样就可以解放双手了。整个程序分为三个部分就可以了：</p>
-<ol>
-<li>登录Coursera；</li>
-<li>在课程资源页面里面找到资源链接；</li>
-<li>根据资源链接选择合适的工具下载资源。</li>
-</ol>
-<p>下面就来具体的实现以下吧！<br>
-        
-          <p class="article-more-link">
-            <a href="/2014/09/03/how_to_crawl_coursera/#more">Read More</a>
-          </p>
-        
-      
-    </div>
-
-    
-  
-    
-
-    <footer class="article-footer">
-      
-        <a href="http://selfboot.cn/2014/09/03/how_to_crawl_coursera/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/python/">python</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/教程/">教程</a></li></ul>
 
     </footer>
   </div>
