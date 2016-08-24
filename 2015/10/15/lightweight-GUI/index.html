@@ -1,134 +1,6 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  
-  <title>轻量级桌面应用开发的捷径——nw.js | Just For Fun</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="每个程序员都希望用自己喜欢的语言，自己喜欢的平台、工具，写自己喜欢的程序。于是我们会看到有人在Win下用Visual Studio愉快地coding，也会看到有人在OS X下用Xcode来开发，或者是用Sublime Text不受平台限制地玩。
-当然了，愿望往往是美好的，然而事与愿违的情况时有发生。如果你基本都是用OS X，却有人让你写一个带有简单界面的小程序，保证在他的Win系统上一定可以运行，">
-<meta property="og:type" content="article">
-<meta property="og:title" content="轻量级桌面应用开发的捷径——nw.js">
-<meta property="og:url" content="http://selfboot.cn/2015/10/15/lightweight-GUI/index.html">
-<meta property="og:site_name" content="Just For Fun">
-<meta property="og:description" content="每个程序员都希望用自己喜欢的语言，自己喜欢的平台、工具，写自己喜欢的程序。于是我们会看到有人在Win下用Visual Studio愉快地coding，也会看到有人在OS X下用Xcode来开发，或者是用Sublime Text不受平台限制地玩。
-当然了，愿望往往是美好的，然而事与愿违的情况时有发生。如果你基本都是用OS X，却有人让你写一个带有简单界面的小程序，保证在他的Win系统上一定可以运行，">
-<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20151015_Win_OSX.png">
-<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20151015_what_is_nw.png">
-<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20151015_how_package.png">
-<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20151015_input.png">
-<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20151015_nwjs_process.png">
-<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20151015_apps_mongo.png">
-<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20151015_apps_soundnode.png">
-<meta property="og:updated_time" content="2015-11-04T10:53:14.000Z">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="轻量级桌面应用开发的捷径——nw.js">
-<meta name="twitter:description" content="每个程序员都希望用自己喜欢的语言，自己喜欢的平台、工具，写自己喜欢的程序。于是我们会看到有人在Win下用Visual Studio愉快地coding，也会看到有人在OS X下用Xcode来开发，或者是用Sublime Text不受平台限制地玩。
-当然了，愿望往往是美好的，然而事与愿违的情况时有发生。如果你基本都是用OS X，却有人让你写一个带有简单界面的小程序，保证在他的Win系统上一定可以运行，">
-<meta name="twitter:image" content="http://xuelangzf-github.qiniudn.com/20151015_Win_OSX.png">
-  
-    <link rel="alternative" href="/atom.xml" title="Just For Fun" type="application/atom+xml">
-  
-  
-    <link rel="icon" href="/image/favicon.ico">
-  
-  <link href="//fonts.useso.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
-  <link href="//libs.useso.com/js/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css">
-  
-<!-- Google Analytics -->
-<script type="text/javascript">
-(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-ga('create', 'UA-41784041-1', 'auto');
-ga('send', 'pageview');
-
-</script>
-<!-- End Google Analytics -->
-
-
-  
-<!-- Baidu Analytics -->
-<script>
-var _hmt = _hmt || [];
-(function() {
-  var hm = document.createElement("script");
-  hm.src = "//hm.baidu.com/hm.js?fd3ab4b3c488cbb43afa1c2669f06648";
-  var s = document.getElementsByTagName("script")[0]; 
-  s.parentNode.insertBefore(hm, s);
-})();
-</script>
-<!-- End Baidu Analytics -->
-
-
-</head>
-
-<body>
-  <div id="container">
-    <div id="wrap">
-      <header id="header">
-  <div id="header-outer" class="outer">
-    <div id="header-title" class="inner">
-      <h1 id="logo-wrap">
-        <a href="/" id="logo">Just For Fun</a>
-      </h1>
-      
-        <h2 id="subtitle-wrap">
-          <a href="/" id="subtitle">享受快乐的时光</a>
-        </h2>
-      
-    </div>
-    <div id="header-menu">
-      <nav id="main-nav">
-        <ul>
-        
-          <li><a href="/"><i class="fa fa-home icon-setting"></i></a></li>
-        
-          <li><a href="/archives"><i class="fa fa-archive icon-setting"></i></a></li>
-        
-          <li><a href="/aboutme.html"><i class="fa fa-user icon-setting"></i></a></li>
-        
-        
-          <li><a href="/atom.xml"><i class="fa fa-rss %> icon-setting"></i></a></li>
-        
-        </ul>
-      </nav>
-    </div>
-  </div>
-</header>
-
-      <div class="outer">
-        <section id="main"><article id="post-lightweight-GUI" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2015/10/15/lightweight-GUI/" class="article-date">
-  <time datetime="2015-10-15T15:33:29.000Z" itemprop="datePublished">10月 15 2015</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/程序设计/">程序设计</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 class="article-title" itemprop="name">
-      轻量级桌面应用开发的捷径——nw.js
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>每个程序员都希望用自己喜欢的语言，自己喜欢的平台、工具，写自己喜欢的程序。于是我们会看到有人在Win下用Visual Studio愉快地coding，也会看到有人在OS X下用Xcode来开发，或者是用Sublime Text不受平台限制地玩。</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>轻量级桌面应用开发的捷径——nw.js | Just For Fun</title><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/normalize/4.2.0/normalize.min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/0.6.0/pure-min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/0.6.0/grids-responsive-min.css"><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css"><script type="text/javascript" src="//cdn.bootcss.com/jquery/3.0.0/jquery.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">轻量级桌面应用开发的捷径——nw.js</h1><a id="logo" href="/.">Just For Fun</a><p class="description">知其然，知其所以然。知识广度是深度的副产品！</p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/aboutme.html"><i class="fa fa-user"> 关于</i></a><a href="/guestbook.html"><i class="fa fa-comments"> 留言</i></a><a href="/atom.xml"><i class="fa fa-rss"> 订阅</i></a></div></div><div id="layout" class="pure-g"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">轻量级桌面应用开发的捷径——nw.js</h1><div class="post-meta">Oct 15, 2015<span> | </span><span class="category"><a href="/categories/程序设计/">程序设计</a></span><script src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> Hits</span></span></div><a data-disqus-identifier="2015/10/15/lightweight-GUI/" href="/2015/10/15/lightweight-GUI/#disqus_thread" class="disqus-comment-count"></a><div class="post-content"><p>每个程序员都希望用自己喜欢的语言，自己喜欢的平台、工具，写自己喜欢的程序。于是我们会看到有人在Win下用Visual Studio愉快地coding，也会看到有人在OS X下用Xcode来开发，或者是用Sublime Text不受平台限制地玩。</p>
 <p>当然了，愿望往往是美好的，然而事与愿违的情况时有发生。如果你基本都是用OS X，却有人让你写一个带有简单界面的小程序，保证在他的Win系统上一定可以运行，那么你是不是有点抓狂。</p>
-<p><img src="http://xuelangzf-github.qiniudn.com/20151015_Win_OSX.png" alt=""></p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151015_Win_OSX.png" alt="跨平台应用的前景"></p>
 <a id="more"></a>
 <h1 id="选择哪条路？"><a href="#选择哪条路？" class="headerlink" title="选择哪条路？"></a>选择哪条路？</h1><p>当然，我可以在Visual Studio（已经有<a href="https://www.visualstudio.com/zh-cn/visual-studio-homepage-vs.aspx" target="_blank" rel="external">Mac OS X版</a>）下用MFC或者其他框架来写，但是总感觉有点重量级，并且不能移植到其他平台（万一哪天让我写个OS X下的界面呢，想想都不寒而栗啊！）</p>
 <p>所以我想找的就是一个可以跨平台的、轻量级的图形界面开发的库，于是想到了喜欢的Python，然后发现它下面的GUI开发框架还真不少：<a href="http://www.wxpython.org/" target="_blank" rel="external">wxPython</a>, <a href="https://wiki.python.org/moin/TkInter" target="_blank" rel="external">tkInter</a>, PyGtk, PyQt。</p>
@@ -150,26 +22,19 @@ var _hmt = _hmt || [];
 <li><a href="http://oldgeeksguide.github.io/presentations/html5devconf2013/wtod.html" target="_blank" rel="external">WebApp to DesktopApp with node-webkit (slides)</a></li>
 </ul>
 <p>下面这张slide解决了“nw.js能做什么？”的问题，简单来说nw.js就是使HTML, CSS, JavaScript写的原本在浏览器上运行的程序，也可以在桌面端运行。</p>
-<p><img src="http://xuelangzf-github.qiniudn.com/20151015_what_is_nw.png" alt=""></p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151015_what_is_nw.png" alt="nw.js能做什么"></p>
 <p>下面这张slide解决了“怎么用nw.js完成任务？”的问题，</p>
-<p><img src="http://xuelangzf-github.qiniudn.com/20151015_how_package.png" alt=""></p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151015_how_package.png" alt="nw.js是如何做到的"></p>
 <p>最后，开发者怕你怀疑nw.js的强大，又提供了<a href="https://github.com/zcbenz/nw-sample-apps" target="_blank" rel="external">几个Demo</a>和<a href="https://github.com/nwjs/nw.js/wiki/List-of-apps-and-companies-using-nw.js" target="_blank" rel="external">许多成功的案例</a>来打消我们的顾虑。</p>
 <h1 id="nwjs——拿下助攻！"><a href="#nwjs——拿下助攻！" class="headerlink" title="nwjs——拿下助攻！"></a>nwjs——拿下助攻！</h1><p>决定用nw.js之后，就开始补充相应的知识啦。首先自己没有怎么去学过JavaScript, HTML, CSS这类web方面的语言，不过想来也不会比C++难。学习的成本也应该比学习MFC, wxPython低很多，并且这些语言太基础、使用场景太多了，所以早晚都得了解一下，干脆借这个机会一边学一边做具体的东西。于是买了<a href="https://book.douban.com/subject/6038371/" target="_blank" rel="external">《JavaScript DOM编程艺术(第2版)</a>》这本书拿来入门。</p>
 <p>讲了这么多，还没说我具体要做什么呢，其实要做的事情特别简单，就是统计一本书的页码中一共有多少个0，1，2，3，4，5，6，7，8，9。关于这个问题，详细看前面的那篇博客：<a href="http://zhaofei.tk/2015/10/13/pages_count/" target="_blank" rel="external">讲得明白，但写的明白吗？</a>。</p>
 <p>我要实现的目标很简单，在输入正确的数字时，给出统计结果；输入错误的数字时，则给出错误提示，重置输入框和统计结果。如下：</p>
-<p><img src="http://xuelangzf-github.qiniudn.com/20151015_input.png" alt=""></p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151015_input.png" alt="统计功能演示"></p>
 <p>实现过程相当简单，特别是对于那些做过web开发的，详细过程就不在这里给出了，只提供一个简单的程序逻辑图吧。</p>
-<p><img src="http://xuelangzf-github.qiniudn.com/20151015_nwjs_process.png" alt=""></p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20151015_nwjs_process.png" alt="程序流程图"></p>
 <p>源码十分简单，可以在<a href="https://gist.github.com/xuelangZF/ce8a570a8e7453c76fd7" target="_blank" rel="external">这里</a>找到，结构如下：</p>
-<pre><code> tree
-.
-├── index.html
-├── main.js
-├── package.json
-└── style.css
-
-0 directories, 4 files
-</code></pre><p>打包到各个平台也有<a href="https://github.com/nwjs/nw.js/wiki/how-to-package-and-distribute-your-apps" target="_blank" rel="external">详细的文档</a>。以Win为例，只需要三步即可：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"> tree</div><div class="line">.</div><div class="line">├── index<span class="selector-class">.html</span></div><div class="line">├── main<span class="selector-class">.js</span></div><div class="line">├── package<span class="selector-class">.json</span></div><div class="line">└── style<span class="selector-class">.css</span></div><div class="line"></div><div class="line"><span class="number">0</span> directories, <span class="number">4</span> files</div></pre></td></tr></table></figure>
+<p>打包到各个平台也有<a href="https://github.com/nwjs/nw.js/wiki/how-to-package-and-distribute-your-apps" target="_blank" rel="external">详细的文档</a>。以Win为例，只需要三步即可：</p>
 <ol>
 <li>将所有工程文件，放在一个文件夹下，确保<code>package.json</code>在根目录，然后压缩为.zip格式，并将压缩文件的后缀由<code>.zip</code>改为<code>.nw</code>；</li>
 <li>在nw.js的环境目录下执行<code>copy /b nw.exe+you_nw_name.nw you_app_name.exe</code> （这一步之后，就可以在生成的目录中直接运行<code>you_app_name.exe</code>，它依赖同目录下的一些其他库）；</li>
@@ -184,126 +49,27 @@ var _hmt = _hmt || [];
 <li><a href="http://www.litixsoft.de/english/mms/" target="_blank" rel="external">Mongo Management Studio</a> 数据库管理应用。</li>
 </ol>
 <p>来欣赏一下一些应用的截图吧，不得不说nw.js开发出的应用一点不比原生的丑陋啊。</p>
-<p><a href="http://www.litixsoft.de/english/mms/" target="_blank" rel="external"><strong>Mongo Management Studio</strong></a><br><img src="http://xuelangzf-github.qiniudn.com/20151015_apps_mongo.png" alt=""></p>
-<p><a href="http://www.soundnodeapp.com/" target="_blank" rel="external"><strong>Soundnode App</strong></a><br><img src="http://xuelangzf-github.qiniudn.com/20151015_apps_soundnode.png" alt=""></p>
-<p>看来nw.js赢得了很多青睐，那么还有什么能阻止我们拥抱nw.js呢？。</p>
-<hr>
-<p>ps：如果有的链接打不开，先检查打开的姿势对不对。</p>
-
-      
-    </div>
-
-    
-	    <!-- 添加捐赠图标 -->
-<div class ="post-donate">
-    <div id="donate_board" class="donate_bar center">
-        <a id="btn_donate" class="btn_donate" href="javascript:;" title="打赏"></a>
-        <span class="donate_txt">
-           &uarr;<br>
-		   欣赏此文？支持一下吧
-        </span>
-        <br>
-      </div>  
-	<div id="donate_guide" class="donate_bar center hidden" >
-		<!-- 支付宝打赏图案 -->
-		<img src="http://xuelangzf-github.qiniudn.com/zhifubao.jpg" alt="支付宝打赏"> 
-		<!-- 微信打赏图案 -->
-		<img src="http://xuelangzf-github.qiniudn.com/weixin.jpg" alt="微信打赏">  
-    </div>
-	<script type="text/javascript">
-		document.getElementById('btn_donate').onclick = function(){
-			$('#donate_board').addClass('hidden');
-			$('#donate_guide').removeClass('hidden');
-		}
-	</script>
-</div>
-<!-- 添加捐赠图标 -->
-
-    
-  
-    
-	    <div class="article-footer-copyright">
-
-<p>本文由 selfboot 发表于 <a href="http://selfboot.cn" target="_blank">个人博客</a>，采用<a href="http://creativecommons.org/licenses/by-sa/3.0/cn" target="_blank" >署名-非商业性使用-相同方式共享 3.0 中国大陆许可协议</a>。</p>
-<p>非商业转载请注明作者及出处。商业转载请联系<a href="mailto:xuezaigds@gmail.com">作者</a>本人。</p>
-<p>
-本文标题为: 轻量级桌面应用开发的捷径——nw.js<br/>
-本文链接为: <a href="/2015/10/15/lightweight-GUI/" target="_blank">http://selfboot.cn/2015/10/15/lightweight-GUI/</a>
-</p>
-</div>
-
-    
-
-    <footer class="article-footer">
-      
-        <a href="http://selfboot.cn/2015/10/15/lightweight-GUI/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/JavaScript/">JavaScript</a></li></ul>
-
-    </footer>
-  </div>
-  
-    
-<nav id="article-nav">
-  
-    <a href="/2015/10/23/marketing/" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Newer</strong>
-      <div class="article-nav-title">
-        
-          别惊讶，这只是营销！
-        
-      </div>
-    </a>
-  
-  
-    <a href="/2015/10/13/pages_count/" id="article-nav-older" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Older</strong>
-      <div class="article-nav-title">讲的明白，但写的明白吗？</div>
-    </a>
-  
-</nav>
-
-  
-</article>
-
-
-<section id="comments">
-  <div id="disqus_thread">
-    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-  </div>
-</section>
-
-
-
-  <!-- Go to www.addthis.com/dashboard to customize your tools -->
-<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-57adc438b914651b"></script>
-
-
-
-</section>
-      </div>
-    </div>
-    
-    
-<script>
-  var disqus_shortname = 'xuelangZF';
-  
-  var disqus_url = 'http://selfboot.cn/2015/10/15/lightweight-GUI/';
-  
-  (function(){
-    var dsq = document.createElement('script');
-    dsq.type = 'text/javascript';
-    dsq.async = true;
-    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-  }());
-</script>
-
-
-<script src="http://libs.useso.com/js/jquery/2.0.3/jquery.min.js"></script>
-<script src="/js/script.js"></script>
-
-  </div>
-</body>
-</html>
+<p><a href="http://www.litixsoft.de/english/mms/" target="_blank" rel="external"><strong>Mongo Management Studio</strong></a><br><img src="http://xuelangzf-github.qiniudn.com/20151015_apps_mongo.png" alt="Mongo"></p>
+<p><a href="http://www.soundnodeapp.com/" target="_blank" rel="external"><strong>Soundnode App</strong></a><br><img src="http://xuelangzf-github.qiniudn.com/20151015_apps_soundnode.png" alt="Soundnode"></p>
+<p>看来nw.js赢得了很多青睐，那么还有什么能阻止我们拥抱nw.js呢？</p>
+</div><div class="tags"><a href="/tags/JavaScript/">JavaScript</a></div><div class="post-nav"><a href="/2015/10/23/marketing/" class="pre">别惊讶，这只是营销！</a><a href="/2015/10/13/pages_count/" class="next">讲的明白，但写的明白吗？</a></div><div id="disqus_thread"><script>var disqus_shortname = 'xuelangZF';
+var disqus_identifier = '2015/10/15/lightweight-GUI/';
+var disqus_title = '轻量级桌面应用开发的捷径——nw.js';
+var disqus_url = 'http://selfboot.cn/2015/10/15/lightweight-GUI/';
+(function() {
+  var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();</script><script id="dsq-count-scr" src="//xuelangZF.disqus.com/count.js" async></script></div></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><form action="//www.google.com/search" method="get" accept-charset="utf-8" target="_blank" class="search-form"><input type="text" name="q" maxlength="20" placeholder="Search"/><input type="hidden" name="sitesearch" value="http://selfboot.cn"/></form></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/工具介绍/">工具介绍</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/社会百态/">社会百态</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/程序设计/">程序设计</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/算法/">算法</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/计算机基础/">计算机基础</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/读书与写作/">读书与写作</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/项目实践/">项目实践</a><span class="category-list-count">2</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> 标签</i></div><div class="tagcloud"><a href="/tags/JavaScript/" style="font-size: 15px;">JavaScript</a> <a href="/tags/hacker/" style="font-size: 15px;">hacker</a> <a href="/tags/总结/" style="font-size: 15px;">总结</a> <a href="/tags/教程-总结/" style="font-size: 15px;">教程, 总结</a> <a href="/tags/思考/" style="font-size: 15px;">思考</a> <a href="/tags/python/" style="font-size: 15px;">python</a> <a href="/tags/教程/" style="font-size: 15px;">教程</a> <a href="/tags/见闻/" style="font-size: 15px;">见闻</a> <a href="/tags/Django/" style="font-size: 15px;">Django</a> <a href="/tags/网络/" style="font-size: 15px;">网络</a> <a href="/tags/方法论/" style="font-size: 15px;">方法论</a> <a href="/tags/Python/" style="font-size: 15px;">Python</a> <a href="/tags/Flask/" style="font-size: 15px;">Flask</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最新文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2016/08/22/threadlocal_overview/">深入理解Python中的ThreadLocal变量（上）</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/08/07/forum_design_wsgi/">从零开始搭建论坛（二）：Web服务器网关接口</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/28/forum_design_framework/">从零开始搭建论坛（一）：Web服务器与Web框架</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/24/leetcode_guide_why/">LeetCode 刷题指南（一）：为什么要刷题</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/06/26/why_need_to_read_stackoverflow/">为什么离不开 Stackoverflow</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/06/13/python_performance_analysis/">Python 性能分析大全</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/05/04/pythonic/">由 sort 中 key 的用法浅谈 python</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/25/skip_classes/">让我们一起愉快地逃课吧</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/14/dns_practice/">从理论到实践，全方位认识DNS（实践篇）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/05/dns_theory/">从理论到实践，全方位认识DNS（理论篇）</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><script type="text/javascript" src="//xuelangZF.disqus.com/recent_comments_widget.js?num_items=5&amp;hide_avatars=1&amp;avatar_size=32&amp;excerpt_length=20&amp;hide_mods=1"></script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">© <a href="/." rel="nofollow">Just For Fun.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a id="rocket" href="#top" class="show"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="//cdn.bootcss.com/fancybox/2.1.5/jquery.fancybox.pack.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="/css/jquery.fancybox.css?v=1.0.0"><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+ga('create','UA-41784041-1','auto');ga('send','pageview');
+</script><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?fd3ab4b3c488cbb43afa1c2669f06648";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+  })();
+</script><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

@@ -1,124 +1,5 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  
-  <title>人机交互之字符编码 | Just For Fun</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="编码其实并不神秘，可以说是随处可见。上溯到远古时期，猿人为了记录所见到的事物，就在岩壁刻下简单的图形，这些图形可以说是最古老的一种编码了。我们的汉语其实也是一种编码，李白同学为了描述瀑布美景，就写出了“飞流直下三千尺，疑是银河落九天”的千古名句。随着汉语的不断完善，我们遇见的每件具体物体和大部分抽象的概念都有了编码，比如“树”代表长有绿叶的高高的植被，“开心”代表了一种愉悦的精神状态。当然了，还有">
-<meta property="og:type" content="article">
-<meta property="og:title" content="人机交互之字符编码">
-<meta property="og:url" content="http://selfboot.cn/2014/08/28/character_encoding/index.html">
-<meta property="og:site_name" content="Just For Fun">
-<meta property="og:description" content="编码其实并不神秘，可以说是随处可见。上溯到远古时期，猿人为了记录所见到的事物，就在岩壁刻下简单的图形，这些图形可以说是最古老的一种编码了。我们的汉语其实也是一种编码，李白同学为了描述瀑布美景，就写出了“飞流直下三千尺，疑是银河落九天”的千古名句。随着汉语的不断完善，我们遇见的每件具体物体和大部分抽象的概念都有了编码，比如“树”代表长有绿叶的高高的植被，“开心”代表了一种愉悦的精神状态。当然了，还有">
-<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20140828_encode_decode.png">
-<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20140828_glyphs_a.png">
-<meta property="og:updated_time" content="2016-08-17T03:12:50.000Z">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="人机交互之字符编码">
-<meta name="twitter:description" content="编码其实并不神秘，可以说是随处可见。上溯到远古时期，猿人为了记录所见到的事物，就在岩壁刻下简单的图形，这些图形可以说是最古老的一种编码了。我们的汉语其实也是一种编码，李白同学为了描述瀑布美景，就写出了“飞流直下三千尺，疑是银河落九天”的千古名句。随着汉语的不断完善，我们遇见的每件具体物体和大部分抽象的概念都有了编码，比如“树”代表长有绿叶的高高的植被，“开心”代表了一种愉悦的精神状态。当然了，还有">
-<meta name="twitter:image" content="http://xuelangzf-github.qiniudn.com/20140828_encode_decode.png">
-  
-    <link rel="alternative" href="/atom.xml" title="Just For Fun" type="application/atom+xml">
-  
-  
-    <link rel="icon" href="/image/favicon.ico">
-  
-  <link href="//fonts.useso.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
-  <link href="//libs.useso.com/js/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css">
-  
-<!-- Google Analytics -->
-<script type="text/javascript">
-(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-ga('create', 'UA-41784041-1', 'auto');
-ga('send', 'pageview');
-
-</script>
-<!-- End Google Analytics -->
-
-
-  
-<!-- Baidu Analytics -->
-<script>
-var _hmt = _hmt || [];
-(function() {
-  var hm = document.createElement("script");
-  hm.src = "//hm.baidu.com/hm.js?fd3ab4b3c488cbb43afa1c2669f06648";
-  var s = document.getElementsByTagName("script")[0]; 
-  s.parentNode.insertBefore(hm, s);
-})();
-</script>
-<!-- End Baidu Analytics -->
-
-
-</head>
-
-<body>
-  <div id="container">
-    <div id="wrap">
-      <header id="header">
-  <div id="header-outer" class="outer">
-    <div id="header-title" class="inner">
-      <h1 id="logo-wrap">
-        <a href="/" id="logo">Just For Fun</a>
-      </h1>
-      
-        <h2 id="subtitle-wrap">
-          <a href="/" id="subtitle">享受快乐的时光</a>
-        </h2>
-      
-    </div>
-    <div id="header-menu">
-      <nav id="main-nav">
-        <ul>
-        
-          <li><a href="/"><i class="fa fa-home icon-setting"></i></a></li>
-        
-          <li><a href="/archives"><i class="fa fa-archive icon-setting"></i></a></li>
-        
-          <li><a href="/aboutme.html"><i class="fa fa-user icon-setting"></i></a></li>
-        
-        
-          <li><a href="/atom.xml"><i class="fa fa-rss %> icon-setting"></i></a></li>
-        
-        </ul>
-      </nav>
-    </div>
-  </div>
-</header>
-
-      <div class="outer">
-        <section id="main"><article id="post-character_encoding" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2014/08/28/character_encoding/" class="article-date">
-  <time datetime="2014-08-27T16:00:00.000Z" itemprop="datePublished">8月 28 2014</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/计算机基础/">计算机基础</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 class="article-title" itemprop="name">
-      人机交互之字符编码
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>编码其实并不神秘，可以说是随处可见。上溯到远古时期，猿人为了记录所见到的事物，就在岩壁刻下简单的图形，这些图形可以说是最古老的一种编码了。我们的汉语其实也是一种编码，李白同学为了描述瀑布美景，就写出了“飞流直下三千尺，疑是银河落九天”的千古名句。随着汉语的不断完善，我们遇见的每件具体物体和大部分抽象的概念都有了编码，比如“树”代表长有绿叶的高高的植被，“开心”代表了一种愉悦的精神状态。当然了，还有英语、法语、德语等等，它们每一个都是一种编码，可以表达自然万物以及抽象概念。</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>人机交互之字符编码 | Just For Fun</title><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/normalize/4.2.0/normalize.min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/0.6.0/pure-min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/0.6.0/grids-responsive-min.css"><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css"><script type="text/javascript" src="//cdn.bootcss.com/jquery/3.0.0/jquery.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">人机交互之字符编码</h1><a id="logo" href="/.">Just For Fun</a><p class="description">知其然，知其所以然。知识广度是深度的副产品！</p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/aboutme.html"><i class="fa fa-user"> 关于</i></a><a href="/guestbook.html"><i class="fa fa-comments"> 留言</i></a><a href="/atom.xml"><i class="fa fa-rss"> 订阅</i></a></div></div><div id="layout" class="pure-g"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">人机交互之字符编码</h1><div class="post-meta">Aug 28, 2014<span> | </span><span class="category"><a href="/categories/计算机基础/">计算机基础</a></span><script src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> Hits</span></span></div><a data-disqus-identifier="2014/08/28/character_encoding/" href="/2014/08/28/character_encoding/#disqus_thread" class="disqus-comment-count"></a><div class="post-content"><p>编码其实并不神秘，可以说是随处可见。上溯到远古时期，猿人为了记录所见到的事物，就在岩壁刻下简单的图形，这些图形可以说是最古老的一种编码了。我们的汉语其实也是一种编码，李白同学为了描述瀑布美景，就写出了“飞流直下三千尺，疑是银河落九天”的千古名句。随着汉语的不断完善，我们遇见的每件具体物体和大部分抽象的概念都有了编码，比如“树”代表长有绿叶的高高的植被，“开心”代表了一种愉悦的精神状态。当然了，还有英语、法语、德语等等，它们每一个都是一种编码，可以表达自然万物以及抽象概念。</p>
+<a id="more"></a>
 <p>千百年来，文字这种编码足以应付我们的生存所需，直到计算机的出现。那么计算机有什么特别之处呢？这就要从计算机的诞生说起，可以说计算机的诞生主要归功于布尔、香农、图灵、冯·诺依曼。</p>
 <ol>
 <li>布尔创立逻辑代数学，为数字电子计算机的二进制、开关逻辑元件和逻辑电路的设计辅平了道路。1854年，出版了名著《布尔代数》，后来发展成为现代计算机的理论基础——数理逻辑。</li>
@@ -127,7 +8,6 @@ var _hmt = _hmt || [];
 <li>冯·诺依曼提出计算机基本结构和工作方式的设想，理论要点就是：数字计算机的数制采用二进制；计算机应该按照程序顺序执行。人们把冯诺依曼的这个理论称为冯诺依曼体系结构，所有的的计算机都采用的是冯诺依曼体系结构。</li>
 </ol>
 <p>由此，我们知道计算机内部只有0和1两个数，无论是什么样的信息，在计算机内部都是用0和1来表示。尽管计算机内部用0和1来表达万物，但是计算机与外部的交互仍然采用人们熟悉和便于阅读的方式，期间的转换过程可以简单的称为编码、解码。</p>
-<a id="more"></a>
 <p><img src="http://xuelangzf-github.qiniudn.com/20140828_encode_decode.png" alt="编码解码"></p>
 <p>计算机中用的最多的就是字符，所以这里会详细讲述<code>字符编码</code>。在讲述前，先来看几个概念：</p>
 <ol>
@@ -197,139 +77,38 @@ var _hmt = _hmt || [];
 <figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="string">'\xe7\x8b\xbc'</span>.decode(<span class="string">'utf-8'</span>)</div><div class="line"><span class="string">u'\u72fc'</span></div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">print</span> <span class="string">'\xe7\x8b\xbc'</span>.decode(<span class="string">'utf-8'</span>)</div><div class="line">狼</div></pre></td></tr></table></figure>
 <h1 id="百花齐放之中文编码"><a href="#百花齐放之中文编码" class="headerlink" title="百花齐放之中文编码"></a>百花齐放之中文编码</h1><p>在前面，我们提到了gbk2312中文编码方案，下面将详细讲解一下中文编码。老外建立字符编码标准时显然没有考虑我们历史悠久的中文，只有128个字符的ASCII码无论如何也无法为我所用。于是，中国国家标准总局随后就发布了GB2312码，即中华人民共和国国家汉字信息交换用编码，并于1981年5月1日实施。GB2312字符集中除常用简体汉字字符外还包括希腊字母等可能会用到的字符，但是未收录繁体中文汉字和一些生僻字。</p>
 <p>在我们学习GB2312的编码规则前，先来看以下几个概念：</p>
-<ol>
-<li><code>区位码</code>，为了便于计算机接受、辨认、处理汉字，我们为中文常用的汉字、符号、数字等编了唯一的数码，这就是区位码。区位码是由4位十进制数字组成的，因为我们把所有的国标汉字与符号组成一个94×94的矩阵，每一行称为一个区，每一列称为一个位，要表示一个汉字只需要给出行号(01~94)与列号(01-94)即可。我们可以用google搜索<code>区位码查询系统</code>，就可以方便地在线查询汉字的区位码了，例如“学”字的区位码为4907。</li>
-<li><p><code>国标码</code>，区位码无法直接用于识别汉字，因为可能与通信使用的控制码00H~1FH(也就是0~31，ASCII码的前32个)冲突，于是乎在每个汉字的区号和位号必须分别加上32(00100000，16进制20H)，就得到所谓的国标码，也叫交换码。</p>
+<p>1、<code>区位码</code>，为了便于计算机接受、辨认、处理汉字，我们为中文常用的汉字、符号、数字等编了唯一的数码，这就是区位码。区位码是由4位十进制数字组成的，因为我们把所有的国标汉字与符号组成一个94×94的矩阵，每一行称为一个区，每一列称为一个位，要表示一个汉字只需要给出行号(01~94)与列号(01-94)即可。我们可以用google搜索<code>区位码查询系统</code>，就可以方便地在线查询汉字的区位码了，例如“学”字的区位码为4907。</p>
+<p>2、<code>国标码</code>，区位码无法直接用于识别汉字，因为可能与通信使用的控制码00H~1FH(也就是0~31，ASCII码的前32个)冲突，于是乎在每个汉字的区号和位号必须分别加上32(00100000，16进制20H)，就得到所谓的国标码，也叫交换码。</p>
 <blockquote>
 <p>  00110001 00000111<br>  00100000 00100000<br>———————————————————<br>  01010001 00100111</p>
 </blockquote>
-<p> 用十六进制表示为D1A7。</p>
-</li>
-<li><p><code>内码</code>，文本中通常会混合使用中文字符和英文字符，因此有时候无法识别两个字节是两个单独的ASCII字符，还是一个汉字字符。因此，GB2312规定汉字的两个字节的最高位都为1，即在国标码的基础上加上128，这种高位为1的双字节汉字编码即为GB2312汉字的内码。</p>
+<p>用十六进制表示为D1A7。</p>
+<p>3、 <code>内码</code>，文本中通常会混合使用中文字符和英文字符，因此有时候无法识别两个字节是两个单独的ASCII字符，还是一个汉字字符。因此，GB2312规定汉字的两个字节的最高位都为1，即在国标码的基础上加上128，这种高位为1的双字节汉字编码即为GB2312汉字的内码。</p>
 <blockquote>
 <p>  01010001 00100111<br>  10000000 10000000<br>———————————————————<br>  11010001 10100111</p>
 </blockquote>
-<p> 用十六进制表示为D1A7，内码也就是字符用GB2312编码的结果了。来验证一下：</p>
- <figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="string">u'学'</span>.encode(<span class="string">'gb2312'</span>)</div><div class="line"><span class="string">'\xd1\xa7'</span></div></pre></td></tr></table></figure>
-</li>
-</ol>
+<p>用十六进制表示为D1A7，内码也就是字符用GB2312编码的结果了。来验证一下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="string">u'学'</span>.encode(<span class="string">'gb2312'</span>)</div><div class="line"><span class="string">'\xd1\xa7'</span></div></pre></td></tr></table></figure>
 <p>GB2312并未包含繁体字和生僻字，因此在1995年出现了《汉字编码扩展规范》(GBK)，GBK完全兼容GB2312，另外还收录了汉字部首符号、竖排标点符号等字符。Unicode3.1出现后，新的中文编码GB18030也随之诞生，GB18030编码向下兼容GBK和GB2312，并收录了所有Unicode3.1中的字符。</p>
-<p><strong>参考：</strong><br><a href="http://www.ruanyifeng.com/blog/2007/10/ascii_unicode_and_utf-8.html" target="_blank" rel="external">字符编码笔记：ASCII，Unicode和UTF-8</a><br><a href="http://www.luanxiang.org/blog/archives/1271.html" target="_blank" rel="external">浅谈编码</a><br><a href="http://my.oschina.net/knightuniverse/blog/293132" target="_blank" rel="external">字符编码</a><br><a href="https://en.wikipedia.org/wiki/Unicode" target="_blank" rel="external">Wiki: Unicode</a><br><a href="https://en.wikipedia.org/wiki/Glyph" target="_blank" rel="external">Wiki: Glyph</a><br><a href="https://en.wikipedia.org/wiki/UTF-8" target="_blank" rel="external">Wiki: UTF-8</a><br><a href="http://www.joelonsoftware.com/articles/Unicode.html" target="_blank" rel="external">关于字符集的最基本知识</a><br><a href="http://www.searchtb.com/2012/04/chinese_encode.html" target="_blank" rel="external">中文编码杂谈</a>  </p>
-
-      
-    </div>
-
-    
-	    <!-- 添加捐赠图标 -->
-<div class ="post-donate">
-    <div id="donate_board" class="donate_bar center">
-        <a id="btn_donate" class="btn_donate" href="javascript:;" title="打赏"></a>
-        <span class="donate_txt">
-           &uarr;<br>
-		   欣赏此文？支持一下吧
-        </span>
-        <br>
-      </div>  
-	<div id="donate_guide" class="donate_bar center hidden" >
-		<!-- 支付宝打赏图案 -->
-		<img src="http://xuelangzf-github.qiniudn.com/zhifubao.jpg" alt="支付宝打赏"> 
-		<!-- 微信打赏图案 -->
-		<img src="http://xuelangzf-github.qiniudn.com/weixin.jpg" alt="微信打赏">  
-    </div>
-	<script type="text/javascript">
-		document.getElementById('btn_donate').onclick = function(){
-			$('#donate_board').addClass('hidden');
-			$('#donate_guide').removeClass('hidden');
-		}
-	</script>
-</div>
-<!-- 添加捐赠图标 -->
-
-    
-  
-    
-	    <div class="article-footer-copyright">
-
-<p>本文由 selfboot 发表于 <a href="http://selfboot.cn" target="_blank">个人博客</a>，采用<a href="http://creativecommons.org/licenses/by-sa/3.0/cn" target="_blank" >署名-非商业性使用-相同方式共享 3.0 中国大陆许可协议</a>。</p>
-<p>非商业转载请注明作者及出处。商业转载请联系<a href="mailto:xuezaigds@gmail.com">作者</a>本人。</p>
-<p>
-本文标题为: 人机交互之字符编码<br/>
-本文链接为: <a href="/2014/08/28/character_encoding/" target="_blank">http://selfboot.cn/2014/08/28/character_encoding/</a>
-</p>
-</div>
-
-    
-
-    <footer class="article-footer">
-      
-        <a href="http://selfboot.cn/2014/08/28/character_encoding/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/python/">python</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/思考/">思考</a></li></ul>
-
-    </footer>
-  </div>
-  
-    
-<nav id="article-nav">
-  
-    <a href="/2014/09/03/how_to_crawl_coursera/" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Newer</strong>
-      <div class="article-nav-title">
-        
-          一步步爬取Coursera课程资源
-        
-      </div>
-    </a>
-  
-  
-    <a href="/2014/08/21/regular_expression_all/" id="article-nav-older" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Older</strong>
-      <div class="article-nav-title">众里寻她千百度--正则表达式</div>
-    </a>
-  
-</nav>
-
-  
-</article>
-
-
-<section id="comments">
-  <div id="disqus_thread">
-    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-  </div>
-</section>
-
-
-
-  <!-- Go to www.addthis.com/dashboard to customize your tools -->
-<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-57adc438b914651b"></script>
-
-
-
-</section>
-      </div>
-    </div>
-    
-    
-<script>
-  var disqus_shortname = 'xuelangZF';
-  
-  var disqus_url = 'http://selfboot.cn/2014/08/28/character_encoding/';
-  
-  (function(){
-    var dsq = document.createElement('script');
-    dsq.type = 'text/javascript';
-    dsq.async = true;
-    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-  }());
-</script>
-
-
-<script src="http://libs.useso.com/js/jquery/2.0.3/jquery.min.js"></script>
-<script src="/js/script.js"></script>
-
-  </div>
-</body>
-</html>
+<h1 id="更多阅读"><a href="#更多阅读" class="headerlink" title="更多阅读"></a>更多阅读</h1><p><a href="http://www.ruanyifeng.com/blog/2007/10/ascii_unicode_and_utf-8.html" target="_blank" rel="external">字符编码笔记：ASCII，Unicode和UTF-8</a><br><a href="http://www.luanxiang.org/blog/archives/1271.html" target="_blank" rel="external">浅谈编码</a><br><a href="http://my.oschina.net/knightuniverse/blog/293132" target="_blank" rel="external">字符编码</a><br><a href="https://en.wikipedia.org/wiki/Unicode" target="_blank" rel="external">Wiki: Unicode</a><br><a href="https://en.wikipedia.org/wiki/Glyph" target="_blank" rel="external">Wiki: Glyph</a><br><a href="https://en.wikipedia.org/wiki/UTF-8" target="_blank" rel="external">Wiki: UTF-8</a><br><a href="http://www.joelonsoftware.com/articles/Unicode.html" target="_blank" rel="external">关于字符集的最基本知识</a><br><a href="http://www.searchtb.com/2012/04/chinese_encode.html" target="_blank" rel="external">中文编码杂谈</a>    </p>
+</div><div class="tags"><a href="/tags/思考/">思考</a><a href="/tags/python/">python</a></div><div class="post-nav"><a href="/2014/09/03/how_to_crawl_coursera/" class="pre">一步步爬取Coursera课程资源</a><a href="/2014/08/21/regular_expression_all/" class="next">众里寻她千百度--正则表达式</a></div><div id="disqus_thread"><script>var disqus_shortname = 'xuelangZF';
+var disqus_identifier = '2014/08/28/character_encoding/';
+var disqus_title = '人机交互之字符编码';
+var disqus_url = 'http://selfboot.cn/2014/08/28/character_encoding/';
+(function() {
+  var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();</script><script id="dsq-count-scr" src="//xuelangZF.disqus.com/count.js" async></script></div></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><form action="//www.google.com/search" method="get" accept-charset="utf-8" target="_blank" class="search-form"><input type="text" name="q" maxlength="20" placeholder="Search"/><input type="hidden" name="sitesearch" value="http://selfboot.cn"/></form></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/工具介绍/">工具介绍</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/社会百态/">社会百态</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/程序设计/">程序设计</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/算法/">算法</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/计算机基础/">计算机基础</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/读书与写作/">读书与写作</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/项目实践/">项目实践</a><span class="category-list-count">2</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> 标签</i></div><div class="tagcloud"><a href="/tags/JavaScript/" style="font-size: 15px;">JavaScript</a> <a href="/tags/hacker/" style="font-size: 15px;">hacker</a> <a href="/tags/总结/" style="font-size: 15px;">总结</a> <a href="/tags/教程-总结/" style="font-size: 15px;">教程, 总结</a> <a href="/tags/思考/" style="font-size: 15px;">思考</a> <a href="/tags/python/" style="font-size: 15px;">python</a> <a href="/tags/教程/" style="font-size: 15px;">教程</a> <a href="/tags/见闻/" style="font-size: 15px;">见闻</a> <a href="/tags/Django/" style="font-size: 15px;">Django</a> <a href="/tags/网络/" style="font-size: 15px;">网络</a> <a href="/tags/方法论/" style="font-size: 15px;">方法论</a> <a href="/tags/Python/" style="font-size: 15px;">Python</a> <a href="/tags/Flask/" style="font-size: 15px;">Flask</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最新文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2016/08/22/threadlocal_overview/">深入理解Python中的ThreadLocal变量（上）</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/08/07/forum_design_wsgi/">从零开始搭建论坛（二）：Web服务器网关接口</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/28/forum_design_framework/">从零开始搭建论坛（一）：Web服务器与Web框架</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/24/leetcode_guide_why/">LeetCode 刷题指南（一）：为什么要刷题</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/06/26/why_need_to_read_stackoverflow/">为什么离不开 Stackoverflow</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/06/13/python_performance_analysis/">Python 性能分析大全</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/05/04/pythonic/">由 sort 中 key 的用法浅谈 python</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/25/skip_classes/">让我们一起愉快地逃课吧</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/14/dns_practice/">从理论到实践，全方位认识DNS（实践篇）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/05/dns_theory/">从理论到实践，全方位认识DNS（理论篇）</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><script type="text/javascript" src="//xuelangZF.disqus.com/recent_comments_widget.js?num_items=5&amp;hide_avatars=1&amp;avatar_size=32&amp;excerpt_length=20&amp;hide_mods=1"></script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">© <a href="/." rel="nofollow">Just For Fun.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a id="rocket" href="#top" class="show"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="//cdn.bootcss.com/fancybox/2.1.5/jquery.fancybox.pack.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="/css/jquery.fancybox.css?v=1.0.0"><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+ga('create','UA-41784041-1','auto');ga('send','pageview');
+</script><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?fd3ab4b3c488cbb43afa1c2669f06648";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+  })();
+</script><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

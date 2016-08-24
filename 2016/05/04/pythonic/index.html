@@ -1,155 +1,22 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  
-  <title>由 sort 中 key 的用法浅谈 python | Just For Fun</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="用 Python 时间也算不短了，但总感觉自己在用写 C++ 代码的思维写 Python，没有真正用到其作为脚本语言的优势。之前刷 LeetCode 时，自己的 Python 代码总是很长，很像披着 Python 外衣的 C++ 代码（放在这里，不断重构中）。
-
-想来大概是因为觉得python简单，平时只是零零碎碎的学习，也没有去读别人的代码，导致掌握的不够深入。回想起前段时间的面试，面试官看我简">
-<meta property="og:type" content="article">
-<meta property="og:title" content="由 sort 中 key 的用法浅谈 python">
-<meta property="og:url" content="http://selfboot.cn/2016/05/04/pythonic/index.html">
-<meta property="og:site_name" content="Just For Fun">
-<meta property="og:description" content="用 Python 时间也算不短了，但总感觉自己在用写 C++ 代码的思维写 Python，没有真正用到其作为脚本语言的优势。之前刷 LeetCode 时，自己的 Python 代码总是很长，很像披着 Python 外衣的 C++ 代码（放在这里，不断重构中）。
-
-想来大概是因为觉得python简单，平时只是零零碎碎的学习，也没有去读别人的代码，导致掌握的不够深入。回想起前段时间的面试，面试官看我简">
-<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20160504_pythonic_cpp.png">
-<meta property="og:updated_time" content="2016-05-23T14:40:44.000Z">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="由 sort 中 key 的用法浅谈 python">
-<meta name="twitter:description" content="用 Python 时间也算不短了，但总感觉自己在用写 C++ 代码的思维写 Python，没有真正用到其作为脚本语言的优势。之前刷 LeetCode 时，自己的 Python 代码总是很长，很像披着 Python 外衣的 C++ 代码（放在这里，不断重构中）。
-
-想来大概是因为觉得python简单，平时只是零零碎碎的学习，也没有去读别人的代码，导致掌握的不够深入。回想起前段时间的面试，面试官看我简">
-<meta name="twitter:image" content="http://xuelangzf-github.qiniudn.com/20160504_pythonic_cpp.png">
-  
-    <link rel="alternative" href="/atom.xml" title="Just For Fun" type="application/atom+xml">
-  
-  
-    <link rel="icon" href="/image/favicon.ico">
-  
-  <link href="//fonts.useso.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
-  <link href="//libs.useso.com/js/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css">
-  
-<!-- Google Analytics -->
-<script type="text/javascript">
-(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-ga('create', 'UA-41784041-1', 'auto');
-ga('send', 'pageview');
-
-</script>
-<!-- End Google Analytics -->
-
-
-  
-<!-- Baidu Analytics -->
-<script>
-var _hmt = _hmt || [];
-(function() {
-  var hm = document.createElement("script");
-  hm.src = "//hm.baidu.com/hm.js?fd3ab4b3c488cbb43afa1c2669f06648";
-  var s = document.getElementsByTagName("script")[0]; 
-  s.parentNode.insertBefore(hm, s);
-})();
-</script>
-<!-- End Baidu Analytics -->
-
-
-</head>
-
-<body>
-  <div id="container">
-    <div id="wrap">
-      <header id="header">
-  <div id="header-outer" class="outer">
-    <div id="header-title" class="inner">
-      <h1 id="logo-wrap">
-        <a href="/" id="logo">Just For Fun</a>
-      </h1>
-      
-        <h2 id="subtitle-wrap">
-          <a href="/" id="subtitle">享受快乐的时光</a>
-        </h2>
-      
-    </div>
-    <div id="header-menu">
-      <nav id="main-nav">
-        <ul>
-        
-          <li><a href="/"><i class="fa fa-home icon-setting"></i></a></li>
-        
-          <li><a href="/archives"><i class="fa fa-archive icon-setting"></i></a></li>
-        
-          <li><a href="/aboutme.html"><i class="fa fa-user icon-setting"></i></a></li>
-        
-        
-          <li><a href="/atom.xml"><i class="fa fa-rss %> icon-setting"></i></a></li>
-        
-        </ul>
-      </nav>
-    </div>
-  </div>
-</header>
-
-      <div class="outer">
-        <section id="main"><article id="post-pythonic" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2016/05/04/pythonic/" class="article-date">
-  <time datetime="2016-05-04T14:54:01.000Z" itemprop="datePublished">5月 4 2016</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/程序设计/">程序设计</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 class="article-title" itemprop="name">
-      由 sort 中 key 的用法浅谈 python
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>用 Python 时间也算不短了，但总感觉自己在用写 C++ 代码的思维写 Python，没有真正用到其作为脚本语言的优势。之前刷 LeetCode 时，自己的 Python 代码总是很长，很像披着 Python 外衣的 C++ 代码（放在<a href="https://github.com/xuelangZF/LeetCode" target="_blank" rel="external">这里</a>，不断重构中）。</p>
-<p><img src="http://xuelangzf-github.qiniudn.com/20160504_pythonic_cpp.png" alt=""></p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>由 sort 中 key 的用法浅谈 python | Just For Fun</title><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/normalize/4.2.0/normalize.min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/0.6.0/pure-min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/0.6.0/grids-responsive-min.css"><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css"><script type="text/javascript" src="//cdn.bootcss.com/jquery/3.0.0/jquery.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">由 sort 中 key 的用法浅谈 python</h1><a id="logo" href="/.">Just For Fun</a><p class="description">知其然，知其所以然。知识广度是深度的副产品！</p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/aboutme.html"><i class="fa fa-user"> 关于</i></a><a href="/guestbook.html"><i class="fa fa-comments"> 留言</i></a><a href="/atom.xml"><i class="fa fa-rss"> 订阅</i></a></div></div><div id="layout" class="pure-g"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">由 sort 中 key 的用法浅谈 python</h1><div class="post-meta">May 4, 2016<span> | </span><span class="category"><a href="/categories/程序设计/">程序设计</a></span><script src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> Hits</span></span></div><a data-disqus-identifier="2016/05/04/pythonic/" href="/2016/05/04/pythonic/#disqus_thread" class="disqus-comment-count"></a><div class="post-content"><p>用 Python 时间也算不短了，但总感觉自己在用写 C++ 代码的思维写 Python，没有真正用到其作为脚本语言的优势。之前刷 LeetCode 时，自己的 Python 代码总是很长，很像披着 Python 外衣的 C++ 代码（放在<a href="https://github.com/xuelangZF/LeetCode" target="_blank" rel="external">这里</a>，不断重构中）。</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20160504_pythonic_cpp.png" alt="Python不是C++"></p>
+<a id="more"></a>
 <p>想来大概是因为觉得python简单，平时只是零零碎碎的学习，也没有去读别人的代码，导致掌握的不够深入。回想起前段时间的面试，面试官看我简历写熟悉Python，就问了两个Python的问题：</p>
 <ol>
 <li>Python 中常用的优化技巧（能够提升 Python 执行效率的，除了算法层面）</li>
 <li>按照 value 从小到大输出 dict 中的 key-value值。</li>
 </ol>
 <p>我支支吾吾半天，就是没有答到点上，直接导致被拒（后来整理的内容放在<a href="https://github.com/xuelangZF/CS_Offer/blob/master/Python.md" target="_blank" rel="external">这里</a>）。所谓知耻而后勇，经过一段时间对 Python 的重新学习，才慢慢发现 Python 的一些强大与美妙之处。</p>
-<a id="more"></a>
 <h1 id="从排序说起！"><a href="#从排序说起！" class="headerlink" title="从排序说起！"></a>从排序说起！</h1><p>程序中经常用到排序函数，Python 提供了 sort 和 sorted 函数，一个原地排序，一个返回排序后的新结果，函数原型很简单：</p>
-<pre><code>sort([cmp[, key[, reverse]]])
-</code></pre><p>自己用的最多的类似下面的语句：</p>
-<pre><code>&gt;&gt;&gt; l = [43, 12, 4, 6]
-&gt;&gt;&gt; l.sort()
-&gt;&gt;&gt; l
-[4, 6, 12, 43]
-</code></pre><p>曾经窃以为这就体现了 Python 的简单优雅，不像 C++ STL中那样还需要指定迭代器范围，然后对 sort 的理解也就止步于此。后来遇到稍微复杂一点的排序场景，自己就 <a href="http://blog.csdn.net/foruok/article/details/44870749" target="_blank" rel="external">Google-Stackoverflow-Copy</a>，解决了眼前的问题，但是从来没有去深挖（这也就导致那次面试中中没有回答出来上面的第二个问题）。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sort([cmp[, key[, reverse]]])</div></pre></td></tr></table></figure>
+<p>自己用的最多的类似下面的语句：</p>
+<figure class="highlight lsl"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">&gt;&gt;&gt; l = [<span class="number">43</span>, <span class="number">12</span>, <span class="number">4</span>, <span class="number">6</span>]</div><div class="line">&gt;&gt;&gt; l.sort()</div><div class="line">&gt;&gt;&gt; l</div><div class="line">[<span class="number">4</span>, <span class="number">6</span>, <span class="number">12</span>, <span class="number">43</span>]</div></pre></td></tr></table></figure>
+<p>曾经窃以为这就体现了 Python 的简单优雅，不像 C++ STL中那样还需要指定迭代器范围，然后对 sort 的理解也就止步于此。后来遇到稍微复杂一点的排序场景，自己就 <a href="http://blog.csdn.net/foruok/article/details/44870749" target="_blank" rel="external">Google-Stackoverflow-Copy</a>，解决了眼前的问题，但是从来没有去深挖（这也就导致那次面试中中没有回答出来上面的第二个问题）。</p>
 <h2 id="sort-之美"><a href="#sort-之美" class="headerlink" title="sort 之美"></a>sort 之美</h2><p>后来去看了下 sort 的函数说明，包括 cmp, key, reverse 参数究竟怎么去用，又写了几个例子，以为这下子对 sort 可谓是理解透彻了。比如要要根据值的大小输出字典内容，那么就可以像下面这样优雅地解决：</p>
-<pre><code>&gt;&gt;&gt; d = {1: &apos;z&apos;, 2:&apos;y&apos;, 3: &apos;x&apos;}
-&gt;&gt;&gt; print sorted(d.items(), key=lambda x: x[1])
-[(3, &apos;x&apos;), (2, &apos;y&apos;), (1, &apos;z&apos;)]
-</code></pre><p>我甚至可以得到一个根据value排序的字典，只需要用 <code>collections.OrderedDict</code> 即可：</p>
-<pre><code>&gt;&gt;&gt; from collections import OrderedDict
-&gt;&gt;&gt; sorted_d = OrderedDict(sorted(d.items(), key=lambda x: x[1]))
-&gt;&gt;&gt; sorted_d
-OrderedDict([(3, &apos;x&apos;), (2, &apos;y&apos;), (1, &apos;z&apos;)])
-</code></pre><h2 id="sort-之魅"><a href="#sort-之魅" class="headerlink" title="sort 之魅"></a>sort 之魅</h2><p>我以为我对 sort 理解足够了，直到在 <a href="https://www.hackerrank.com" target="_blank" rel="external">hackerrank</a> 遇到这个<a href="https://www.hackerrank.com/challenges/ginorts" target="_blank" rel="external">题目</a>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="meta">&gt;&gt;&gt; </span>d = &#123;<span class="number">1</span>: <span class="string">'z'</span>, <span class="number">2</span>:<span class="string">'y'</span>, <span class="number">3</span>: <span class="string">'x'</span>&#125;</div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">print</span> sorted(d.items(), key=<span class="keyword">lambda</span> x: x[<span class="number">1</span>])</div><div class="line">[(<span class="number">3</span>, <span class="string">'x'</span>), (<span class="number">2</span>, <span class="string">'y'</span>), (<span class="number">1</span>, <span class="string">'z'</span>)]</div></pre></td></tr></table></figure>
+<p>我甚至可以得到一个根据value排序的字典，只需要用 <code>collections.OrderedDict</code> 即可：</p>
+<figure class="highlight lisp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">&gt;&gt;&gt; from collections import OrderedDict</div><div class="line">&gt;&gt;&gt; sorted_d = OrderedDict(<span class="name">sorted</span>(<span class="name">d</span>.items(), key=lambda x: x[<span class="number">1</span>]))</div><div class="line">&gt;&gt;&gt; sorted_d</div><div class="line">OrderedDict([(<span class="number">3</span>, 'x'), (<span class="number">2</span>, 'y'), (<span class="number">1</span>, 'z')])</div></pre></td></tr></table></figure>
+<h2 id="sort-之魅"><a href="#sort-之魅" class="headerlink" title="sort 之魅"></a>sort 之魅</h2><p>我以为我对 sort 理解足够了，直到在 <a href="https://www.hackerrank.com" target="_blank" rel="external">hackerrank</a> 遇到这个<a href="https://www.hackerrank.com/challenges/ginorts" target="_blank" rel="external">题目</a>。</p>
 <p>给定一个只包含大小写字母，数字的字符串，对其进行排序，保证：</p>
 <ul>
 <li>所有的小写字母在大写字母前面</li>
@@ -161,187 +28,40 @@ OrderedDict([(3, &apos;x&apos;), (2, &apos;y&apos;), (1, &apos;z&apos;)])
 <p>key parameter to specify a function to be called on each list element prior to making comparisons.  The value of the key parameter should be a function that takes a single argument and returns a key to use for sorting purposes. </p>
 </blockquote>
 <p>通俗讲，<strong>key 用来决定在排序算法中 cmp 比较的内容，key 可以是任何可被比较的内容，比如元组（python 中元组是可被比较的）</strong>。所以上面的排序问题可以用下面的代码来解决：</p>
-<pre><code>&gt;&gt;&gt; s = &quot;Sorting1234&quot;
-&gt;&gt;&gt; &quot;&quot;.join(sorted(s, key=lambda x: (x.isdigit(), x.isdigit() and int(x) % 2 == 0, x.isupper(), x.islower(), x)))
-&apos;ginortS1324&apos;
-</code></pre><p>这里，lambda 函数将输入的字符转换为一个元组，然后 <code>sorted 函数将根据元组</code>（而不是字符）来进行比较，进而判断每个字符的前后顺序。</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">&gt;&gt;&gt; s = <span class="string">"Sorting1234"</span></div><div class="line">&gt;&gt;&gt; <span class="string">""</span>.join(sorted(s, key=lambda x: (x.isdigit(), x.isdigit() and <span class="keyword">int</span>(x) % 2 == 0, x.isupper(), x.islower(), x)))</div><div class="line">'ginortS1324'</div></pre></td></tr></table></figure>
+<p>这里，lambda 函数将输入的字符转换为一个元组，然后 <code>sorted 函数将根据元组</code>（而不是字符）来进行比较，进而判断每个字符的前后顺序。</p>
 <p>如果同样的程序用 C++ 来写的话，可能需要一个复杂的仿函数，来定义排序的规则，远没有 Python 这般简洁优雅。</p>
 <h1 id="再探-Python"><a href="#再探-Python" class="headerlink" title="再探 Python"></a>再探 Python</h1><p>Python 是一门简单方便的语言，相信这是大部分人对 Python 的第一感觉。初学 Python，我们可能痴迷于 Python 的列表解析，list 切片，字典推导，或者是陶醉在各种强大的第三方库里，比如网络库 requests，科学计算库 numpy，web开发框架 Django 等。</p>
 <p>但是实际写程序中，我们经常会写出许多<code>繁杂的、丑陋的</code>Python代码。比如要<a href="https://leetcode.com/problems/palindrome-number/" target="_blank" rel="external">判断一个数字是否是回文数字</a>，可能会习惯性地写出下面这样的代码：</p>
-<pre><code>def isPalindrome(x):
-    if x &lt; 0:
-        return False
-    reversed_x = 0
-    original_x = x
-    while x &gt; 0:
-        reversed_x = reversed_x * 10 + x % 10
-        x /= 10
-    return reversed_x == original_x
-</code></pre><p>仔细一看，这简直就是 C++ 代码，完全没有 Python 的优雅与简单。那么，该怎样写才能够显的 Pythonic 呢？其实，用 Python 的话只要一行就可以啦（这里不考虑效率，如果考虑效率的话，C++会更加合适，单对这题来说，其实有比上面<a href="https://leetcode.com/discuss/33500/an-easy-lines-code-only-reversing-till-half-and-then-compare" target="_blank" rel="external">更高效的方法</a>）！</p>
-<pre><code>def isPalindrome(x):
-    return x &gt;= 0 and str(x) == str(x)[::-1]
-</code></pre><p>那么如何养成用 Pythonic 的思维解决问题呢？我觉得首先要对 Python 十分熟悉，精通大部分函数以及 Python 的特色：比如装饰器，迭代器，生成器以等，下面举几个简单的例子：</p>
-<pre><code># 函数式编程
-&gt;&gt;&gt; nums = map(int, &quot;123456789&quot; )
-&gt;&gt;&gt; nums
-[1, 2, 3, 4, 5, 6, 7, 8, 9]
-&gt;&gt;&gt; reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])
-15
-&gt;&gt;&gt; sum(nums)
-45
-# 生成器
-&gt;&gt;&gt; mygenerator = (x*x for x in range(3))
-&gt;&gt;&gt; for i in mygenerator:
-...     print i
-...
-0
-1
-4
-&gt;&gt;&gt; for i in mygenerator:
-...     print i
-...
-# lambda 匿名函数
-&gt;&gt;&gt; c = lambda *z: z
-&gt;&gt;&gt; c( 10, &apos;test&apos;)
-(10, &apos;test&apos;)
-# 迭代
-&gt;&gt;&gt; l = [i**2 for i in range(9)]
-&gt;&gt;&gt; l_iter = iter(l)
-&gt;&gt;&gt; next(l_iter)
-0
-&gt;&gt;&gt; next(l_iter)
-1
-&gt;&gt;&gt; next(l_iter)
-4
-# 数据结构 set
-&gt;&gt;&gt; set_a = set([i for i in range(1,9,2)])
-&gt;&gt;&gt; set_b = set([i for i in range(0,9,2)])
-&gt;&gt;&gt; print set_a | set_b
-set([0, 1, 2, 3, 4, 5, 6, 7, 8])
-</code></pre><p>其次，要多读一些 Pythonic 的代码，学习别人如何优雅地使用python。这里我推荐去看 Leetcode 的 Discuss，里面有许多惊才艳艳的代码。特别推荐 <a href="https://leetcode.com/discuss/user/StefanPochmann" target="_blank" rel="external">@StefanPochmann</a>，许多代码让我获益匪浅，比如这里对 <a href="https://leetcode.com/discuss/66147/recursive-preorder-python-and-c-o-n" target="_blank" rel="external">iter()</a> 的使用。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">isPalindrome</span><span class="params">(x)</span>:</span></div><div class="line">    <span class="keyword">if</span> x &lt; <span class="number">0</span>:</div><div class="line">        <span class="keyword">return</span> <span class="keyword">False</span></div><div class="line">    reversed_x = <span class="number">0</span></div><div class="line">    original_x = x</div><div class="line">    <span class="keyword">while</span> x &gt; <span class="number">0</span>:</div><div class="line">        reversed_x = reversed_x * <span class="number">10</span> + x % <span class="number">10</span></div><div class="line">        x /= <span class="number">10</span></div><div class="line">    <span class="keyword">return</span> reversed_x == original_x</div></pre></td></tr></table></figure>
+<p>仔细一看，这简直就是 C++ 代码，完全没有 Python 的优雅与简单。那么，该怎样写才能够显的 Pythonic 呢？其实，用 Python 的话只要一行就可以啦（这里不考虑效率，如果考虑效率的话，C++会更加合适，单对这题来说，其实有比上面<a href="https://leetcode.com/discuss/33500/an-easy-lines-code-only-reversing-till-half-and-then-compare" target="_blank" rel="external">更高效的方法</a>）！</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">isPalindrome</span><span class="params">(x)</span>:</span></div><div class="line">    <span class="keyword">return</span> x &gt;= <span class="number">0</span> <span class="keyword">and</span> str(x) == str(x)[::<span class="number">-1</span>]</div></pre></td></tr></table></figure>
+<p>那么如何养成用 Pythonic 的思维解决问题呢？我觉得首先要对 Python 十分熟悉，精通大部分函数以及 Python 的特色：比如装饰器，迭代器，生成器以等，下面举几个简单的例子：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># 函数式编程</span></div><div class="line"><span class="meta">&gt;&gt;&gt; </span>nums = map(int, <span class="string">"123456789"</span> )</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>nums</div><div class="line">[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>]</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>reduce(<span class="keyword">lambda</span> x, y: x+y, [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>])</div><div class="line"><span class="number">15</span></div><div class="line"><span class="meta">&gt;&gt;&gt; </span>sum(nums)</div><div class="line"><span class="number">45</span></div><div class="line"><span class="comment"># 生成器</span></div><div class="line"><span class="meta">&gt;&gt;&gt; </span>mygenerator = (x*x <span class="keyword">for</span> x <span class="keyword">in</span> range(<span class="number">3</span>))</div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">for</span> i <span class="keyword">in</span> mygenerator:</div><div class="line"><span class="meta">... </span>    <span class="keyword">print</span> i</div><div class="line">...</div><div class="line"><span class="number">0</span></div><div class="line"><span class="number">1</span></div><div class="line"><span class="number">4</span></div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">for</span> i <span class="keyword">in</span> mygenerator:</div><div class="line"><span class="meta">... </span>    <span class="keyword">print</span> i</div><div class="line">...</div><div class="line"><span class="comment"># lambda 匿名函数</span></div><div class="line"><span class="meta">&gt;&gt;&gt; </span>c = <span class="keyword">lambda</span> *z: z</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>c( <span class="number">10</span>, <span class="string">'test'</span>)</div><div class="line">(<span class="number">10</span>, <span class="string">'test'</span>)</div><div class="line"><span class="comment"># 迭代</span></div><div class="line"><span class="meta">&gt;&gt;&gt; </span>l = [i**<span class="number">2</span> <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">9</span>)]</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>l_iter = iter(l)</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>next(l_iter)</div><div class="line"><span class="number">0</span></div><div class="line"><span class="meta">&gt;&gt;&gt; </span>next(l_iter)</div><div class="line"><span class="number">1</span></div><div class="line"><span class="meta">&gt;&gt;&gt; </span>next(l_iter)</div><div class="line"><span class="number">4</span></div><div class="line"><span class="comment"># 数据结构 set</span></div><div class="line"><span class="meta">&gt;&gt;&gt; </span>set_a = set([i <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">1</span>,<span class="number">9</span>,<span class="number">2</span>)])</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>set_b = set([i <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">0</span>,<span class="number">9</span>,<span class="number">2</span>)])</div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">print</span> set_a | set_b</div><div class="line">set([<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>])</div></pre></td></tr></table></figure>
+<p>其次，要多读一些 Pythonic 的代码，学习别人如何优雅地使用python。这里我推荐去看 Leetcode 的 Discuss，里面有许多惊才艳艳的代码。特别推荐 <a href="https://leetcode.com/discuss/user/StefanPochmann" target="_blank" rel="external">@StefanPochmann</a>，许多代码让我获益匪浅，比如这里对 <a href="https://leetcode.com/discuss/66147/recursive-preorder-python-and-c-o-n" target="_blank" rel="external">iter()</a> 的使用。</p>
 <p>再来看一个问题，按照二进制位<a href="https://leetcode.com/problems/reverse-bits/" target="_blank" rel="external">反转 32 位的一个整形无符号数字</a>。用 Python 可以写出很简单直观的代码，如下：</p>
-<pre><code>def reverseBits(n):
-    bit_str = &apos;{0:032b}&apos;.format(n)
-    reverse_str = bit_str[::-1]
-    return int(reverse_str, 2)
-</code></pre><p>当然，上面不考虑效率，<a href="https://leetcode.com/discuss/27405/o-1-bit-operation-c-solution-8ms" target="_blank" rel="external">这里</a>有一个利用分治法思想的高效的方法。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">reverseBits</span><span class="params">(n)</span>:</span></div><div class="line">    bit_str = <span class="string">'&#123;0:032b&#125;'</span>.format(n)</div><div class="line">    reverse_str = bit_str[::<span class="number">-1</span>]</div><div class="line">    <span class="keyword">return</span> int(reverse_str, <span class="number">2</span>)</div></pre></td></tr></table></figure>
+<p>当然，上面不考虑效率，<a href="https://leetcode.com/discuss/27405/o-1-bit-operation-c-solution-8ms" target="_blank" rel="external">这里</a>有一个利用分治法思想的高效的方法。</p>
 <p>Python 是一门高效、简单、方便的语言，但这并不意味你不花时间就可以用的很好。</p>
 <h1 id="更多阅读"><a href="#更多阅读" class="headerlink" title="更多阅读"></a>更多阅读</h1><p><a href="https://wiki.python.org/moin/HowTo/Sorting" target="_blank" rel="external">Sorting Mini-HOW TO</a><br><a href="https://segmentfault.com/q/1010000000405289" target="_blank" rel="external">sort()中cmp参数的用法</a><br><a href="https://www.hackerrank.com/challenges/ginorts/forum" target="_blank" rel="external">hackerrank: ginortS</a><br><a href="http://stackoverflow.com/questions/613183/sort-a-python-dictionary-by-value" target="_blank" rel="external">Sort a Python dictionary by value</a><br><a href="http://python.jobbole.com/61171/" target="_blank" rel="external">Python高级编程技巧</a><br><a href="http://wuzhiwei.net/be_pythonic/" target="_blank" rel="external">让你的Python代码更加pythonic</a>  </p>
-
-      
-    </div>
-
-    
-	    <!-- 添加捐赠图标 -->
-<div class ="post-donate">
-    <div id="donate_board" class="donate_bar center">
-        <a id="btn_donate" class="btn_donate" href="javascript:;" title="打赏"></a>
-        <span class="donate_txt">
-           &uarr;<br>
-		   欣赏此文？支持一下吧
-        </span>
-        <br>
-      </div>  
-	<div id="donate_guide" class="donate_bar center hidden" >
-		<!-- 支付宝打赏图案 -->
-		<img src="http://xuelangzf-github.qiniudn.com/zhifubao.jpg" alt="支付宝打赏"> 
-		<!-- 微信打赏图案 -->
-		<img src="http://xuelangzf-github.qiniudn.com/weixin.jpg" alt="微信打赏">  
-    </div>
-	<script type="text/javascript">
-		document.getElementById('btn_donate').onclick = function(){
-			$('#donate_board').addClass('hidden');
-			$('#donate_guide').removeClass('hidden');
-		}
-	</script>
-</div>
-<!-- 添加捐赠图标 -->
-
-    
-  
-    
-	    <div class="article-footer-copyright">
-
-<p>本文由 selfboot 发表于 <a href="http://selfboot.cn" target="_blank">个人博客</a>，采用<a href="http://creativecommons.org/licenses/by-sa/3.0/cn" target="_blank" >署名-非商业性使用-相同方式共享 3.0 中国大陆许可协议</a>。</p>
-<p>非商业转载请注明作者及出处。商业转载请联系<a href="mailto:xuezaigds@gmail.com">作者</a>本人。</p>
-<p>
-本文标题为: 由 sort 中 key 的用法浅谈 python<br/>
-本文链接为: <a href="/2016/05/04/pythonic/" target="_blank">http://selfboot.cn/2016/05/04/pythonic/</a>
-</p>
-</div>
-
-    
-
-    <footer class="article-footer">
-      
-        <a href="http://selfboot.cn/2016/05/04/pythonic/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Python/">Python</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/思考/">思考</a></li></ul>
-
-    </footer>
-  </div>
-  
-    
-<nav id="article-nav">
-  
-    <a href="/2016/06/13/python_performance_analysis/" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Newer</strong>
-      <div class="article-nav-title">
-        
-          Python 性能分析大全
-        
-      </div>
-    </a>
-  
-  
-    <a href="/2015/11/25/skip_classes/" id="article-nav-older" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Older</strong>
-      <div class="article-nav-title">让我们一起愉快地逃课吧</div>
-    </a>
-  
-</nav>
-
-  
-</article>
-
-
-<section id="comments">
-  <div id="disqus_thread">
-    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-  </div>
-</section>
-
-
-
-  <!-- Go to www.addthis.com/dashboard to customize your tools -->
-<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-57adc438b914651b"></script>
-
-
-
-</section>
-      </div>
-    </div>
-    
-    
-<script>
-  var disqus_shortname = 'xuelangZF';
-  
-  var disqus_url = 'http://selfboot.cn/2016/05/04/pythonic/';
-  
-  (function(){
-    var dsq = document.createElement('script');
-    dsq.type = 'text/javascript';
-    dsq.async = true;
-    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-  }());
-</script>
-
-
-<script src="http://libs.useso.com/js/jquery/2.0.3/jquery.min.js"></script>
-<script src="/js/script.js"></script>
-
-  </div>
-</body>
-</html>
+</div><div class="tags"><a href="/tags/思考/">思考</a><a href="/tags/Python/">Python</a></div><div class="post-nav"><a href="/2016/06/13/python_performance_analysis/" class="pre">Python 性能分析大全</a><a href="/2015/11/25/skip_classes/" class="next">让我们一起愉快地逃课吧</a></div><div id="disqus_thread"><script>var disqus_shortname = 'xuelangZF';
+var disqus_identifier = '2016/05/04/pythonic/';
+var disqus_title = '由 sort 中 key 的用法浅谈 python';
+var disqus_url = 'http://selfboot.cn/2016/05/04/pythonic/';
+(function() {
+  var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();</script><script id="dsq-count-scr" src="//xuelangZF.disqus.com/count.js" async></script></div></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><form action="//www.google.com/search" method="get" accept-charset="utf-8" target="_blank" class="search-form"><input type="text" name="q" maxlength="20" placeholder="Search"/><input type="hidden" name="sitesearch" value="http://selfboot.cn"/></form></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/工具介绍/">工具介绍</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/社会百态/">社会百态</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/程序设计/">程序设计</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/算法/">算法</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/计算机基础/">计算机基础</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/读书与写作/">读书与写作</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/项目实践/">项目实践</a><span class="category-list-count">2</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> 标签</i></div><div class="tagcloud"><a href="/tags/JavaScript/" style="font-size: 15px;">JavaScript</a> <a href="/tags/hacker/" style="font-size: 15px;">hacker</a> <a href="/tags/总结/" style="font-size: 15px;">总结</a> <a href="/tags/教程-总结/" style="font-size: 15px;">教程, 总结</a> <a href="/tags/思考/" style="font-size: 15px;">思考</a> <a href="/tags/python/" style="font-size: 15px;">python</a> <a href="/tags/教程/" style="font-size: 15px;">教程</a> <a href="/tags/见闻/" style="font-size: 15px;">见闻</a> <a href="/tags/Django/" style="font-size: 15px;">Django</a> <a href="/tags/网络/" style="font-size: 15px;">网络</a> <a href="/tags/方法论/" style="font-size: 15px;">方法论</a> <a href="/tags/Python/" style="font-size: 15px;">Python</a> <a href="/tags/Flask/" style="font-size: 15px;">Flask</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最新文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2016/08/22/threadlocal_overview/">深入理解Python中的ThreadLocal变量（上）</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/08/07/forum_design_wsgi/">从零开始搭建论坛（二）：Web服务器网关接口</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/28/forum_design_framework/">从零开始搭建论坛（一）：Web服务器与Web框架</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/24/leetcode_guide_why/">LeetCode 刷题指南（一）：为什么要刷题</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/06/26/why_need_to_read_stackoverflow/">为什么离不开 Stackoverflow</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/06/13/python_performance_analysis/">Python 性能分析大全</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/05/04/pythonic/">由 sort 中 key 的用法浅谈 python</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/25/skip_classes/">让我们一起愉快地逃课吧</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/14/dns_practice/">从理论到实践，全方位认识DNS（实践篇）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/05/dns_theory/">从理论到实践，全方位认识DNS（理论篇）</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><script type="text/javascript" src="//xuelangZF.disqus.com/recent_comments_widget.js?num_items=5&amp;hide_avatars=1&amp;avatar_size=32&amp;excerpt_length=20&amp;hide_mods=1"></script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">© <a href="/." rel="nofollow">Just For Fun.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a id="rocket" href="#top" class="show"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="//cdn.bootcss.com/fancybox/2.1.5/jquery.fancybox.pack.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="/css/jquery.fancybox.css?v=1.0.0"><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+ga('create','UA-41784041-1','auto');ga('send','pageview');
+</script><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?fd3ab4b3c488cbb43afa1c2669f06648";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+  })();
+</script><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

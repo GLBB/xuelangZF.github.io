@@ -1,340 +1,79 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  
-  <title>使用python写vim插件 | Just For Fun</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="vim有各种强大的插件，这不仅归功于其提供的用来编写插件的脚本语言vimL，还得益于它良好的接口实现，从而支持python等语言编写插件。当vim编译时带有+python特性时就能使用python2.x编写插件，+python3则支持python3.x，可以使用vim --version来查看vim的编译特性。
-要使用python接口，可以用:h python来查看vim提供的帮助文档，本文做一个">
-<meta property="og:type" content="article">
-<meta property="og:title" content="使用python写vim插件">
-<meta property="og:url" content="http://selfboot.cn/2014/11/03/vim_plugin_with_python/index.html">
-<meta property="og:site_name" content="Just For Fun">
-<meta property="og:description" content="vim有各种强大的插件，这不仅归功于其提供的用来编写插件的脚本语言vimL，还得益于它良好的接口实现，从而支持python等语言编写插件。当vim编译时带有+python特性时就能使用python2.x编写插件，+python3则支持python3.x，可以使用vim --version来查看vim的编译特性。
-要使用python接口，可以用:h python来查看vim提供的帮助文档，本文做一个">
-<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20141103_vim_python_script.gif">
-<meta property="og:updated_time" content="2015-09-23T10:01:46.000Z">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="使用python写vim插件">
-<meta name="twitter:description" content="vim有各种强大的插件，这不仅归功于其提供的用来编写插件的脚本语言vimL，还得益于它良好的接口实现，从而支持python等语言编写插件。当vim编译时带有+python特性时就能使用python2.x编写插件，+python3则支持python3.x，可以使用vim --version来查看vim的编译特性。
-要使用python接口，可以用:h python来查看vim提供的帮助文档，本文做一个">
-<meta name="twitter:image" content="http://xuelangzf-github.qiniudn.com/20141103_vim_python_script.gif">
-  
-    <link rel="alternative" href="/atom.xml" title="Just For Fun" type="application/atom+xml">
-  
-  
-    <link rel="icon" href="/image/favicon.ico">
-  
-  <link href="//fonts.useso.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
-  <link href="//libs.useso.com/js/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css">
-  
-<!-- Google Analytics -->
-<script type="text/javascript">
-(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-ga('create', 'UA-41784041-1', 'auto');
-ga('send', 'pageview');
-
-</script>
-<!-- End Google Analytics -->
-
-
-  
-<!-- Baidu Analytics -->
-<script>
-var _hmt = _hmt || [];
-(function() {
-  var hm = document.createElement("script");
-  hm.src = "//hm.baidu.com/hm.js?fd3ab4b3c488cbb43afa1c2669f06648";
-  var s = document.getElementsByTagName("script")[0]; 
-  s.parentNode.insertBefore(hm, s);
-})();
-</script>
-<!-- End Baidu Analytics -->
-
-
-</head>
-
-<body>
-  <div id="container">
-    <div id="wrap">
-      <header id="header">
-  <div id="header-outer" class="outer">
-    <div id="header-title" class="inner">
-      <h1 id="logo-wrap">
-        <a href="/" id="logo">Just For Fun</a>
-      </h1>
-      
-        <h2 id="subtitle-wrap">
-          <a href="/" id="subtitle">享受快乐的时光</a>
-        </h2>
-      
-    </div>
-    <div id="header-menu">
-      <nav id="main-nav">
-        <ul>
-        
-          <li><a href="/"><i class="fa fa-home icon-setting"></i></a></li>
-        
-          <li><a href="/archives"><i class="fa fa-archive icon-setting"></i></a></li>
-        
-          <li><a href="/aboutme.html"><i class="fa fa-user icon-setting"></i></a></li>
-        
-        
-          <li><a href="/atom.xml"><i class="fa fa-rss %> icon-setting"></i></a></li>
-        
-        </ul>
-      </nav>
-    </div>
-  </div>
-</header>
-
-      <div class="outer">
-        <section id="main"><article id="post-vim_plugin_with_python" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2014/11/03/vim_plugin_with_python/" class="article-date">
-  <time datetime="2014-11-02T16:00:00.000Z" itemprop="datePublished">11月 3 2014</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/程序设计/">程序设计</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 class="article-title" itemprop="name">
-      使用python写vim插件
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>vim有各种强大的插件，这不仅归功于其提供的用来编写插件的脚本语言vimL，还得益于它良好的接口实现，从而支持python等语言编写插件。当vim编译时带有<code>+python</code>特性时就能使用python2.x编写插件，<code>+python3</code>则支持python3.x，可以使用<code>vim --version</code>来查看vim的编译特性。</p>
-<p>要使用python接口，可以用<code>:h python</code>来查看vim提供的帮助文档，本文做一个简单的介绍。我们都知道在vim里可以执行bash命令，只需要<code>:!command</code>即可，那么vim里可以执行python语句吗？当然可以了，vim那么强大！不是吗，是吗？！</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>使用python写vim插件 | Just For Fun</title><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/normalize/4.2.0/normalize.min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/0.6.0/pure-min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/0.6.0/grids-responsive-min.css"><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css"><script type="text/javascript" src="//cdn.bootcss.com/jquery/3.0.0/jquery.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">使用python写vim插件</h1><a id="logo" href="/.">Just For Fun</a><p class="description">知其然，知其所以然。知识广度是深度的副产品！</p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/aboutme.html"><i class="fa fa-user"> 关于</i></a><a href="/guestbook.html"><i class="fa fa-comments"> 留言</i></a><a href="/atom.xml"><i class="fa fa-rss"> 订阅</i></a></div></div><div id="layout" class="pure-g"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">使用python写vim插件</h1><div class="post-meta">Nov 3, 2014<span> | </span><span class="category"><a href="/categories/程序设计/">程序设计</a></span><script src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> Hits</span></span></div><a data-disqus-identifier="2014/11/03/vim_plugin_with_python/" href="/2014/11/03/vim_plugin_with_python/#disqus_thread" class="disqus-comment-count"></a><div class="post-content"><p>vim有各种强大的插件，这不仅归功于其提供的用来编写插件的脚本语言vimL，还得益于它良好的接口实现，从而支持python等语言编写插件。当vim编译时带有<code>+python</code>特性时就能使用python2.x编写插件，<code>+python3</code>则支持python3.x，可以使用<code>vim --version</code>来查看vim的编译特性。</p>
+<p>要使用python接口，可以用<code>:h python</code>来查看vim提供的帮助文档，本文做一个简单的介绍。我们都知道在vim里可以执行bash命令，只需要<code>:!command</code>即可，那么vim里可以执行python语句吗？当然可以了，vim那么强大！</p>
+<a id="more"></a>
 <h1 id="vim中执行python命令"><a href="#vim中执行python命令" class="headerlink" title="vim中执行python命令"></a>vim中执行python命令</h1><p>在vim中可以使用<code>py[thon] {stmt}</code>来执行python语句{stmt}，你可以用<code>:python print &quot;Hello World!&quot;</code>来验证一下。</p>
 <p>只能执行一条语句，没什么用，不是吗？所以有更加强大的接口，语法如下：</p>
 <blockquote>
 <p>py[thon] &lt;&lt; {endmarker}<br>{script}<br>{endmarker}  </p>
 </blockquote>
-<a id="more"></a>
 <p>这样我们就可以执行python脚本{script}中的内容了。{endmarker}是一个标记符号，可以是任何内容，不过<strong>{endmarker}后面不能有任何的空白字符</strong>。看一个简单的例子，假设下面代码保存为script_demo.vim：</p>
-<pre><code>function! Foo()
-python &lt;&lt; EOF
-class Foo_demo:
-    def __init__(self):
-        print &apos;Foo_demo init&apos;
-Foo_demo()
-EOF
-endfunction
-</code></pre><p>那么在vim中我们先用<code>:source path_to_script/script_demo.vim</code>来加载脚本，然后就可以用<code>:call Foo()</code>来运行python脚本了，整个过程如图所示：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">function! Foo()</div><div class="line">python &lt;&lt; EOF</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Foo_demo</span>:</span></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">        <span class="keyword">print</span> <span class="string">'Foo_demo init'</span></div><div class="line"></div><div class="line">Foo_demo()</div><div class="line">EOF</div><div class="line">endfunction</div></pre></td></tr></table></figure>
+<p>那么在vim中我们先用<code>:source path_to_script/script_demo.vim</code>来加载脚本，然后就可以用<code>:call Foo()</code>来运行python脚本了，整个过程如图所示：</p>
 <p><img src="http://xuelangzf-github.qiniudn.com/20141103_vim_python_script.gif" alt="vim中执行python脚本"></p>
 <p>此外，我们还可以将python脚本放到一个单独的.py文件中，然后用<code>pyf[ile] {file}</code>来运行python文件中的程序，要注意这里pyf[ile]后面的所有参数被看做是一个文件的名字。</p>
 <h1 id="vim模块"><a href="#vim模块" class="headerlink" title="vim模块"></a>vim模块</h1><p>我们已经可以在vim中执行python命令了，但是python怎么获取vim中的一些信息呢？比如说我想知道vim当前缓冲区一共有多少行内容，然后获取最后一行的内容，用python该怎么做呢？</p>
 <p>于是vim提供了一个python模块，有趣的是模块名字就叫做vim，我们可以用它来获取vim编辑器里面的所有信息。上面问题用以下python脚本就可以解决了：</p>
-<pre><code>function! Bar()
-python &lt;&lt; EOF
-import vim
-cur_buf = vim.current.buffer
-print &quot;Lines: {0}&quot;.format(len(cur_buf))
-print &quot;Contents: {0}&quot;.format(cur_buf[-1])
-EOF
-endfunction
-</code></pre><p>你可以自己加载脚本运行一下见证奇迹！上面代码出现了<code>vim.current.buffer</code>，想必你已经从名字猜到了它的意思了，不过还是来详细看下吧：</p>
+<figure class="highlight vim"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">function</span>! <span class="title">Bar</span><span class="params">()</span></span></div><div class="line"><span class="keyword">python</span> &lt;&lt; EOF</div><div class="line">import <span class="keyword">vim</span></div><div class="line"></div><div class="line">cur_buf = <span class="keyword">vim</span>.current.<span class="keyword">buffer</span></div><div class="line"><span class="keyword">print</span> <span class="string">"Lines: &#123;0&#125;"</span>.format(<span class="built_in">len</span>(cur_buf))</div><div class="line"><span class="keyword">print</span> <span class="string">"Contents: &#123;0&#125;"</span>.format(cur_buf[-<span class="number">1</span>])</div><div class="line">EOF</div><div class="line"><span class="keyword">endfunction</span></div></pre></td></tr></table></figure>
+<p>你可以自己加载脚本运行一下见证奇迹！上面代码出现了<code>vim.current.buffer</code>，想必你已经从名字猜到了它的意思了，不过还是来详细看下吧：</p>
 <p><strong>vim模块中的常量</strong></p>
-<ol>
-<li><p>vim.buffers: 用来访问vim中缓冲区的列表对象，可以进行如下操作：</p>
-<pre><code>:py b = vim.buffers[i]      # Indexing (read-only)
-:py b in vim.buffers      # Membership test
-:py n = len(vim.buffers)  # Number of elements
-:py for b in vim.buffers: # Iterating over buffer list
-</code></pre></li>
-<li>vim.windows: 用来访问vim中窗口的列表对象，和vim.buffers支持的操作基本相。</li>
-<li><p>vim.current: 用来访问vim中当前位置的各种信息，比如：</p>
+<p>1、vim.buffers: 用来访问vim中缓冲区的列表对象，可以进行如下操作：</p>
+<figure class="highlight vim"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">:<span class="keyword">py</span> <span class="keyword">b</span> = <span class="keyword">vim</span>.<span class="keyword">buffers</span>[i]	  # Indexing (<span class="keyword">read</span>-<span class="keyword">only</span>)</div><div class="line">:<span class="keyword">py</span> <span class="keyword">b</span> in <span class="keyword">vim</span>.<span class="keyword">buffers</span>	  # Membership test</div><div class="line">:<span class="keyword">py</span> n = <span class="built_in">len</span>(<span class="keyword">vim</span>.<span class="keyword">buffers</span>)  # Number of elements</div><div class="line">:<span class="keyword">py</span> <span class="keyword">for</span> <span class="keyword">b</span> in <span class="keyword">vim</span>.<span class="keyword">buffer</span><span class="variable">s:</span> # Iterating over <span class="keyword">buffer</span> <span class="keyword">list</span></div></pre></td></tr></table></figure>
+<p>2、 vim.windows: 用来访问vim中窗口的列表对象，和vim.buffers支持的操作基本相。</p>
+<p>3、 vim.current: 用来访问vim中当前位置的各种信息，比如：</p>
 <blockquote>
-<p>vim.current.line<br>vim.current.buffer<br>vim.current.window<br>vim.current.tabpage<br>vim.current.range  </p>
+<p>vim.current.line<br>vim.current.buffer<br>vim.current.window<br>vim.current.tabpage<br>vim.current.range </p>
 </blockquote>
-</li>
-<li><p>vim.vvars: 类似字典的对象，用来存储global(g:)变量或者vim(v:)变量。</p>
-</li>
-</ol>
+<p>4、 vim.vvars: 类似字典的对象，用来存储global(g:)变量或者vim(v:)变量。</p>
 <p>还有其他的一些常量，这里不做叙述。注意这里的常量并不是真正意义上的常量，你可以重新给他们赋值。但是我们应该避免这样做，因为这样会丢失该常量引用的值。现在为止我们已经能获取vim中数据，然后用python来对其进行操作，似乎完美了。</p>
 <p>不过vim并没有止步于此，它可是<code>Stronger than Stronger</code>！因为我们可以在python里使用vim强大的命令集，这样就可以用python写一些常用的批处理插件，看下面简单的例子：</p>
-<pre><code>function! Del(number)
-python &lt;&lt; EOF
-import vim
-num = vim.eval(&quot;a:number&quot;)
-vim.command(&quot;normal gg{0}dd&quot;.format(num))
-vim.command(&quot;w&quot;)
-EOF
-endfunction
-</code></pre><p>可以调用上面函数Del(n)用来删除当前缓冲区前n行的内容（只是示例而已，现实中别这么做！）上面用到了eval和command函数，如下：</p>
+<figure class="highlight vim"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">function</span>! <span class="title">Del</span><span class="params">(number)</span></span></div><div class="line"><span class="keyword">python</span> &lt;&lt; EOF</div><div class="line">import <span class="keyword">vim</span></div><div class="line"></div><div class="line">num = <span class="keyword">vim</span>.<span class="built_in">eval</span>(<span class="string">"a:number"</span>)</div><div class="line"><span class="keyword">vim</span>.<span class="keyword">command</span>(<span class="string">"normal gg&#123;0&#125;dd"</span>.format(num))</div><div class="line"><span class="keyword">vim</span>.<span class="keyword">command</span>(<span class="string">"w"</span>)</div><div class="line">EOF</div><div class="line"><span class="keyword">endfunction</span></div></pre></td></tr></table></figure>
+<p>可以调用上面函数Del(n)用来删除当前缓冲区前n行的内容（只是示例而已，现实中别这么做！）上面用到了eval和command函数，如下：</p>
 <p><strong>vim模块中两个主要的方法</strong></p>
-<ol>
-<li><p><code>vim.command(str)</code>: 执行vim中的命令str(ex-mode，命令模式下的命令)，返回值为None，比如：</p>
-<pre><code>:py vim.command(&quot;%s/aaa/bbb/g&quot;)
-</code></pre><p> 也可以用<code>vim.command(&quot;normal &quot;+str)</code>来执行normal模式下的命令，比如说用以下命令删除当前行的内容：</p>
-<pre><code>:py vim.command(&quot;normal &quot;+&apos;dd&apos;)
-</code></pre></li>
-<li><p><code>vim.eval(str)</code>: 用vim内部的解释器来计算str中的内容，返回值可以是字符串、字典、或者列表，比如计算12+12的值：</p>
-<pre><code>:py print vim.eval(&quot;12+12&quot;)
-</code></pre><p> 将返回结算结果24。</p>
-</li>
-</ol>
+<p>1、 <code>vim.command(str)</code>: 执行vim中的命令str(ex-mode，命令模式下的命令)，返回值为None，比如：</p>
+<figure class="highlight vim"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">:<span class="keyword">py</span> <span class="keyword">vim</span>.<span class="keyword">command</span>(<span class="string">"%s/aaa/bbb/g"</span>)</div></pre></td></tr></table></figure>
+<p>也可以用<code>vim.command(&quot;normal &quot;+str)</code>来执行normal模式下的命令，比如说用以下命令删除当前行的内容：</p>
+<figure class="highlight vim"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">:<span class="keyword">py</span> <span class="keyword">vim</span>.<span class="keyword">command</span>(<span class="string">"normal "</span>+<span class="string">'dd'</span>)</div></pre></td></tr></table></figure>
+<p>2、 <code>vim.eval(str)</code>: 用vim内部的解释器来计算str中的内容，返回值可以是字符串、字典、或者列表，比如计算12+12的值：</p>
+<figure class="highlight vim"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">:<span class="keyword">py</span> <span class="keyword">print</span> <span class="keyword">vim</span>.<span class="built_in">eval</span>(<span class="string">"12+12"</span>)</div></pre></td></tr></table></figure>
+<p>将返回结算结果24。</p>
 <p>前面的Del函数还提供了一个number参数，在vimL里面可以通过<code>let arg=a:number</code>来使用，在python中通过<code>vim.eval(&quot;a:number&quot;)</code>来使用。也可以通过参数位置来访问，比如let arg=a:0或者是vim.eval(“a:0”)。我们可以使用”…”来代替命名参数来定义一个能接收任意数量参数的函数，不过这样只能通过位置来访问。</p>
 <p>vim模块还提供了一个<code>异常处理对象vim.error</code>，使用vim模块时一旦出现错误，将会触发一个vim.error异常，简单的例子如下：</p>
-<pre><code>try:
-    vim.command(&quot;put a&quot;)
-except vim.error:
-    # nothing in register a
-</code></pre><h1 id="vim模块提供的对象"><a href="#vim模块提供的对象" class="headerlink" title="vim模块提供的对象"></a>vim模块提供的对象</h1><p>到这里你基本能用python来对缓冲区进行基本的操作，比如删除行或者是在指定行添加内容等。不过在缓冲区添加内容会很不pythoner，因为你得使用command来调用vim的i/I/a/A命令。好在有更科学的方式，那就是利用vim模块提供的对象来进行操作，看下面简单的例子：</p>
-<pre><code>function! Append()
-python &lt;&lt; EOF
-import vim
-cur_buf = vim.current.buffer
-lens = len(cur_buf)
-cur_buf.append(&apos;&quot; Demo&apos;, lens)
-EOF
-endfunction
-</code></pre><p>Append函数在当前缓冲区的结尾添加注释内容<code>&quot; Demo</code>，缓冲区对象是怎么一会儿事呢？</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">try</span>:</div><div class="line">    vim.command(<span class="string">"put a"</span>)</div><div class="line"><span class="keyword">except</span> vim.error:</div><div class="line"><span class="comment"># nothing in register a</span></div></pre></td></tr></table></figure>
+<h1 id="vim模块提供的对象"><a href="#vim模块提供的对象" class="headerlink" title="vim模块提供的对象"></a>vim模块提供的对象</h1><p>到这里你基本能用python来对缓冲区进行基本的操作，比如删除行或者是在指定行添加内容等。不过在缓冲区添加内容会很不pythoner，因为你得使用command来调用vim的i/I/a/A命令。好在有更科学的方式，那就是利用vim模块提供的对象来进行操作，看下面简单的例子：</p>
+<figure class="highlight vim"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">function</span>! <span class="title">Append</span><span class="params">()</span></span></div><div class="line"><span class="keyword">python</span> &lt;&lt; EOF</div><div class="line">import <span class="keyword">vim</span></div><div class="line"></div><div class="line">cur_buf = <span class="keyword">vim</span>.current.<span class="keyword">buffer</span></div><div class="line">lens = <span class="built_in">len</span>(cur_buf)</div><div class="line">cur_buf.<span class="keyword">append</span>(<span class="string">'" Demo'</span>, lens)</div><div class="line">EOF</div><div class="line"><span class="keyword">endfunction</span></div></pre></td></tr></table></figure>
+<p>Append函数在当前缓冲区的结尾添加注释内容<code>&quot; Demo</code>，缓冲区对象是怎么一会儿事呢？</p>
 <p><strong>缓冲区对象</strong></p>
 <p>vim模块提供了缓冲区对象来让我们对缓冲区进行操作，该对象有两个只读属性name和number，name为当前缓冲区文件的名称（包含绝对路径），number为缓冲区的数量。还有一个bool属性valid，用来标识相关缓冲区是否被擦除。</p>
 <p>缓冲区对象有以下几种方法:</p>
 <ul>
 <li>b.append(str): 在当前行的下面插入新的行，内容为str；</li>
 <li>b.append(str, n):  在第n行的下面插入新的行，内容为str；</li>
-<li>b.append(list)<br>  b.append(list, n): 插入多行到缓冲区中；</li>
+<li>b.append(list)  </li>
+<li>b.append(list, n): 插入多行到缓冲区中；</li>
 <li>b.range(s,e): 返回一个<code>range对象</code>表示缓冲区中s到e行的内容。</li>
 </ul>
 <p>注意使用append添加新行str时，str中一定不能包含换行符”\n”。str结尾可以有”\n”，但会被忽略掉。</p>
 <p>缓冲区对象的range方法会返回一个range对象来代表部分的缓冲区内容，那么range对象又有那些属性以及方法呢? 其实在操作上range对象和缓冲区对象基本相同，除了range对象的操作均是在指定的区域上。range对象有两个属性start和end，分别是range对象的起始和结尾行。它的方法有r.append(str)，r.append(str, n)和r.append(list)，r.append(list, n)。 </p>
 <p>我们可以通过<code>vim.windows</code>来获取vim中的窗口对象，我们只能通过窗口对象的属性来对其进行操作，因为它没有提供方法或者其他接口来操作。其中只读属性有buffer、number、tabpage等，读写属性有cursor、height、width、valid等。具体可以查看帮助<code>:h python-window</code></p>
-<p>参考<br><a href="http://orestis.gr/blog/2008/08/10/scripting-vim-with-python/" target="_blank" rel="external">Scripting Vim with Python</a><br><a href="http://python.42qu.com/11165602" target="_blank" rel="external">如何用python写vim插件</a> </p>
-
-      
-    </div>
-
-    
-	    <!-- 添加捐赠图标 -->
-<div class ="post-donate">
-    <div id="donate_board" class="donate_bar center">
-        <a id="btn_donate" class="btn_donate" href="javascript:;" title="打赏"></a>
-        <span class="donate_txt">
-           &uarr;<br>
-		   欣赏此文？支持一下吧
-        </span>
-        <br>
-      </div>  
-	<div id="donate_guide" class="donate_bar center hidden" >
-		<!-- 支付宝打赏图案 -->
-		<img src="http://xuelangzf-github.qiniudn.com/zhifubao.jpg" alt="支付宝打赏"> 
-		<!-- 微信打赏图案 -->
-		<img src="http://xuelangzf-github.qiniudn.com/weixin.jpg" alt="微信打赏">  
-    </div>
-	<script type="text/javascript">
-		document.getElementById('btn_donate').onclick = function(){
-			$('#donate_board').addClass('hidden');
-			$('#donate_guide').removeClass('hidden');
-		}
-	</script>
-</div>
-<!-- 添加捐赠图标 -->
-
-    
-  
-    
-	    <div class="article-footer-copyright">
-
-<p>本文由 selfboot 发表于 <a href="http://selfboot.cn" target="_blank">个人博客</a>，采用<a href="http://creativecommons.org/licenses/by-sa/3.0/cn" target="_blank" >署名-非商业性使用-相同方式共享 3.0 中国大陆许可协议</a>。</p>
-<p>非商业转载请注明作者及出处。商业转载请联系<a href="mailto:xuezaigds@gmail.com">作者</a>本人。</p>
-<p>
-本文标题为: 使用python写vim插件<br/>
-本文链接为: <a href="/2014/11/03/vim_plugin_with_python/" target="_blank">http://selfboot.cn/2014/11/03/vim_plugin_with_python/</a>
-</p>
-</div>
-
-    
-
-    <footer class="article-footer">
-      
-        <a href="http://selfboot.cn/2014/11/03/vim_plugin_with_python/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/python/">python</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/教程/">教程</a></li></ul>
-
-    </footer>
-  </div>
-  
-    
-<nav id="article-nav">
-  
-    <a href="/2014/11/11/osx_app_summary/" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Newer</strong>
-      <div class="article-nav-title">
-        
-          OS X 应用总结(神兵利器大展览)
-        
-      </div>
-    </a>
-  
-  
-    <a href="/2014/10/27/python_default_values/" id="article-nav-older" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Older</strong>
-      <div class="article-nav-title">陷阱！python参数默认值</div>
-    </a>
-  
-</nav>
-
-  
-</article>
-
-
-<section id="comments">
-  <div id="disqus_thread">
-    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-  </div>
-</section>
-
-
-
-  <!-- Go to www.addthis.com/dashboard to customize your tools -->
-<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-57adc438b914651b"></script>
-
-
-
-</section>
-      </div>
-    </div>
-    
-    
-<script>
-  var disqus_shortname = 'xuelangZF';
-  
-  var disqus_url = 'http://selfboot.cn/2014/11/03/vim_plugin_with_python/';
-  
-  (function(){
-    var dsq = document.createElement('script');
-    dsq.type = 'text/javascript';
-    dsq.async = true;
-    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-  }());
-</script>
-
-
-<script src="http://libs.useso.com/js/jquery/2.0.3/jquery.min.js"></script>
-<script src="/js/script.js"></script>
-
-  </div>
-</body>
-</html>
+<h1 id="更多阅读"><a href="#更多阅读" class="headerlink" title="更多阅读"></a>更多阅读</h1><p><a href="http://orestis.gr/blog/2008/08/10/scripting-vim-with-python/" target="_blank" rel="external">Scripting Vim with Python</a><br><a href="http://python.42qu.com/11165602" target="_blank" rel="external">如何用python写vim插件</a> </p>
+</div><div class="tags"><a href="/tags/教程/">教程</a><a href="/tags/python/">python</a></div><div class="post-nav"><a href="/2014/11/11/osx_app_summary/" class="pre">OS X 应用总结(神兵利器大展览)</a><a href="/2014/10/27/python_default_values/" class="next">陷阱！python参数默认值</a></div><div id="disqus_thread"><script>var disqus_shortname = 'xuelangZF';
+var disqus_identifier = '2014/11/03/vim_plugin_with_python/';
+var disqus_title = '使用python写vim插件';
+var disqus_url = 'http://selfboot.cn/2014/11/03/vim_plugin_with_python/';
+(function() {
+  var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();</script><script id="dsq-count-scr" src="//xuelangZF.disqus.com/count.js" async></script></div></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><form action="//www.google.com/search" method="get" accept-charset="utf-8" target="_blank" class="search-form"><input type="text" name="q" maxlength="20" placeholder="Search"/><input type="hidden" name="sitesearch" value="http://selfboot.cn"/></form></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/工具介绍/">工具介绍</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/社会百态/">社会百态</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/程序设计/">程序设计</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/算法/">算法</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/计算机基础/">计算机基础</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/读书与写作/">读书与写作</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/项目实践/">项目实践</a><span class="category-list-count">2</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> 标签</i></div><div class="tagcloud"><a href="/tags/JavaScript/" style="font-size: 15px;">JavaScript</a> <a href="/tags/hacker/" style="font-size: 15px;">hacker</a> <a href="/tags/总结/" style="font-size: 15px;">总结</a> <a href="/tags/教程-总结/" style="font-size: 15px;">教程, 总结</a> <a href="/tags/思考/" style="font-size: 15px;">思考</a> <a href="/tags/python/" style="font-size: 15px;">python</a> <a href="/tags/教程/" style="font-size: 15px;">教程</a> <a href="/tags/见闻/" style="font-size: 15px;">见闻</a> <a href="/tags/Django/" style="font-size: 15px;">Django</a> <a href="/tags/网络/" style="font-size: 15px;">网络</a> <a href="/tags/方法论/" style="font-size: 15px;">方法论</a> <a href="/tags/Python/" style="font-size: 15px;">Python</a> <a href="/tags/Flask/" style="font-size: 15px;">Flask</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最新文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2016/08/22/threadlocal_overview/">深入理解Python中的ThreadLocal变量（上）</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/08/07/forum_design_wsgi/">从零开始搭建论坛（二）：Web服务器网关接口</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/28/forum_design_framework/">从零开始搭建论坛（一）：Web服务器与Web框架</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/24/leetcode_guide_why/">LeetCode 刷题指南（一）：为什么要刷题</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/06/26/why_need_to_read_stackoverflow/">为什么离不开 Stackoverflow</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/06/13/python_performance_analysis/">Python 性能分析大全</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/05/04/pythonic/">由 sort 中 key 的用法浅谈 python</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/25/skip_classes/">让我们一起愉快地逃课吧</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/14/dns_practice/">从理论到实践，全方位认识DNS（实践篇）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/05/dns_theory/">从理论到实践，全方位认识DNS（理论篇）</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><script type="text/javascript" src="//xuelangZF.disqus.com/recent_comments_widget.js?num_items=5&amp;hide_avatars=1&amp;avatar_size=32&amp;excerpt_length=20&amp;hide_mods=1"></script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">© <a href="/." rel="nofollow">Just For Fun.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a id="rocket" href="#top" class="show"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="//cdn.bootcss.com/fancybox/2.1.5/jquery.fancybox.pack.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="/css/jquery.fancybox.css?v=1.0.0"><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+ga('create','UA-41784041-1','auto');ga('send','pageview');
+</script><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?fd3ab4b3c488cbb43afa1c2669f06648";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+  })();
+</script><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

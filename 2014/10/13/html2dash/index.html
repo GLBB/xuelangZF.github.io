@@ -1,138 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  
-  <title>Dash助手——任意html转换为Docset | Just For Fun</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="作为一名程序员，最离不开的就是文档了，大多数情况下我们都是通过文档了解一个陌生的领域。想象一下，打开了一堆文档，在文档中跳来跳去，多么的不优雅！所以Bogdan Popescu一怒之下开发了dash，解放了太多在文档中跳来跳去的码农。
-dash主要有以下特点：
-
-自带大量常用文档(iOS/Mac/PHP/Python/Java等)
-支持用户自定义文档(scrapy/requests/beautif">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Dash助手——任意html转换为Docset">
-<meta property="og:url" content="http://selfboot.cn/2014/10/13/html2dash/index.html">
-<meta property="og:site_name" content="Just For Fun">
-<meta property="og:description" content="作为一名程序员，最离不开的就是文档了，大多数情况下我们都是通过文档了解一个陌生的领域。想象一下，打开了一堆文档，在文档中跳来跳去，多么的不优雅！所以Bogdan Popescu一怒之下开发了dash，解放了太多在文档中跳来跳去的码农。
-dash主要有以下特点：
-
-自带大量常用文档(iOS/Mac/PHP/Python/Java等)
-支持用户自定义文档(scrapy/requests/beautif">
-<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20141013_dash_overview.png">
-<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20141013_request_dash.png">
-<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20141013_docset_API.png">
-<meta property="og:image" content="http://xuelangzf-github.qiniudn.com/20141013_sitesucker.png">
-<meta property="og:updated_time" content="2015-09-23T10:01:35.000Z">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Dash助手——任意html转换为Docset">
-<meta name="twitter:description" content="作为一名程序员，最离不开的就是文档了，大多数情况下我们都是通过文档了解一个陌生的领域。想象一下，打开了一堆文档，在文档中跳来跳去，多么的不优雅！所以Bogdan Popescu一怒之下开发了dash，解放了太多在文档中跳来跳去的码农。
-dash主要有以下特点：
-
-自带大量常用文档(iOS/Mac/PHP/Python/Java等)
-支持用户自定义文档(scrapy/requests/beautif">
-<meta name="twitter:image" content="http://xuelangzf-github.qiniudn.com/20141013_dash_overview.png">
-  
-    <link rel="alternative" href="/atom.xml" title="Just For Fun" type="application/atom+xml">
-  
-  
-    <link rel="icon" href="/image/favicon.ico">
-  
-  <link href="//fonts.useso.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
-  <link href="//libs.useso.com/js/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css">
-  
-<!-- Google Analytics -->
-<script type="text/javascript">
-(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-ga('create', 'UA-41784041-1', 'auto');
-ga('send', 'pageview');
-
-</script>
-<!-- End Google Analytics -->
-
-
-  
-<!-- Baidu Analytics -->
-<script>
-var _hmt = _hmt || [];
-(function() {
-  var hm = document.createElement("script");
-  hm.src = "//hm.baidu.com/hm.js?fd3ab4b3c488cbb43afa1c2669f06648";
-  var s = document.getElementsByTagName("script")[0]; 
-  s.parentNode.insertBefore(hm, s);
-})();
-</script>
-<!-- End Baidu Analytics -->
-
-
-</head>
-
-<body>
-  <div id="container">
-    <div id="wrap">
-      <header id="header">
-  <div id="header-outer" class="outer">
-    <div id="header-title" class="inner">
-      <h1 id="logo-wrap">
-        <a href="/" id="logo">Just For Fun</a>
-      </h1>
-      
-        <h2 id="subtitle-wrap">
-          <a href="/" id="subtitle">享受快乐的时光</a>
-        </h2>
-      
-    </div>
-    <div id="header-menu">
-      <nav id="main-nav">
-        <ul>
-        
-          <li><a href="/"><i class="fa fa-home icon-setting"></i></a></li>
-        
-          <li><a href="/archives"><i class="fa fa-archive icon-setting"></i></a></li>
-        
-          <li><a href="/aboutme.html"><i class="fa fa-user icon-setting"></i></a></li>
-        
-        
-          <li><a href="/atom.xml"><i class="fa fa-rss %> icon-setting"></i></a></li>
-        
-        </ul>
-      </nav>
-    </div>
-  </div>
-</header>
-
-      <div class="outer">
-        <section id="main"><article id="post-html2dash" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2014/10/13/html2dash/" class="article-date">
-  <time datetime="2014-10-12T16:00:00.000Z" itemprop="datePublished">10月 13 2014</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/工具介绍/">工具介绍</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 class="article-title" itemprop="name">
-      Dash助手——任意html转换为Docset
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>作为一名程序员，最离不开的就是文档了，大多数情况下我们都是通过文档了解一个陌生的领域。想象一下，打开了一堆文档，在文档中跳来跳去，多么的不优雅！所以<a href="http://blog.kapeli.com/about" target="_blank" rel="external">Bogdan Popescu</a>一怒之下开发了<a href="http://kapeli.com/dash" target="_blank" rel="external">dash</a>，解放了太多在文档中跳来跳去的码农。</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>Dash助手——任意html转换为Docset | Just For Fun</title><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/normalize/4.2.0/normalize.min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/0.6.0/pure-min.css"><link rel="stylesheet" type="text/css" href="//cdn.bootcss.com/pure/0.6.0/grids-responsive-min.css"><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css"><script type="text/javascript" src="//cdn.bootcss.com/jquery/3.0.0/jquery.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">Dash助手——任意html转换为Docset</h1><a id="logo" href="/.">Just For Fun</a><p class="description">知其然，知其所以然。知识广度是深度的副产品！</p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/aboutme.html"><i class="fa fa-user"> 关于</i></a><a href="/guestbook.html"><i class="fa fa-comments"> 留言</i></a><a href="/atom.xml"><i class="fa fa-rss"> 订阅</i></a></div></div><div id="layout" class="pure-g"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">Dash助手——任意html转换为Docset</h1><div class="post-meta">Oct 13, 2014<span> | </span><span class="category"><a href="/categories/工具介绍/">工具介绍</a></span><script src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> Hits</span></span></div><a data-disqus-identifier="2014/10/13/html2dash/" href="/2014/10/13/html2dash/#disqus_thread" class="disqus-comment-count"></a><div class="post-content"><p>作为一名程序员，最离不开的就是文档了，大多数情况下我们都是通过文档了解一个陌生的领域。想象一下，打开了一堆文档，在文档中跳来跳去，多么的不优雅！所以<a href="http://blog.kapeli.com/about" target="_blank" rel="external">Bogdan Popescu</a>一怒之下开发了<a href="http://kapeli.com/dash" target="_blank" rel="external">dash</a>，解放了太多在文档中跳来跳去的码农。</p>
 <p>dash主要有以下特点：</p>
 <ul>
 <li>自带大量常用文档(iOS/Mac/PHP/Python/Java等)</li>
@@ -156,157 +22,38 @@ var _hmt = _hmt || [];
 <li>写入SQLite数据索引(Populate the SQLite Index)；</li>
 </ol>
 <p>为了将转换的过程自动化，我写了一个小程序<a href="https://github.com/xuelangZF/html2Dash" target="_blank" rel="external">html2dash</a>放在github上，使用十分简单，可以用<code>./html2dash.py -h</code>查看帮助，如下：</p>
-<pre><code>$ /html2dash.py -h
-usage: html2dash.py [-h] [-n NAME] [-d PATH] [-i FILENAME] [-p INDEX_PAGE]
-                    SOURCE
-
-positional arguments:
-  SOURCE                Directory containing the HTML documents
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -n NAME, --name NAME  Name the docset explicitly
-  -d PATH, --destination PATH
-                        Put the resulting docset into PATH
-  -i FILENAME, --icon FILENAME
-                        Add PNG icon FILENAME to docset
-  -p INDEX_PAGE, --index-page INDEX_PAGE
-                        Set the file that is shown
-</code></pre><p>下面是转换requests文档的示例：</p>
-<pre><code>$ ./html2dash.py -n requests -i ~/Documents/requests-sidebar.png ~/Documents/requests  
-Create the Docset Folder!  
-Copy the HTML Documentation!  
-Create the SQLite Index    
-Create the Info.plist File  
-Create the Icon for the Docset!  
-Generate Docset Successfully!  
-</code></pre><p>效果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">$ /html2dash.py -h</div><div class="line">usage: html2dash.py [-h] [-n NAME] [<span class="_">-d</span> PATH] [-i FILENAME] [-p INDEX_PAGE]</div><div class="line">                    SOURCE</div><div class="line">	</div><div class="line">positional arguments:</div><div class="line">  SOURCE                Directory containing the HTML documents</div><div class="line">	</div><div class="line">optional arguments:</div><div class="line">  -h, --help            show this <span class="built_in">help</span> message and <span class="built_in">exit</span></div><div class="line">  -n NAME, --name NAME  Name the docset explicitly</div><div class="line">  <span class="_">-d</span> PATH, --destination PATH</div><div class="line">                        Put the resulting docset into PATH</div><div class="line">  -i FILENAME, --icon FILENAME</div><div class="line">                        Add PNG icon FILENAME to docset</div><div class="line">  -p INDEX_PAGE, --index-page INDEX_PAGE</div><div class="line">                        Set the file that is shown</div></pre></td></tr></table></figure>
+<p>下面是转换requests文档的示例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">$ ./html2dash.py -n requests -i ~/Documents/requests-sidebar.png ~/Documents/requests  </div><div class="line">Create the Docset Folder!  </div><div class="line">Copy the HTML Documentation!  </div><div class="line">Create the SQLite Index    </div><div class="line">Create the Info.plist File  </div><div class="line">Create the Icon <span class="keyword">for</span> the Docset!  </div><div class="line">Generate Docset Successfully!</div></pre></td></tr></table></figure>
+<p>效果如下：</p>
 <p><img src="http://xuelangzf-github.qiniudn.com/20141013_request_dash.png" alt="requests文档效果图" title="requests文档"></p>
 <p>从HTML制作的文档其实不算真正意义上的“文档”，因为并没有Classes、Functions、Types等API，如下图：</p>
 <p><img src="http://xuelangzf-github.qiniudn.com/20141013_docset_API.png" alt="HTML Docset" title="HTML Docset"></p>
 <p>下面介绍一下我常用的镜像站点的方法。</p>
 <h1 id="镜像站点"><a href="#镜像站点" class="headerlink" title="镜像站点"></a><a href="id:backup" target="_blank" rel="external">镜像站点</a></h1><p>镜像站点最简单的方法就是使用wget，一般像这样使用：</p>
-<pre><code>wget -r -p -k -np http://tengine.taobao.org/book/ 
-</code></pre><p>关于wget的更多内容，可以看之前的一篇文章：<a href="https://xuelangzf.github.io/06-07-2013/use_wget.html" target="_blank" rel="external">如何使用wget</a></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">wget -r -p -k -np http://tengine.taobao.org/book/</div></pre></td></tr></table></figure>
 <p>其实OS X 下有一款比较不错的工具可以用来镜像站点，那就是<a href="http://sitesucker.us/home.html" target="_blank" rel="external">SiteSucker</a>。比如要下载requests的文档，只需要输入文档首页地址，然后设置Path Constraint为Directory即可下载文档，如下图：</p>
 <p><img src="http://xuelangzf-github.qiniudn.com/20141013_sitesucker.png" alt="SiteSucker下载文档" title="SiteSucker下载文档"></p>
 <p>前面两种镜像方法都不是很完美，因为有时候某些站点(比如<a href="http://doc.scrapy.org/en/latest/index.html" target="_blank" rel="external">Scrapy</a>)引用的css、js文件来自其他的站点，这时候如果选择只镜像当前目录下面的文件，就会漏掉这些资源文件，目前还没有找到一个合适的方法解决这个问题。</p>
-<p>参考：<br><a href="https://github.com/ablfx/Dash-Docset-Creator" target="_blank" rel="external">Dash-Docset-Creator</a><br><a href="http://kapeli.com/docsets" target="_blank" rel="external">Generate a docset from any HTML Documentation</a>  </p>
-
-      
-    </div>
-
-    
-	    <!-- 添加捐赠图标 -->
-<div class ="post-donate">
-    <div id="donate_board" class="donate_bar center">
-        <a id="btn_donate" class="btn_donate" href="javascript:;" title="打赏"></a>
-        <span class="donate_txt">
-           &uarr;<br>
-		   欣赏此文？支持一下吧
-        </span>
-        <br>
-      </div>  
-	<div id="donate_guide" class="donate_bar center hidden" >
-		<!-- 支付宝打赏图案 -->
-		<img src="http://xuelangzf-github.qiniudn.com/zhifubao.jpg" alt="支付宝打赏"> 
-		<!-- 微信打赏图案 -->
-		<img src="http://xuelangzf-github.qiniudn.com/weixin.jpg" alt="微信打赏">  
-    </div>
-	<script type="text/javascript">
-		document.getElementById('btn_donate').onclick = function(){
-			$('#donate_board').addClass('hidden');
-			$('#donate_guide').removeClass('hidden');
-		}
-	</script>
-</div>
-<!-- 添加捐赠图标 -->
-
-    
-  
-    
-	    <div class="article-footer-copyright">
-
-<p>本文由 selfboot 发表于 <a href="http://selfboot.cn" target="_blank">个人博客</a>，采用<a href="http://creativecommons.org/licenses/by-sa/3.0/cn" target="_blank" >署名-非商业性使用-相同方式共享 3.0 中国大陆许可协议</a>。</p>
-<p>非商业转载请注明作者及出处。商业转载请联系<a href="mailto:xuezaigds@gmail.com">作者</a>本人。</p>
-<p>
-本文标题为: Dash助手——任意html转换为Docset<br/>
-本文链接为: <a href="/2014/10/13/html2dash/" target="_blank">http://selfboot.cn/2014/10/13/html2dash/</a>
-</p>
-</div>
-
-    
-
-    <footer class="article-footer">
-      
-        <a href="http://selfboot.cn/2014/10/13/html2dash/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/python/">python</a></li></ul>
-
-    </footer>
-  </div>
-  
-    
-<nav id="article-nav">
-  
-    <a href="/2014/10/27/python_default_values/" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Newer</strong>
-      <div class="article-nav-title">
-        
-          陷阱！python参数默认值
-        
-      </div>
-    </a>
-  
-  
-    <a href="/2014/09/19/chrome_DevTools_1/" id="article-nav-older" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Older</strong>
-      <div class="article-nav-title">神器——Chrome开发者工具(一)</div>
-    </a>
-  
-</nav>
-
-  
-</article>
-
-
-<section id="comments">
-  <div id="disqus_thread">
-    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-  </div>
-</section>
-
-
-
-  <!-- Go to www.addthis.com/dashboard to customize your tools -->
-<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-57adc438b914651b"></script>
-
-
-
-</section>
-      </div>
-    </div>
-    
-    
-<script>
-  var disqus_shortname = 'xuelangZF';
-  
-  var disqus_url = 'http://selfboot.cn/2014/10/13/html2dash/';
-  
-  (function(){
-    var dsq = document.createElement('script');
-    dsq.type = 'text/javascript';
-    dsq.async = true;
-    dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-  }());
-</script>
-
-
-<script src="http://libs.useso.com/js/jquery/2.0.3/jquery.min.js"></script>
-<script src="/js/script.js"></script>
-
-  </div>
-</body>
-</html>
+<h1 id="更多阅读"><a href="#更多阅读" class="headerlink" title="更多阅读"></a>更多阅读</h1><p><a href="https://github.com/ablfx/Dash-Docset-Creator" target="_blank" rel="external">Dash-Docset-Creator</a><br><a href="http://kapeli.com/docsets" target="_blank" rel="external">Generate a docset from any HTML Documentation</a>  </p>
+</div><div class="tags"><a href="/tags/python/">python</a></div><div class="post-nav"><a href="/2014/10/27/python_default_values/" class="pre">陷阱！python参数默认值</a><a href="/2014/09/19/chrome_DevTools_1/" class="next">神器——Chrome开发者工具(一)</a></div><div id="disqus_thread"><script>var disqus_shortname = 'xuelangZF';
+var disqus_identifier = '2014/10/13/html2dash/';
+var disqus_title = 'Dash助手——任意html转换为Docset';
+var disqus_url = 'http://selfboot.cn/2014/10/13/html2dash/';
+(function() {
+  var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();</script><script id="dsq-count-scr" src="//xuelangZF.disqus.com/count.js" async></script></div></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><form action="//www.google.com/search" method="get" accept-charset="utf-8" target="_blank" class="search-form"><input type="text" name="q" maxlength="20" placeholder="Search"/><input type="hidden" name="sitesearch" value="http://selfboot.cn"/></form></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/工具介绍/">工具介绍</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/社会百态/">社会百态</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/程序设计/">程序设计</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/算法/">算法</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/计算机基础/">计算机基础</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/读书与写作/">读书与写作</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/项目实践/">项目实践</a><span class="category-list-count">2</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> 标签</i></div><div class="tagcloud"><a href="/tags/JavaScript/" style="font-size: 15px;">JavaScript</a> <a href="/tags/hacker/" style="font-size: 15px;">hacker</a> <a href="/tags/总结/" style="font-size: 15px;">总结</a> <a href="/tags/教程-总结/" style="font-size: 15px;">教程, 总结</a> <a href="/tags/思考/" style="font-size: 15px;">思考</a> <a href="/tags/python/" style="font-size: 15px;">python</a> <a href="/tags/教程/" style="font-size: 15px;">教程</a> <a href="/tags/见闻/" style="font-size: 15px;">见闻</a> <a href="/tags/Django/" style="font-size: 15px;">Django</a> <a href="/tags/网络/" style="font-size: 15px;">网络</a> <a href="/tags/方法论/" style="font-size: 15px;">方法论</a> <a href="/tags/Python/" style="font-size: 15px;">Python</a> <a href="/tags/Flask/" style="font-size: 15px;">Flask</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最新文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2016/08/22/threadlocal_overview/">深入理解Python中的ThreadLocal变量（上）</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/08/07/forum_design_wsgi/">从零开始搭建论坛（二）：Web服务器网关接口</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/28/forum_design_framework/">从零开始搭建论坛（一）：Web服务器与Web框架</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/24/leetcode_guide_why/">LeetCode 刷题指南（一）：为什么要刷题</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/06/26/why_need_to_read_stackoverflow/">为什么离不开 Stackoverflow</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/06/13/python_performance_analysis/">Python 性能分析大全</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/05/04/pythonic/">由 sort 中 key 的用法浅谈 python</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/25/skip_classes/">让我们一起愉快地逃课吧</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/14/dns_practice/">从理论到实践，全方位认识DNS（实践篇）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/05/dns_theory/">从理论到实践，全方位认识DNS（理论篇）</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><script type="text/javascript" src="//xuelangZF.disqus.com/recent_comments_widget.js?num_items=5&amp;hide_avatars=1&amp;avatar_size=32&amp;excerpt_length=20&amp;hide_mods=1"></script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">© <a href="/." rel="nofollow">Just For Fun.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a id="rocket" href="#top" class="show"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="//cdn.bootcss.com/fancybox/2.1.5/jquery.fancybox.pack.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="/css/jquery.fancybox.css?v=1.0.0"><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+ga('create','UA-41784041-1','auto');ga('send','pageview');
+</script><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?fd3ab4b3c488cbb43afa1c2669f06648";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+  })();
+</script><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>
