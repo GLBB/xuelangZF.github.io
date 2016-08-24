@@ -1546,3 +1546,6 @@ em.search-keyword {
   font-weight: bold;
   font-style: normal;
   color: #01579f; }
+
+.addthis_sharing_toolbox {
+  float: right; }
