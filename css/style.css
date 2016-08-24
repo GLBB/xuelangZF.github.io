@@ -325,9 +325,8 @@ div {
     padding: 5px 5px; }
 
 #footer {
-  padding: .8em 0 3.6em;
+  padding: .8em 0 1em;
   margin-top: 1em;
-  line-height: 2.5;
   color: #6E7173;
   text-align: center; }
   #footer span {
