@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://selfboot.cn/2016/08/26/threadlocal_implement/</loc>
+    
+    <lastmod>2016-08-25T14:01:43.000Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://selfboot.cn/aboutme.html</loc>
     
     <lastmod>2016-08-24T13:09:42.000Z</lastmod>
