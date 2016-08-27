@@ -126,7 +126,10 @@ div {
       padding: 0; }
       #sidebar .widget ul li {
         margin: 5px 0;
-        line-height: 1.5; }
+        line-height: 1.5;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap; }
     #sidebar .widget .category-list-count {
       padding-left: 5px;
       color: #6E7173; }
@@ -1403,25 +1406,20 @@ figure.highlight,
       color: #222; }
 
 /* toc*/
-.toc-article {
-  border: 1px solid #bbb;
-  border-radius: 7px;
-  margin: 1.1em 0 0 2em;
-  padding: 0.7em 0.7em 0 0.7em;
-  max-width: 40%; }
-
 .toc-title {
   font-size: 120%; }
 
 #toc {
-  line-height: 1em;
-  float: right; }
+  line-height: 1em; }
   #toc .toc {
     padding: 0;
     margin: 0.5em;
     line-height: 1.8em; }
     #toc .toc li {
       list-style-type: none; }
+    #toc .toc a:hover, #toc .toc a.active {
+      background: #666;
+      color: #fff; }
   #toc .toc-child {
     margin-left: 1em;
     padding-left: 0; }

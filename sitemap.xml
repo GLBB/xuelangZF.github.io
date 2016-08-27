@@ -2,23 +2,212 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>http://selfboot.cn/2015/10/15/lightweight-GUI/</loc>
+    <loc>http://selfboot.cn/2013/06/07/hack_the_browser/</loc>
     
-    <lastmod>2016-08-26T06:19:01.000Z</lastmod>
+    <lastmod>2016-08-27T00:45:22.000Z</lastmod>
     
   </url>
   
   <url>
-    <loc>http://selfboot.cn/2016/08/26/threadlocal_implement/</loc>
+    <loc>http://selfboot.cn/2013/06/11/vim_plugins/</loc>
     
-    <lastmod>2016-08-26T06:17:16.000Z</lastmod>
+    <lastmod>2016-08-27T00:45:16.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2013/06/16/how_to_use_the_network/</loc>
+    
+    <lastmod>2016-08-27T00:45:11.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2014/08/08/python_copy/</loc>
+    
+    <lastmod>2016-08-27T00:45:05.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2014/08/10/python_decorator/</loc>
+    
+    <lastmod>2016-08-27T00:44:57.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2014/08/12/python_how_to_use_trie_tree/</loc>
+    
+    <lastmod>2016-08-27T00:44:41.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2014/08/28/character_encoding/</loc>
+    
+    <lastmod>2016-08-27T00:44:28.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2014/08/21/regular_expression_all/</loc>
+    
+    <lastmod>2016-08-27T00:44:24.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2014/09/03/how_to_crawl_coursera/</loc>
+    
+    <lastmod>2016-08-27T00:44:17.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2014/09/19/chrome_DevTools_1/</loc>
+    
+    <lastmod>2016-08-27T00:44:13.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2014/11/03/vim_plugin_with_python/</loc>
+    
+    <lastmod>2016-08-27T00:44:00.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2014/12/21/add_blog_to_google/</loc>
+    
+    <lastmod>2016-08-27T00:43:55.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2014/12/26/django_start/</loc>
+    
+    <lastmod>2016-08-27T00:43:43.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2014/12/28/love_gmail/</loc>
+    
+    <lastmod>2016-08-27T00:43:38.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2015/01/02/realworld_fish/</loc>
+    
+    <lastmod>2016-08-27T00:43:34.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2015/01/11/django_start(2)/</loc>
+    
+    <lastmod>2016-08-27T00:43:30.000Z</lastmod>
     
   </url>
   
   <url>
     <loc>http://selfboot.cn/2015/09/23/something_about_bit_operation/</loc>
     
-    <lastmod>2016-08-26T06:16:35.000Z</lastmod>
+    <lastmod>2016-08-27T00:43:26.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2015/10/15/lightweight-GUI/</loc>
+    
+    <lastmod>2016-08-27T00:43:16.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2015/10/23/marketing/</loc>
+    
+    <lastmod>2016-08-27T00:43:08.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2015/11/03/howto_find_algorithm/</loc>
+    
+    <lastmod>2016-08-27T00:43:03.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2015/11/05/dns_theory/</loc>
+    
+    <lastmod>2016-08-27T00:42:58.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2015/11/14/dns_practice/</loc>
+    
+    <lastmod>2016-08-27T00:42:53.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2016/05/04/pythonic/</loc>
+    
+    <lastmod>2016-08-27T00:42:47.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2016/07/24/leetcode_guide_why/</loc>
+    
+    <lastmod>2016-08-27T00:42:41.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2016/06/13/python_performance_analysis/</loc>
+    
+    <lastmod>2016-08-27T00:42:32.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2016/06/26/why_need_to_read_stackoverflow/</loc>
+    
+    <lastmod>2016-08-27T00:42:27.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2016/07/28/forum_design_framework/</loc>
+    
+    <lastmod>2016-08-27T00:42:20.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2016/08/22/threadlocal_overview/</loc>
+    
+    <lastmod>2016-08-27T00:42:13.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2016/08/07/forum_design_wsgi/</loc>
+    
+    <lastmod>2016-08-27T00:42:04.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2016/08/26/threadlocal_implement/</loc>
+    
+    <lastmod>2016-08-26T07:58:01.000Z</lastmod>
     
   </url>
   
@@ -26,20 +215,6 @@
     <loc>http://selfboot.cn/2014/08/07/python_object/</loc>
     
     <lastmod>2016-08-26T06:16:22.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2015/01/11/django_start(2)/</loc>
-    
-    <lastmod>2016-08-26T06:16:11.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2014/11/03/vim_plugin_with_python/</loc>
-    
-    <lastmod>2016-08-26T06:15:02.000Z</lastmod>
     
   </url>
   
@@ -58,48 +233,6 @@
   </url>
   
   <url>
-    <loc>http://selfboot.cn/2014/09/03/how_to_crawl_coursera/</loc>
-    
-    <lastmod>2016-08-26T06:14:43.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2014/08/28/character_encoding/</loc>
-    
-    <lastmod>2016-08-26T06:14:39.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2014/08/21/regular_expression_all/</loc>
-    
-    <lastmod>2016-08-26T06:14:34.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2014/08/12/python_how_to_use_trie_tree/</loc>
-    
-    <lastmod>2016-08-26T06:14:29.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2014/08/10/python_decorator/</loc>
-    
-    <lastmod>2016-08-26T06:14:25.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2014/08/08/python_copy/</loc>
-    
-    <lastmod>2016-08-26T06:14:20.000Z</lastmod>
-    
-  </url>
-  
-  <url>
     <loc>http://selfboot.cn/2014/08/04/simple_trie_tree/</loc>
     
     <lastmod>2016-08-26T06:14:15.000Z</lastmod>
@@ -107,86 +240,9 @@
   </url>
   
   <url>
-    <loc>http://selfboot.cn/2013/06/07/hack_the_browser/</loc>
-    
-    <lastmod>2016-08-26T06:14:03.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2014/12/21/add_blog_to_google/</loc>
-    
-    <lastmod>2016-08-26T06:13:48.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2014/12/26/django_start/</loc>
-    
-    <lastmod>2016-08-26T06:13:40.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2016/07/24/leetcode_guide_why/</loc>
-    
-    <lastmod>2016-08-26T06:13:34.000Z</lastmod>
-    
-  </url>
-  
-  <url>
     <loc>http://selfboot.cn/2015/10/13/pages_count/</loc>
     
     <lastmod>2016-08-26T06:13:26.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2015/10/23/marketing/</loc>
-    
-    <lastmod>2016-08-26T06:13:01.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2015/11/03/howto_find_algorithm/</loc>
-    
-    <lastmod>2016-08-26T06:12:52.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2016/06/26/why_need_to_read_stackoverflow/</loc>
-    
-    <lastmod>2016-08-26T06:12:28.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2016/07/28/forum_design_framework/</loc>
-    
-    <lastmod>2016-08-26T06:12:11.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2016/08/07/forum_design_wsgi/</loc>
-    
-    <lastmod>2016-08-26T06:12:06.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2016/08/22/threadlocal_overview/</loc>
-    
-    <lastmod>2016-08-26T06:12:00.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2013/06/11/vim_plugins/</loc>
-    
-    <lastmod>2016-08-26T06:10:22.000Z</lastmod>
     
   </url>
   
@@ -205,41 +261,6 @@
   </url>
   
   <url>
-    <loc>http://selfboot.cn/2016/06/13/python_performance_analysis/</loc>
-    
-    <lastmod>2016-08-24T09:19:40.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2016/05/04/pythonic/</loc>
-    
-    <lastmod>2016-08-24T09:13:04.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2015/11/14/dns_practice/</loc>
-    
-    <lastmod>2016-08-24T09:07:51.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2015/11/05/dns_theory/</loc>
-    
-    <lastmod>2016-08-24T09:03:55.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2014/12/28/love_gmail/</loc>
-    
-    <lastmod>2016-08-24T08:34:18.000Z</lastmod>
-    
-  </url>
-  
-  <url>
     <loc>http://selfboot.cn/2014/11/30/jekyll_to_hexo/</loc>
     
     <lastmod>2016-08-24T08:19:58.000Z</lastmod>
@@ -254,23 +275,9 @@
   </url>
   
   <url>
-    <loc>http://selfboot.cn/2014/09/19/chrome_DevTools_1/</loc>
-    
-    <lastmod>2016-08-24T07:45:34.000Z</lastmod>
-    
-  </url>
-  
-  <url>
     <loc>http://selfboot.cn/2013/06/22/books_summary/</loc>
     
     <lastmod>2016-08-24T06:32:33.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2013/06/16/how_to_use_the_network/</loc>
-    
-    <lastmod>2016-08-24T06:30:46.000Z</lastmod>
     
   </url>
   
@@ -299,13 +306,6 @@
     <loc>http://selfboot.cn/google0b4c8a25b65d7c2a.html</loc>
     
     <lastmod>2015-10-27T06:24:34.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2015/01/02/realworld_fish/</loc>
-    
-    <lastmod>2015-09-23T05:10:40.000Z</lastmod>
     
   </url>
   

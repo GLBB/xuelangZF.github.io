@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://selfboot.cn/"/>
-  <updated>2016-08-26T06:17:16.000Z</updated>
+  <updated>2016-08-26T07:58:01.000Z</updated>
   <id>http://selfboot.cn/</id>
   
   <author>
@@ -20,7 +20,7 @@
     <link href="http://selfboot.cn/2016/08/26/threadlocal_implement/"/>
     <id>http://selfboot.cn/2016/08/26/threadlocal_implement/</id>
     <published>2016-08-25T16:02:50.000Z</published>
-    <updated>2016-08-26T06:17:16.000Z</updated>
+    <updated>2016-08-26T07:58:01.000Z</updated>
     
     <content type="html"><![CDATA[<p>在 <a href="http://selfboot.cn/2016/08/22/threadlocal_overview/">深入理解Python中的ThreadLocal变量（上）</a> 中我们看到 ThreadLocal 的引入，使得可以很方便地在多线程环境中使用局部变量。如此美妙的功能到底是怎样实现的？如果你对它的实现原理没有好奇心或一探究竟的冲动，那么接下来的内容估计会让你后悔自己的浅尝辄止了。</p>
 <p>简单来说，Python 中 ThreadLocal 就是通过<a name="img_1"></a>下图中的方法，将全局变量伪装成线程局部变量，相信读完本篇文章你会理解图中内容的。（对这张图不眼熟的话，可以回顾下<a href="(http://selfboot.cn/2016/08/22/threadlocal_overview/">上篇</a>)）。</p>
@@ -103,7 +103,7 @@
     <link href="http://selfboot.cn/2016/08/22/threadlocal_overview/"/>
     <id>http://selfboot.cn/2016/08/22/threadlocal_overview/</id>
     <published>2016-08-22T14:02:50.000Z</published>
-    <updated>2016-08-26T06:12:00.000Z</updated>
+    <updated>2016-08-27T00:42:13.000Z</updated>
     
     <content type="html"><![CDATA[<p>我们知道多线程环境下，每一个线程均可以使用所属进程的全局变量。如果一个线程对全局变量进行了修改，将会影响到其他所有的线程。为了避免多个线程同时对变量进行修改，引入了线程同步机制，通过互斥锁，条件变量或者读写锁来控制对全局变量的访问。</p>
 <p>只用全局变量并不能满足多线程环境的需求，很多时候线程还需要拥有自己的私有数据，这些数据对于其他线程来说不可见。因此线程中也可以使用局部变量，局部变量只有线程自身可以访问，同一个进程下的其他线程不可访问。</p>
@@ -142,9 +142,9 @@
       <category term="程序设计" scheme="http://selfboot.cn/categories/%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1/"/>
     
     
-      <category term="思考" scheme="http://selfboot.cn/tags/%E6%80%9D%E8%80%83/"/>
-    
       <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
+    
+      <category term="思考" scheme="http://selfboot.cn/tags/%E6%80%9D%E8%80%83/"/>
     
   </entry>
   
@@ -153,7 +153,7 @@
     <link href="http://selfboot.cn/2016/08/07/forum_design_wsgi/"/>
     <id>http://selfboot.cn/2016/08/07/forum_design_wsgi/</id>
     <published>2016-08-07T14:02:50.000Z</published>
-    <updated>2016-08-26T06:12:06.000Z</updated>
+    <updated>2016-08-27T00:42:04.000Z</updated>
     
     <content type="html"><![CDATA[<p>在 <a href="http://selfboot.cn/2016/07/28/forum_design_framework/">从零开始搭建论坛（一）：Web服务器与Web框架</a> 中我们弄清楚了Web 服务器、Web 应用程序、Web框架的概念。对于 Python 来说，越来越多的 Web 框架面世，在给我们更多选择机会的同时，也限制了我们对于 Web Server 的选择。同样是有着很多 Web 框架的Java，因为有着 servlet API 的存在，任何Java Web框架写的应用程序都可以运行在任意一个 Web Server 上。</p>
 <p>Python 社区当然也需要这样一套 API，来适配Web服务器和应用程序，这套 API 就是 WSGI（Python Web Server Gateway Interface），在 <a href="https://www.python.org/dev/peps/pep-3333/" target="_blank" rel="external">PEP 3333</a> 里有详细的说明。简单来说，WSGI是连接Web服务器和Web应用程序的桥梁，一方面从Web server 拿到原始 HTTP 数据，处理成统一格式后交给 Web 应用程序，另一方面从应用程序／框架这边进行业务逻辑处理，生成响应内容后交给服务器。</p>
@@ -250,7 +250,7 @@
     <link href="http://selfboot.cn/2016/07/28/forum_design_framework/"/>
     <id>http://selfboot.cn/2016/07/28/forum_design_framework/</id>
     <published>2016-07-28T14:02:50.000Z</published>
-    <updated>2016-08-26T06:12:11.000Z</updated>
+    <updated>2016-08-27T00:42:20.000Z</updated>
     
     <content type="html"><![CDATA[<p>之前用 Django 做过一个小的站点，感觉Django太过笨重，于是就准备换一个比较轻量级的 Web 框架来玩玩。Web.py 作者已经挂掉，项目好久没有更新，所以不准备用它。而 Flask 也是一个成熟的轻量级 Web 框架，在 github 上有众多的 Star 和 Fork，文档和扩展也很丰富，值得学习。</p>
 <p>学习一个框架最好的方式就是用框架做一个项目，在实战中理解掌握框架。这里我用 Flask 框架，使用 Mysql 数据库做了一个<a href="https://github.com/xuelangZF/NaHan" target="_blank" rel="external">论坛系统</a>。麻雀虽小，五脏俱全，论坛效果图如下：</p>
@@ -336,7 +336,7 @@
     <link href="http://selfboot.cn/2016/07/24/leetcode_guide_why/"/>
     <id>http://selfboot.cn/2016/07/24/leetcode_guide_why/</id>
     <published>2016-07-24T14:02:50.000Z</published>
-    <updated>2016-08-26T06:13:34.000Z</updated>
+    <updated>2016-08-27T00:42:41.000Z</updated>
     
     <content type="html"><![CDATA[<p>虽然刷题一直饱受诟病，不过不可否认刷题确实能锻炼我们的编程能力，相信每个认真刷题的人都会有体会。现在提供在线编程评测的平台有很多，比较有名的有 <a href="http://hihocoder.com/" target="_blank" rel="external">hihocoder</a>，<a href="http://www.lintcode.com/zh-cn/" target="_blank" rel="external">LintCode</a>，以及这里我们关注的 <a href="https://LeetCode.com/" target="_blank" rel="external">LeetCode</a>。</p>
 <p><img src="http://xuelangzf-github.qiniudn.com/20160724_leetcode_guide_1.png" alt="LeetCode"></p>
@@ -422,9 +422,9 @@
       <category term="算法" scheme="http://selfboot.cn/categories/%E7%AE%97%E6%B3%95/"/>
     
     
-      <category term="思考" scheme="http://selfboot.cn/tags/%E6%80%9D%E8%80%83/"/>
-    
       <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
+    
+      <category term="思考" scheme="http://selfboot.cn/tags/%E6%80%9D%E8%80%83/"/>
     
   </entry>
   
@@ -433,7 +433,7 @@
     <link href="http://selfboot.cn/2016/06/26/why_need_to_read_stackoverflow/"/>
     <id>http://selfboot.cn/2016/06/26/why_need_to_read_stackoverflow/</id>
     <published>2016-06-26T14:02:50.000Z</published>
-    <updated>2016-08-26T06:12:28.000Z</updated>
+    <updated>2016-08-27T00:42:27.000Z</updated>
     
     <content type="html"><![CDATA[<p>作为一名程序员，如果没有听过 Stackoverflow，那么你最好去面壁思过一下。程序员最需要阅读的一本编程书籍（其实编程书留下这本就够了！）：</p>
 <p><img src="http://xuelangzf-github.qiniudn.com/20160626_stackoverflow_book.jpg" alt="虚构的书"></p>
@@ -527,11 +527,11 @@
       <category term="计算机基础" scheme="http://selfboot.cn/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/"/>
     
     
+      <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
+    
       <category term="总结" scheme="http://selfboot.cn/tags/%E6%80%BB%E7%BB%93/"/>
     
       <category term="思考" scheme="http://selfboot.cn/tags/%E6%80%9D%E8%80%83/"/>
-    
-      <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
     
   </entry>
   
@@ -540,7 +540,7 @@
     <link href="http://selfboot.cn/2016/06/13/python_performance_analysis/"/>
     <id>http://selfboot.cn/2016/06/13/python_performance_analysis/</id>
     <published>2016-06-13T14:02:50.000Z</published>
-    <updated>2016-08-24T09:19:40.000Z</updated>
+    <updated>2016-08-27T00:42:32.000Z</updated>
     
     <content type="html"><![CDATA[<p>虽然运行速度慢是 Python 与生俱来的特点，大多数时候我们用 Python 就意味着放弃对性能的追求。但是，就算是用纯 Python 完成同一个任务，老手写出来的代码可能会比菜鸟写的代码块几倍，甚至是几十倍（这里不考虑算法的因素，只考虑语言方面的因素）。很多时候，我们将自己的代码运行缓慢地原因归结于python本来就很慢，从而心安理得地放弃深入探究。</p>
 <p>但是，事实真的是这样吗？面对python代码，你有分析下面这些问题吗：</p>
@@ -635,9 +635,9 @@
       <category term="程序设计" scheme="http://selfboot.cn/categories/%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1/"/>
     
     
-      <category term="总结" scheme="http://selfboot.cn/tags/%E6%80%BB%E7%BB%93/"/>
-    
       <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
+    
+      <category term="总结" scheme="http://selfboot.cn/tags/%E6%80%BB%E7%BB%93/"/>
     
   </entry>
   
@@ -646,7 +646,7 @@
     <link href="http://selfboot.cn/2016/05/04/pythonic/"/>
     <id>http://selfboot.cn/2016/05/04/pythonic/</id>
     <published>2016-05-04T14:54:01.000Z</published>
-    <updated>2016-08-24T09:13:04.000Z</updated>
+    <updated>2016-08-27T00:42:47.000Z</updated>
     
     <content type="html"><![CDATA[<p>用 Python 时间也算不短了，但总感觉自己在用写 C++ 代码的思维写 Python，没有真正用到其作为脚本语言的优势。之前刷 LeetCode 时，自己的 Python 代码总是很长，很像披着 Python 外衣的 C++ 代码（放在<a href="https://github.com/xuelangZF/LeetCode" target="_blank" rel="external">这里</a>，不断重构中）。</p>
 <p><img src="http://xuelangzf-github.qiniudn.com/20160504_pythonic_cpp.png" alt="Python不是C++"></p>
@@ -706,9 +706,9 @@
       <category term="程序设计" scheme="http://selfboot.cn/categories/%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1/"/>
     
     
-      <category term="思考" scheme="http://selfboot.cn/tags/%E6%80%9D%E8%80%83/"/>
-    
       <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
+    
+      <category term="思考" scheme="http://selfboot.cn/tags/%E6%80%9D%E8%80%83/"/>
     
   </entry>
   
@@ -797,7 +797,7 @@
     <link href="http://selfboot.cn/2015/11/14/dns_practice/"/>
     <id>http://selfboot.cn/2015/11/14/dns_practice/</id>
     <published>2015-11-13T16:00:00.000Z</published>
-    <updated>2016-08-24T09:07:51.000Z</updated>
+    <updated>2016-08-27T00:42:53.000Z</updated>
     
     <content type="html"><![CDATA[<p>在<a href="http://selfboot.cn/2015/11/05/dns_theory/">理论篇</a>我们基本了解了DNS的整个协议原理，但是可能还会有着下面的疑问：</p>
 <ol>
@@ -880,7 +880,7 @@
     <link href="http://selfboot.cn/2015/11/05/dns_theory/"/>
     <id>http://selfboot.cn/2015/11/05/dns_theory/</id>
     <published>2015-11-04T16:00:00.000Z</published>
-    <updated>2016-08-24T09:03:55.000Z</updated>
+    <updated>2016-08-27T00:42:58.000Z</updated>
     
     <content type="html"><![CDATA[<p>对于 <a href="https://en.wikipedia.org/wiki/Domain_Name_System" target="_blank" rel="external">DNS(Domain Name System)</a> 大家肯定不陌生，不就是用来将一个网站的域名转换为对应的IP吗。当我们发现可以上QQ但不能浏览网页时，我们会想到可能是域名服务器挂掉了；当我们用别人提供的hosts文件浏览到一个“<code>不存在</code>”的网页时，我们会了解到域名解析系统的脆弱。</p>
 <p>然而关于DNS还有一大堆故事值得我们去倾听，去思考。</p>
@@ -1023,7 +1023,7 @@
     <link href="http://selfboot.cn/2015/11/03/howto_find_algorithm/"/>
     <id>http://selfboot.cn/2015/11/03/howto_find_algorithm/</id>
     <published>2015-11-02T16:00:00.000Z</published>
-    <updated>2016-08-26T06:12:52.000Z</updated>
+    <updated>2016-08-27T00:43:03.000Z</updated>
     
     <content type="html"><![CDATA[<p>相信大部分同学曾经都学习过快速排序、Huffman、KMP、Dijkstra等经典算法，初次学习时我们惊叹于算法的巧妙，同时被设计者的智慧所折服。于是，我们仔细研读算法的每一步，甚至去证明算法的正确性，或者是去尝试优雅地实现这些算法。总之，我们会花费很大的时间精力去理解这些智慧的结晶。</p>
 <p>然而，现在对于这些经典的算法你仍然了然于胸吗？就算现在你仍然记得这些算法的步骤，你敢确保一年后、十年后自己不会忘记？我想没有多少人敢保证吧。</p>
@@ -1089,9 +1089,9 @@
       <category term="算法" scheme="http://selfboot.cn/categories/%E7%AE%97%E6%B3%95/"/>
     
     
-      <category term="思考" scheme="http://selfboot.cn/tags/%E6%80%9D%E8%80%83/"/>
-    
       <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
+    
+      <category term="思考" scheme="http://selfboot.cn/tags/%E6%80%9D%E8%80%83/"/>
     
   </entry>
   
@@ -1100,7 +1100,7 @@
     <link href="http://selfboot.cn/2015/10/23/marketing/"/>
     <id>http://selfboot.cn/2015/10/23/marketing/</id>
     <published>2015-10-22T16:00:00.000Z</published>
-    <updated>2016-08-26T06:13:01.000Z</updated>
+    <updated>2016-08-27T00:43:08.000Z</updated>
     
     <content type="html"><![CDATA[<p>说到营销，你可能会想起街头派发的传单，想起地铁里的各种宣传海报，想起优酷视频开始前漫长的无聊的广告，想起史玉柱的脑残广告台词（敢问有谁没听过？！）：</p>
 <blockquote>
@@ -1179,7 +1179,7 @@
     <link href="http://selfboot.cn/2015/10/15/lightweight-GUI/"/>
     <id>http://selfboot.cn/2015/10/15/lightweight-GUI/</id>
     <published>2015-10-15T15:33:29.000Z</published>
-    <updated>2016-08-26T06:19:01.000Z</updated>
+    <updated>2016-08-27T00:43:16.000Z</updated>
     
     <content type="html"><![CDATA[<p>每个程序员都希望用自己喜欢的语言，自己喜欢的平台、工具，写自己喜欢的程序。于是我们会看到有人在Win下用Visual Studio愉快地coding，也会看到有人在OS X下用Xcode来开发，或者是用Sublime Text不受平台限制地玩。</p>
 <p>当然了，愿望往往是美好的，然而事与愿违的情况时有发生。如果你基本都是用OS X，却有人让你写一个带有简单界面的小程序，保证在他的Win系统上一定可以运行，那么你是不是有点抓狂。</p>
@@ -1315,7 +1315,7 @@
     <link href="http://selfboot.cn/2015/09/23/something_about_bit_operation/"/>
     <id>http://selfboot.cn/2015/09/23/something_about_bit_operation/</id>
     <published>2015-09-22T16:00:00.000Z</published>
-    <updated>2016-08-26T06:16:35.000Z</updated>
+    <updated>2016-08-27T00:43:26.000Z</updated>
     
     <content type="html"><![CDATA[<p>先来看<a href="https://leetcode.com" target="_blank" rel="external">LeetCode</a>上的<a href="https://leetcode.com/problems/divide-two-integers/" target="_blank" rel="external">Divide Two Integers</a>题目要求：</p>
 <blockquote>
@@ -1384,9 +1384,9 @@
       <category term="计算机基础" scheme="http://selfboot.cn/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/"/>
     
     
-      <category term="总结" scheme="http://selfboot.cn/tags/%E6%80%BB%E7%BB%93/"/>
-    
       <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
+    
+      <category term="总结" scheme="http://selfboot.cn/tags/%E6%80%BB%E7%BB%93/"/>
     
   </entry>
   
@@ -1395,7 +1395,7 @@
     <link href="http://selfboot.cn/2015/01/11/django_start(2)/"/>
     <id>http://selfboot.cn/2015/01/11/django_start(2)/</id>
     <published>2015-01-10T16:00:00.000Z</published>
-    <updated>2016-08-26T06:16:11.000Z</updated>
+    <updated>2016-08-27T00:43:30.000Z</updated>
     
     <content type="html"><![CDATA[<p>在<a href="http://selfboot.cn/2014/12/26/django_start/">两篇文章帮你入门Django(上)</a>一文中，我们已经做了一个简单的小网站，实现了保存用户数据到数据库，以及从后台数据库读取数据显示到网页上这两个功能。</p>
 <p>看上去没有什么问题了，不过我们可以让它变得更加完美，比如说为它添加一个简单的后台，用来管理我们的Question数据库，或者是写点测试单元来看看我们的程序有没有什么Bug。</p>
@@ -1442,11 +1442,11 @@
       <category term="程序设计" scheme="http://selfboot.cn/categories/%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1/"/>
     
     
+      <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
+    
       <category term="教程" scheme="http://selfboot.cn/tags/%E6%95%99%E7%A8%8B/"/>
     
       <category term="Django" scheme="http://selfboot.cn/tags/Django/"/>
-    
-      <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
     
   </entry>
   
@@ -1455,7 +1455,7 @@
     <link href="http://selfboot.cn/2015/01/02/realworld_fish/"/>
     <id>http://selfboot.cn/2015/01/02/realworld_fish/</id>
     <published>2015-01-01T16:00:00.000Z</published>
-    <updated>2015-09-23T05:10:40.000Z</updated>
+    <updated>2016-08-27T00:43:34.000Z</updated>
     
     <content type="html"><![CDATA[<p>先来看一个段子：</p>
 <blockquote>
@@ -1519,7 +1519,7 @@
     <link href="http://selfboot.cn/2014/12/28/love_gmail/"/>
     <id>http://selfboot.cn/2014/12/28/love_gmail/</id>
     <published>2014-12-27T16:00:00.000Z</published>
-    <updated>2016-08-24T08:34:18.000Z</updated>
+    <updated>2016-08-27T00:43:38.000Z</updated>
     
     <content type="html"><![CDATA[<blockquote>
 <p>2013年7月，我们深爱着的Google Reader走了，一去不复返。现在，我们形影不离的Gmail也要神秘失踪了吗？</p>
@@ -1576,7 +1576,7 @@
     <link href="http://selfboot.cn/2014/12/26/django_start/"/>
     <id>http://selfboot.cn/2014/12/26/django_start/</id>
     <published>2014-12-25T16:00:00.000Z</published>
-    <updated>2016-08-26T06:13:40.000Z</updated>
+    <updated>2016-08-27T00:43:43.000Z</updated>
     
     <content type="html"><![CDATA[<p>相信用过python的人都听过Django的大名，知道它是一个web框架，用来支持动态网站、网络应用程序以及网络服务的开发。那么为什么我们需要一个web框架，而不是直接用python来写web应用呢？其实简单来说，就是为了偷懒。</p>
 <p>如果不用框架的话，你可能需要连接数据库、查询数据库、关闭数据库，在python代码文件里掺杂html标签、css样式等。并且每次开始一个web应用，你都要从头开始写起，重复许多枯燥无味的代码。</p>
@@ -1651,11 +1651,11 @@
       <category term="程序设计" scheme="http://selfboot.cn/categories/%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1/"/>
     
     
+      <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
+    
       <category term="教程" scheme="http://selfboot.cn/tags/%E6%95%99%E7%A8%8B/"/>
     
       <category term="Django" scheme="http://selfboot.cn/tags/Django/"/>
-    
-      <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
     
   </entry>
   
