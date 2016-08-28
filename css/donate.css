@@ -32,5 +32,12 @@
   margin: 0 auto; }
 
 #donate_guide img {
-  height: 200px;
   height: 200px; }
+
+@media (max-width: 768px) {
+  #donate_guide {
+    height: 170px;
+    width: 300px;
+    margin: 0 auto; }
+  #donate_guide img {
+    height: 150px; } }
