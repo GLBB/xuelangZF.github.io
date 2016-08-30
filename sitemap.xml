@@ -2,6 +2,27 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://selfboot.cn/2016/09/01/lost_partition/</loc>
+    
+    <lastmod>2016-08-30T05:48:28.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2016/08/26/threadlocal_implement/</loc>
+    
+    <lastmod>2016-08-29T00:59:24.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2016/08/22/threadlocal_overview/</loc>
+    
+    <lastmod>2016-08-29T00:59:16.000Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://selfboot.cn/2013/06/07/hack_the_browser/</loc>
     
     <lastmod>2016-08-27T00:45:22.000Z</lastmod>
@@ -191,23 +212,9 @@
   </url>
   
   <url>
-    <loc>http://selfboot.cn/2016/08/22/threadlocal_overview/</loc>
-    
-    <lastmod>2016-08-27T00:42:13.000Z</lastmod>
-    
-  </url>
-  
-  <url>
     <loc>http://selfboot.cn/2016/08/07/forum_design_wsgi/</loc>
     
     <lastmod>2016-08-27T00:42:04.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2016/08/26/threadlocal_implement/</loc>
-    
-    <lastmod>2016-08-26T07:58:01.000Z</lastmod>
     
   </url>
   
