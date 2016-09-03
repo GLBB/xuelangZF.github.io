@@ -355,6 +355,8 @@ div {
     padding-right: 15px; }
   .hidden_mid_and_down {
     display: none !important; }
+  i.fa-rss {
+    display: none !important; }
   #sidebar {
     border-left-width: 0px; }
   #header .site-name {
