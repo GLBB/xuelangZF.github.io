@@ -668,9 +668,9 @@
       <category term="工具介绍" scheme="http://selfboot.cn/categories/%E5%B7%A5%E5%85%B7%E4%BB%8B%E7%BB%8D/"/>
     
     
-      <category term="方法" scheme="http://selfboot.cn/tags/%E6%96%B9%E6%B3%95/"/>
-    
       <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
+    
+      <category term="方法" scheme="http://selfboot.cn/tags/%E6%96%B9%E6%B3%95/"/>
     
       <category term="C++" scheme="http://selfboot.cn/tags/C/"/>
     
@@ -776,9 +776,9 @@
       <category term="程序设计" scheme="http://selfboot.cn/categories/%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1/"/>
     
     
-      <category term="总结" scheme="http://selfboot.cn/tags/%E6%80%BB%E7%BB%93/"/>
-    
       <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
+    
+      <category term="总结" scheme="http://selfboot.cn/tags/%E6%80%BB%E7%BB%93/"/>
     
   </entry>
   
@@ -1230,9 +1230,9 @@
       <category term="数据结构与算法" scheme="http://selfboot.cn/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%95/"/>
     
     
-      <category term="方法" scheme="http://selfboot.cn/tags/%E6%96%B9%E6%B3%95/"/>
-    
       <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
+    
+      <category term="方法" scheme="http://selfboot.cn/tags/%E6%96%B9%E6%B3%95/"/>
     
   </entry>
   
@@ -1525,9 +1525,9 @@
       <category term="计算机基础" scheme="http://selfboot.cn/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/"/>
     
     
-      <category term="总结" scheme="http://selfboot.cn/tags/%E6%80%BB%E7%BB%93/"/>
-    
       <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
+    
+      <category term="总结" scheme="http://selfboot.cn/tags/%E6%80%BB%E7%BB%93/"/>
     
   </entry>
   
@@ -1583,9 +1583,9 @@
       <category term="程序设计" scheme="http://selfboot.cn/categories/%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1/"/>
     
     
-      <category term="教程" scheme="http://selfboot.cn/tags/%E6%95%99%E7%A8%8B/"/>
-    
       <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
+    
+      <category term="教程" scheme="http://selfboot.cn/tags/%E6%95%99%E7%A8%8B/"/>
     
       <category term="Django" scheme="http://selfboot.cn/tags/Django/"/>
     
