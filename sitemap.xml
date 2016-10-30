@@ -2,9 +2,16 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://selfboot.cn/2016/10/30/forum_design_flask/</loc>
+    
+    <lastmod>2016-10-30T12:12:35.000Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://selfboot.cn/2014/08/21/regular_expression_all/</loc>
     
-    <lastmod>2016-10-19T09:05:28.000Z</lastmod>
+    <lastmod>2016-10-19T09:12:19.000Z</lastmod>
     
   </url>
   
