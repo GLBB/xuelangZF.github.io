@@ -2,6 +2,27 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://selfboot.cn/2016/11/03/threadlocal_enhance/</loc>
+    
+    <lastmod>2016-11-03T08:46:16.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2016/08/26/threadlocal_implement/</loc>
+    
+    <lastmod>2016-10-31T08:31:57.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://selfboot.cn/2016/08/22/threadlocal_overview/</loc>
+    
+    <lastmod>2016-10-31T08:31:18.000Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://selfboot.cn/2016/10/30/forum_design_flask/</loc>
     
     <lastmod>2016-10-30T12:12:35.000Z</lastmod>
@@ -19,13 +40,6 @@
     <loc>http://selfboot.cn/2016/09/18/c++_undefined_behaviours/</loc>
     
     <lastmod>2016-09-18T13:21:16.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2016/08/26/threadlocal_implement/</loc>
-    
-    <lastmod>2016-09-11T01:20:09.000Z</lastmod>
     
   </url>
   
@@ -131,13 +145,6 @@
     <loc>http://selfboot.cn/2016/06/26/why_need_to_read_stackoverflow/</loc>
     
     <lastmod>2016-08-30T12:06:57.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://selfboot.cn/2016/08/22/threadlocal_overview/</loc>
-    
-    <lastmod>2016-08-29T00:59:16.000Z</lastmod>
     
   </url>
   

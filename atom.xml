@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://selfboot.cn/"/>
-  <updated>2016-10-30T12:12:35.000Z</updated>
+  <updated>2016-11-03T08:46:16.000Z</updated>
   <id>http://selfboot.cn/</id>
   
   <author>
@@ -14,6 +14,71 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>深入理解Python中的ThreadLocal变量（下）</title>
+    <link href="http://selfboot.cn/2016/11/03/threadlocal_enhance/"/>
+    <id>http://selfboot.cn/2016/11/03/threadlocal_enhance/</id>
+    <published>2016-11-03T14:02:50.000Z</published>
+    <updated>2016-11-03T08:46:16.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>在<a href="http://selfboot.cn/2016/08/22/threadlocal_overview/">上篇</a>我们看到了 ThreadLocal 变量的简单使用，<a href="http://selfboot.cn/2016/08/26/threadlocal_implement/">中篇</a>对python中 ThreadLocal 的实现进行了分析，但故事还没有结束。本篇我们一起来看下<a href="http://werkzeug.pocoo.org/" target="_blank" rel="external">Werkzeug</a>中ThreadLocal的设计。</p>
+<p>Werkzeug 作为一个 WSGI 工具库，由于一些方面的考虑，并没有直接使用python内置的ThreadLocal类，而是自己实现了一系列Local类。包括简单的Local，以及在此基础上实现的LocalStack，LocalManager 和 LocalProxy。接下来我们一起来看看这些类的使用方式，设计的初衷，以及具体的实现技巧。</p>
+<a id="more"></a>
+<h1 id="Local-类的设计"><a href="#Local-类的设计" class="headerlink" title="Local 类的设计"></a>Local 类的设计</h1><p>Werkzeug 的设计者认为python自带的ThreadLocal并不能满足需求，主要因为下面两个原因：</p>
+<ol>
+<li>Werkzeug 主要用“ThreadLocal”来满足并发的要求，python 自带的ThreadLocal只能实现基于线程的并发。而python中还有其他许多并发方式，比如常见的<a href="https://github.com/xuelangZF/CS_Offer/blob/4ab9bed1a0b11b34f1761ba2ead3bf8387350d60/Python/Coroutine.md" target="_blank" rel="external">协程</a>（greenlet），因此需要实现一种能够支持协程的Local对象。</li>
+<li><a href="http://selfboot.cn/2016/08/07/forum_design_wsgi/">WSGI</a>不保证每次都会产生一个新的线程来处理请求，也就是说线程是可以复用的（可以维护一个线程池来处理请求）。这样如果werkzeug 使用python自带的ThreadLocal，一个“不干净（存有之前处理过的请求的相关数据）”的线程会被用来处理新的请求。</li>
+</ol>
+<p>为了解决这两个问题，werkzeug 中实现了Local类。Local对象可以做到线程和协程之间数据的隔离，此外，还要支持清理某个线程或者协程下的数据（这样就可以在处理一个请求之后，清理相应的数据，然后等待下一个请求的到来）。</p>
+<p>具体怎么实现的呢，思想其实特别简单，我们在<a href="http://selfboot.cn/2016/08/22/threadlocal_overview/">深入理解Python中的ThreadLocal变量（上）</a> 一文的最后有提起过，就是创建一个全局字典，然后将线程（或者协程）标识符作为key，相应线程（或协程）的局部数据作为 value。这里 werkzeug 就是按照上面思路进行实现，不过利用了python的一些黑魔法，最后提供给用户一个清晰、简单的接口。</p>
+<h2 id="具体实现"><a href="#具体实现" class="headerlink" title="具体实现"></a>具体实现</h2><p>Local 类的实现在 <a href="https://github.com/pallets/werkzeug/blob/master/werkzeug/local.py" target="_blank" rel="external">werkzeug.local</a> 中，以 <a href="https://github.com/pallets/werkzeug/commit/8a84b62b3dd89fe7d720d7948954e20ada690c40" target="_blank" rel="external">8a84b62</a> 版本的代码进行分析。通过前两篇对ThreadLocal的了解，我们已经知道了Local对象的特点和使用方法。所以这里不再给出Local对象的使用例子，我们直接看代码。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Local</span><span class="params">(object)</span>:</span></div><div class="line">    __slots__ = (<span class="string">'__storage__'</span>, <span class="string">'__ident_func__'</span>)</div><div class="line">    </div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></div><div class="line">        object.__setattr__(self, <span class="string">'__storage__'</span>, &#123;&#125;)</div><div class="line">        object.__setattr__(self, <span class="string">'__ident_func__'</span>, get_ident)</div><div class="line">    ...</div></pre></td></tr></table></figure>
+<p>由于可能有大量的Local对象，为了节省Local对象占用的空间，这里使用 <code>__slots__</code> 写死了Local可以拥有的属性：</p>
+<ul>
+<li>__storage__： 值为一个字典，用来保存实际的数据，初始化为空；</li>
+<li>__ident<em>func\</em>_：值为一个函数，用来找到当前线程或者协程的标志符。</li>
+</ul>
+<p>由于Local对象实际的数据保存在__storage__中，所以对Local属性的操作其实是对__storage__的操作。对于获取属性而言，这里用魔术方法<code>__getattr__</code>拦截__storage__ 和 __ident<em>func\</em>_以外的属性获取，将其导向__storage__存储的当前线程或协程的数据。而对于属性值的set或者del，则分别用__setattr__和__setattr__来实现（这些魔术方法的介绍见<a href="https://github.com/xuelangZF/CS_Offer/blob/master/Python/Class.md#属性控制" target="_blank" rel="external">属性控制</a>）。关键代码如下所示：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">__getattr__</span><span class="params">(self, name)</span>:</span></div><div class="line">    <span class="keyword">try</span>:</div><div class="line">        <span class="keyword">return</span> self.__storage__[self.__ident_func__()][name]</div><div class="line">    <span class="keyword">except</span> KeyError:</div><div class="line">        <span class="keyword">raise</span> AttributeError(name)</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">__setattr__</span><span class="params">(self, name, value)</span>:</span></div><div class="line">    ident = self.__ident_func__()</div><div class="line">    storage = self.__storage__</div><div class="line">    <span class="keyword">try</span>:</div><div class="line">        storage[ident][name] = value</div><div class="line">    <span class="keyword">except</span> KeyError:</div><div class="line">        storage[ident] = &#123;name: value&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">__delattr__</span><span class="params">(self, name)</span>:</span></div><div class="line">    <span class="keyword">try</span>:</div><div class="line">        <span class="keyword">del</span> self.__storage__[self.__ident_func__()][name]</div><div class="line">    <span class="keyword">except</span> KeyError:</div><div class="line">        <span class="keyword">raise</span> AttributeError(name)</div></pre></td></tr></table></figure>
+<p>假设我们有ID为1，2， … ， N 的N个线程或者协程，每个都用Local对象保存有自己的一些局部数据，那么Local对象的内容如下图所示：</p>
+<p><img src="http://xuelangzf-github.qiniudn.com/20161103_threadlocal_enhance_1.png" alt=""></p>
+<p>此外，Local类还提供了<code>__release_local__</code>方法，用来释放当前线程或者协程保存的数据。</p>
+<h1 id="Local-扩展接口"><a href="#Local-扩展接口" class="headerlink" title="Local 扩展接口"></a>Local 扩展接口</h1><p>Werkzeug 在 Local 的基础上实现了 LocalStack 和 LocalManager，用来提供更加友好的接口支持。</p>
+<h2 id="LocalStack"><a href="#LocalStack" class="headerlink" title="LocalStack"></a>LocalStack</h2><p>LocalStack通过封装Local从而实现了一个线程（或者协程）独立的栈结构，注释里面有具体的使用方法，一个简单的使用例子如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">ls = LocalStack()</div><div class="line">ls.push(<span class="number">12</span>)</div><div class="line"><span class="keyword">print</span> ls.top    <span class="comment"># 12</span></div><div class="line"><span class="keyword">print</span> ls._local.__storage__</div><div class="line"><span class="comment"># &#123;140735190843392: &#123;'stack': [12]&#125;&#125;</span></div></pre></td></tr></table></figure>
+<p>LocalStack 的实现比较有意思，它将一个Local对象作为自己的属性<code>_local</code>，然后定义接口push, pop 和 top 方法进行相应的栈操作。这里用 <strong>_local.__storage__.[<em>local.\</em>_ident_func__()][‘stack’]</strong> 这个list来模拟栈结构。在接口push, pop和top中，通过操作这个list来模拟栈的操作，需要注意的是在接口函数内部获取这个list时，不用像上面黑体那么复杂，可以直接用_local的getattr()方法即可。以 push 函数为例，实现如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">push</span><span class="params">(self, obj)</span>:</span></div><div class="line">    <span class="string">"""Pushes a new item to the stack"""</span></div><div class="line">    rv = getattr(self._local, <span class="string">'stack'</span>, <span class="keyword">None</span>)</div><div class="line">    <span class="keyword">if</span> rv <span class="keyword">is</span> <span class="keyword">None</span>:</div><div class="line">        self._local.stack = rv = []</div><div class="line">    rv.append(obj)</div><div class="line">    <span class="keyword">return</span> rv</div></pre></td></tr></table></figure>
+<p>pop 和 top 的实现和一般栈类似，都是对 <code>stack = getattr(self._local, &#39;stack&#39;, None)</code> 这个列表进行相应的操作。此外，LocalStack还允许我们自定义<code>__ident_func__</code>，这里用 <a href="https://docs.python.org/2/library/functions.html#property" target="_blank" rel="external">内置函数 property</a> 生成了<a href="https://github.com/xuelangZF/CS_Offer/blob/master/Python/Descriptor.md" target="_blank" rel="external">描述器</a>，封装了__ident_func__的get和set操作，提供了一个属性值__ident_func__作为接口，具体代码如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">_get__ident_func__</span><span class="params">(self)</span>:</span></div><div class="line">    <span class="keyword">return</span> self._local.__ident_func__</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">_set__ident_func__</span><span class="params">(self, value)</span>:</span></div><div class="line">    object.__setattr__(self._local, <span class="string">'__ident_func__'</span>, value)</div><div class="line">__ident_func__ = property(_get__ident_func__, _set__ident_func__)</div><div class="line"><span class="keyword">del</span> _get__ident_func__, _set__ident_func__</div></pre></td></tr></table></figure>
+<h1 id="LocalManager"><a href="#LocalManager" class="headerlink" title="LocalManager"></a>LocalManager</h1><p>Local 和 LocalStack 都是线程或者协程独立的单个对象，很多时候我们需要一个线程或者协程独立的容器，来组织多个Local或者LocalStack对象（就像我们用一个list来组织多个int或者string类型一样）。</p>
+<p>Werkzeug实现了LocalManager，它通过一个list类型的属性locals来存储所管理的Local或者LocalStack对象，还提供cleanup方法来释放所有的Local对象。Werkzeug中LocalManager最主要的接口就是<a href="http://selfboot.cn/2014/08/10/python_decorator/">装饰器</a>方法<code>make_middleware</code>，代码如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">make_middleware</span><span class="params">(self, app)</span>:</span></div><div class="line">    <span class="string">"""Wrap a WSGI application so that cleaning up happens after</span></div><div class="line">    request end.</div><div class="line">    """</div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">application</span><span class="params">(environ, start_response)</span>:</span></div><div class="line">        <span class="keyword">return</span> ClosingIterator(app(environ, start_response), self.cleanup)</div><div class="line">    <span class="keyword">return</span> application</div></pre></td></tr></table></figure>
+<p>这个装饰器注册了回调函数cleanup，当一个线程（或者协程）处理完请求之后，就会调用cleanup清理它所管理的Local或者LocalStack 对象（ClosingIterator 的实现在 <a href="https://github.com/pallets/werkzeug/blob/master/werkzeug/wsgi.py" target="_blank" rel="external">werkzeug.wsgi</a>中）。下面是一个使用 LocalManager 的简单例子：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> werkzeug.local <span class="keyword">import</span> Local, LocalManager</div><div class="line"></div><div class="line">local = Local()</div><div class="line">local_2 = Local()</div><div class="line">local_manager = LocalManager([local, local2])</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">application</span><span class="params">(environ, start_response)</span>:</span></div><div class="line">    local.request = request = Request(environ)</div><div class="line">    ...</div><div class="line"></div><div class="line"><span class="comment"># application 处理完毕后，会自动清理local_manager 的内容</span></div><div class="line">application = local_manager.make_middleware(application)</div></pre></td></tr></table></figure>
+<p>通过LocalManager的make_middleware我们可以在某个线程（协程）处理完一个请求后，清空所有的Local或者LocalStack对象，这样这个线程又可以处理另一个请求了。至此，文章开始时提到的第二个问题就可以解决了。Werkzeug.local 里面还实现了一个 LocalProxy 用来作为Local对象的代理，也非常值得去学习。</p>
+<p>通过这三篇文章，相信对 ThreadLocal 有了一个初步的了解。Python标准库和Werkzeug在实现中都用到了很多python的黑魔法，不过最终提供给用户的都是非常友好的接口。Werkzeug作为WSGI 工具集，为了解决Web开发中的特定使用问题，提供了一个改进版本，并且进行了一系列封装，便于使用。不得不说，werkzeug的代码可读性非常好，注释也是写的非常棒，建议去阅读源码。</p>
+<h1 id="更多阅读"><a href="#更多阅读" class="headerlink" title="更多阅读"></a>更多阅读</h1><p><a href="http://werkzeug.pocoo.org/docs/0.11/local/" target="_blank" rel="external">Context Locals</a><br><a href="https://docs.python.org/2/tutorial/classes.html#private-variables-and-class-local-references" target="_blank" rel="external">Private Variables and Class-local References</a><br><a href="http://stackoverflow.com/questions/17330160/how-does-the-property-decorator-work" target="_blank" rel="external">How does the @property decorator work?</a><br><a href="http://stackoverflow.com/questions/350404/how-do-the-proxy-decorator-adapter-and-bridge-patterns-differ/350471#350471" target="_blank" rel="external">How do the Proxy, Decorator, Adapter, and Bridge Patterns differ?</a>  </p>
+<p><a href="http://mingxinglai.com/cn/2016/08/flask-source-code/" target="_blank" rel="external">Flask源码剖析</a><br><a href="https://www.15yan.com/story/j7BfM4NHEI9/" target="_blank" rel="external">Werkzeug.locals 模块解读</a><br><a href="http://www.zlovezl.cn/articles/charming-python-start-from-flask-request/" target="_blank" rel="external">Charming Python: 从Flask的request说起</a><br><a href="http://stackoverflow.com/questions/11277432/how-to-remove-a-key-from-a-python-dictionary" target="_blank" rel="external">How to remove a key from a python dictionary?</a><br><a href="https://www.ficapy.com/2016/08/03/werkzeug_local_note/" target="_blank" rel="external">werkzeug源码分析(local.py)</a>  </p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;在&lt;a href=&quot;http://selfboot.cn/2016/08/22/threadlocal_overview/&quot;&gt;上篇&lt;/a&gt;我们看到了 ThreadLocal 变量的简单使用，&lt;a href=&quot;http://selfboot.cn/2016/08/26/threadlocal_implement/&quot;&gt;中篇&lt;/a&gt;对python中 ThreadLocal 的实现进行了分析，但故事还没有结束。本篇我们一起来看下&lt;a href=&quot;http://werkzeug.pocoo.org/&quot;&gt;Werkzeug&lt;/a&gt;中ThreadLocal的设计。&lt;/p&gt;
+&lt;p&gt;Werkzeug 作为一个 WSGI 工具库，由于一些方面的考虑，并没有直接使用python内置的ThreadLocal类，而是自己实现了一系列Local类。包括简单的Local，以及在此基础上实现的LocalStack，LocalManager 和 LocalProxy。接下来我们一起来看看这些类的使用方式，设计的初衷，以及具体的实现技巧。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="源码剖析" scheme="http://selfboot.cn/categories/%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/"/>
+    
+    
+      <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
+    
+      <category term="Flask" scheme="http://selfboot.cn/tags/Flask/"/>
+    
+      <category term="Thread" scheme="http://selfboot.cn/tags/Thread/"/>
+    
+  </entry>
   
   <entry>
     <title>从零开始搭建论坛（三）：Flask框架简单介绍</title>
@@ -217,7 +282,7 @@
     <link href="http://selfboot.cn/2016/08/26/threadlocal_implement/"/>
     <id>http://selfboot.cn/2016/08/26/threadlocal_implement/</id>
     <published>2016-08-25T16:02:50.000Z</published>
-    <updated>2016-09-11T01:20:09.000Z</updated>
+    <updated>2016-10-31T08:31:57.000Z</updated>
     
     <content type="html"><![CDATA[<p>在 <a href="http://selfboot.cn/2016/08/22/threadlocal_overview/">深入理解Python中的ThreadLocal变量（上）</a> 中我们看到 ThreadLocal 的引入，使得可以很方便地在多线程环境中使用局部变量。如此美妙的功能到底是怎样实现的？如果你对它的实现原理没有好奇心或一探究竟的冲动，那么接下来的内容估计会让你后悔自己的浅尝辄止了。</p>
 <p>简单来说，Python 中 ThreadLocal 就是通过<a name="img_1"></a>下图中的方法，将全局变量伪装成线程局部变量，相信读完本篇文章你会理解图中内容的。（对这张图不眼熟的话，可以回顾下<a href="(http://selfboot.cn/2016/08/22/threadlocal_overview/">上篇</a>)）。</p>
@@ -245,7 +310,7 @@
 <h2 id="python-黑魔法"><a href="#python-黑魔法" class="headerlink" title="python 黑魔法"></a>python 黑魔法</h2><p>下面是我对上面提到的内容的一点总结，如果觉得读的明白，那么可以继续往下分析源码了。如果还有不理解的，再读几遍文档（或者我错了，欢迎指出来）。</p>
 <ul>
 <li>简单来说，python 中创建一个<strong>新式类</strong>的实例时，首先会调用<code>__new__(cls[, ...])</code>创建实例，如果它成功返回cls类型的对象，然后才会调用__init__来对对象进行初始化。</li>
-<li>新式类中我们可以用__slots__指定该类可以拥有的属性名称，这样每个对象就不会再创建<strong>dict</strong>，从而节省对象占用的空间。特别需要注意的是，基类的__slots__并不会屏蔽派生类中__dict__的创建。</li>
+<li>新式类中我们可以用__slots__指定该类可以拥有的属性名称，这样每个对象就不会再创建__dict__，从而节省对象占用的空间。特别需要注意的是，基类的__slots__并不会屏蔽派生类中__dict__的创建。</li>
 <li>可以通过重载<code>__setattr__，__delattr__和__getattribute__</code>这些方法，来控制自定义类的属性访问（x.name），它们分别对应属性的赋值，删除，读取。</li>
 <li>锁是操作系统中为了保证操作原子性而引入的概念，python 中 RLock是一种可重入锁（reentrant lock，也可以叫作递归锁），Rlock.acquire()可以不被阻塞地多次进入同一个线程。</li>
 <li><code>__dict__</code>用来保存对象的（可写）属性，可以是一个字典，或者其他映射对象。</li>
@@ -300,7 +365,7 @@
     <link href="http://selfboot.cn/2016/08/22/threadlocal_overview/"/>
     <id>http://selfboot.cn/2016/08/22/threadlocal_overview/</id>
     <published>2016-08-22T14:02:50.000Z</published>
-    <updated>2016-08-29T00:59:16.000Z</updated>
+    <updated>2016-10-31T08:31:18.000Z</updated>
     
     <content type="html"><![CDATA[<p>我们知道多线程环境下，每一个线程均可以使用所属进程的全局变量。如果一个线程对全局变量进行了修改，将会影响到其他所有的线程。为了避免多个线程同时对变量进行修改，引入了线程同步机制，通过互斥锁，条件变量或者读写锁来控制对全局变量的访问。</p>
 <p>只用全局变量并不能满足多线程环境的需求，很多时候线程还需要拥有自己的私有数据，这些数据对于其他线程来说不可见。因此线程中也可以使用局部变量，局部变量只有线程自身可以访问，同一个进程下的其他线程不可访问。</p>
@@ -323,7 +388,7 @@
 <p>为了更好解决这个问题，python 线程库实现了 ThreadLocal 变量（很多语言都有类似的实现，比如Java）。ThreadLocal 真正做到了线程之间的数据隔离，并且使用时不需要手动获取自己的线程 ID，如下示例：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">global_data = threading.local()</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">show</span><span class="params">()</span>:</span></div><div class="line">    <span class="keyword">print</span> threading.current_thread().getName(), global_data.num</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">thread_cal</span><span class="params">()</span>:</span></div><div class="line">    global_data.num = <span class="number">0</span></div><div class="line">    <span class="keyword">for</span> _ <span class="keyword">in</span> xrange(<span class="number">1000</span>):</div><div class="line">        global_data.num += <span class="number">1</span></div><div class="line">    show()</div><div class="line"></div><div class="line">threads = []</div><div class="line">...</div><div class="line"></div><div class="line"><span class="keyword">print</span> <span class="string">"Main thread: "</span>, global_data.__dict__ <span class="comment"># &#123;&#125;</span></div></pre></td></tr></table></figure>
 <p>上面示例中每个线程都可以通过 global_data.num 获得自己独有的数据，并且每个线程读取到的 global_data 都不同，真正做到线程之间的隔离。</p>
-<p>Python通过 local 类来实现 ThreadLocal 变量，代码量不多（只有100多行），但是比较难理解，涉及很多 Python 黑魔法，下篇再来详细分析。那么 ThreadLocal 很完美了？不！Python 的 WSGI 工具库 werkzeug 中有一个更好的 <a href="https://github.com/pallets/werkzeug/blob/8a84b62b3dd89fe7d720d7948954e20ada690c40/werkzeug/local.py" target="_blank" rel="external">ThreadLocal 实现</a>，甚至支持协程之间的私有数据，实现更加复杂，有机会再分析。</p>
+<p>Python通过 local 类来实现 ThreadLocal 变量，代码量不多（只有100多行），但是比较难理解，涉及很多 Python 黑魔法，<a href="http://selfboot.cn/2016/08/26/threadlocal_implement/">下一篇</a>再来详细分析。那么 ThreadLocal 很完美了？不！Python 的 WSGI 工具库 werkzeug 中有一个更好的 <a href="https://github.com/pallets/werkzeug/blob/8a84b62b3dd89fe7d720d7948954e20ada690c40/werkzeug/local.py" target="_blank" rel="external">ThreadLocal 实现</a>，甚至支持协程之间的私有数据，实现更加复杂，有机会再分析。</p>
 <h1 id="更多阅读"><a href="#更多阅读" class="headerlink" title="更多阅读"></a>更多阅读</h1><p><a href="http://stackoverflow.com/questions/1408171/thread-local-storage-in-python" target="_blank" rel="external">Thread local storage in Python</a><br><a href="https://pymotw.com/2/threading/" target="_blank" rel="external">threading – Manage concurrent threads</a><br><a href="https://harveyqing.gitbooks.io/python-read-and-write/content/python_advance/python_thread_sync.html" target="_blank" rel="external">Python线程同步机制</a><br><a href="http://www.cnblogs.com/vamei/archive/2012/10/09/2715393.html" target="_blank" rel="external">Linux多线程与同步</a><br><a href="https://www.quora.com/Are-local-variables-in-a-python-function-thread-safe" target="_blank" rel="external">Are local variables in a python function thread safe?</a>  </p>
 ]]></content>
     
@@ -834,9 +899,9 @@
       <category term="程序设计" scheme="http://selfboot.cn/categories/%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1/"/>
     
     
-      <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
-    
       <category term="总结" scheme="http://selfboot.cn/tags/%E6%80%BB%E7%BB%93/"/>
+    
+      <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
     
   </entry>
   
@@ -1583,69 +1648,9 @@
       <category term="计算机基础" scheme="http://selfboot.cn/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/"/>
     
     
-      <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
-    
       <category term="总结" scheme="http://selfboot.cn/tags/%E6%80%BB%E7%BB%93/"/>
     
-  </entry>
-  
-  <entry>
-    <title>两篇文章帮你入门Django(下)</title>
-    <link href="http://selfboot.cn/2015/01/11/django_start(2)/"/>
-    <id>http://selfboot.cn/2015/01/11/django_start(2)/</id>
-    <published>2015-01-10T16:00:00.000Z</published>
-    <updated>2016-08-27T00:43:30.000Z</updated>
-    
-    <content type="html"><![CDATA[<p>在<a href="http://selfboot.cn/2014/12/26/django_start/">两篇文章帮你入门Django(上)</a>一文中，我们已经做了一个简单的小网站，实现了保存用户数据到数据库，以及从后台数据库读取数据显示到网页上这两个功能。</p>
-<p>看上去没有什么问题了，不过我们可以让它变得更加完美，比如说为它添加一个简单的后台，用来管理我们的Question数据库，或者是写点测试单元来看看我们的程序有没有什么Bug。</p>
-<a id="more"></a>
-<h1 id="后台管理"><a href="#后台管理" class="headerlink" title="后台管理"></a>后台管理</h1><p>首先需要添加后台管理员账号，只需要简单的 <code>createsuperuser</code> 命令，如下：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">$ python manage.py createsuperuser</div><div class="line">Username (leave blank to use <span class="string">'feizhao'</span>): happy</div><div class="line">Email address:</div><div class="line">Password:</div><div class="line">Password (again):</div><div class="line">Superuser created successfully.</div></pre></td></tr></table></figure>
-<p>然后就可以通过 <a href="http://127.0.0.1:8000/admin/" target="_blank" rel="external">http://127.0.0.1:8000/admin/</a> 进入管理员登录页面。我们用刚才创建的管理员账号登录成功后就会看到<code>Groups</code>和<code>Users</code>两个可以编辑的内容，它们是Django内置的认证模块<code>django.contrib.auth</code>提供的数据库，进入Users就会看到刚刚创建的管理员用户happy了。</p>
-<p>目前后台还看不到我们的Question数据库，因为还没告诉后台它的存在。我们可以在questions应用下的<code>admin.py</code>文件里面注册该数据库的存在，注册的语句非常简单，如下：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> django.contrib <span class="keyword">import</span> admin</div><div class="line"><span class="keyword">from</span> questions.models <span class="keyword">import</span> Question</div><div class="line"></div><div class="line">admin.site.register(Question)</div></pre></td></tr></table></figure>
-<p>这样我们刷新后台之后，就能看到Question数据库了，如下图：</p>
-<p><img src="http://xuelangzf-github.qiniudn.com/20150111_admin_question.png" alt="Question数据库"></p>
-<p>进入Question数据库后，我们会看到每一条记录，不过这里显示的结果可能是这样子：</p>
-<p><img src="http://xuelangzf-github.qiniudn.com/20150111_question_object.png" alt="数据库记录"></p>
-<p>这是因为默认情况下，每条记录显示的是<code>str()</code>返回的内容，而我们没有在<code>class Question(models.Model)</code>中覆盖该方法。不过我们可以在这里指定数据库记录显示某个字段，方法也特别简单，修改admin.py如下：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">QuestionAdmin</span><span class="params">(admin.ModelAdmin)</span>:</span></div><div class="line">    list_display = (<span class="string">'context'</span>,)</div><div class="line"></div><div class="line">admin.site.register(Question, QuestionAdmin)</div></pre></td></tr></table></figure>
-<p>这样每条记录显示的就是context内容了，我们进去某条记录后，会看到所有的字段，并且可以进行更新、删除、添加等操作。Django后台的可定制性还是非常高的，我们可以按照自己爱好打造属于自己的后台。</p>
-<h1 id="自动化测试"><a href="#自动化测试" class="headerlink" title="自动化测试"></a>自动化测试</h1><p>Django另一个比较不错的地方就是提供了完整的自动化测试机制，方便开发人员进行测试。仍然以我们前面的questions这个应用为例，我们会发现在问题描述框没有输入任何内容时点击提交，仍然会跳转到添加成功页面，也就是说我们添加了一个空的问题，这当然不是我们想要的，我们可以写一个程序来测试我们的添加问题的功能。</p>
-<p>Django中，实现测试非常简单，我们可以在questions应用中新建<code>tests.py</code>文件，在里面写好测试逻辑，然后用django的测试系统完成测试。下面即为我们的测试程序questions/tests.py：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> django.test <span class="keyword">import</span> TestCase</div><div class="line"><span class="keyword">from</span> django.test <span class="keyword">import</span> Client</div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">QuestionMethodTests</span><span class="params">(TestCase)</span>:</span></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">test_add</span><span class="params">(self)</span>:</span></div><div class="line">        client = Client()</div><div class="line">        response = client.post(<span class="string">'/add_done/'</span>, &#123;<span class="string">'content'</span>: <span class="string">""</span>&#125;)</div><div class="line">        self.assertNotEqual(response.status_code, <span class="number">200</span>)</div></pre></td></tr></table></figure>
-<p>我们模拟了一个客户端client，将空字符串传给content字段，然后发起一个post请求到<code>/add_done/</code>页面(默认情况下测试时并不检查CSRF字段)，然后断言post请求不成功(也就是返回包的状态码不为200)。下面运行测试程序：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">$ python manage.py <span class="built_in">test</span> questions</div><div class="line">Creating <span class="built_in">test</span> database <span class="keyword">for</span> <span class="built_in">alias</span> <span class="string">'default'</span>...</div><div class="line">F</div><div class="line">======================================================================</div><div class="line">FAIL: test_add (questions.tests.QuestionMethodTests)</div><div class="line">----------------------------------------------------------------------</div><div class="line">Traceback (most recent call last):</div><div class="line">  File <span class="string">"/Users/feizhao/Documents/python_demo/mysite/questions/tests.py"</span>, line 10, <span class="keyword">in</span> test_add</div><div class="line">    self.assertNotEqual(response.status_code, 200)</div><div class="line">AssertionError: 200 == 200</div><div class="line">	</div><div class="line">----------------------------------------------------------------------</div><div class="line">Ran 1 <span class="built_in">test</span> <span class="keyword">in</span> 0.009s</div><div class="line">	</div><div class="line">FAILED (failures=1)</div><div class="line">Destroying <span class="built_in">test</span> database <span class="keyword">for</span> <span class="built_in">alias</span> <span class="string">'default'</span>...</div></pre></td></tr></table></figure>
-<p>测试没通过，说明确实插入了空白问题。注意测试时并不需要运行web服务，这样能节省HTTP服务的开销，提高测试的速度。现在对views中的add_done稍作改动，如下：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">add_done</span><span class="params">(request)</span>:</span></div><div class="line">    content = request.POST[<span class="string">'content'</span>]</div><div class="line">    <span class="keyword">if</span> content != <span class="string">""</span>:</div><div class="line">        add_question = Question()</div><div class="line">        add_question.context = content</div><div class="line">        add_question.save()</div><div class="line">        <span class="keyword">return</span> render(</div><div class="line">            request,</div><div class="line">            <span class="string">"questions/add_done.html"</span>,</div><div class="line">            &#123;<span class="string">'question'</span>: content&#125;,</div><div class="line">        )</div><div class="line">    <span class="keyword">else</span>:</div><div class="line">        <span class="keyword">return</span> redirect(<span class="string">"/add/"</span>)</div></pre></td></tr></table></figure>
-<p>首先检查字符串是否为空，为空的话重定向页面到<code>/add/</code>，不为空则添加问题成功。再次运行测试程序，则通过测试，结果如下：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">$ python manage.py <span class="built_in">test</span> questions</div><div class="line">Creating <span class="built_in">test</span> database <span class="keyword">for</span> <span class="built_in">alias</span> <span class="string">'default'</span>...</div><div class="line">.</div><div class="line">----------------------------------------------------------------------</div><div class="line">Ran 1 <span class="built_in">test</span> <span class="keyword">in</span> 0.007s</div><div class="line">	</div><div class="line">OK</div><div class="line">Destroying <span class="built_in">test</span> database <span class="keyword">for</span> <span class="built_in">alias</span> <span class="string">'default'</span>...</div></pre></td></tr></table></figure>
-<p>其实这个应用还有bug就是一个问题可能重复提交多次，这里不详细阐述。</p>
-<h1 id="命令行交互"><a href="#命令行交互" class="headerlink" title="命令行交互"></a>命令行交互</h1><p>有时候我们想验证下某条语句是否符合预期，或者是输出某个变量观察一下值，这时候直接在项目里实现可能会非常麻烦。这种情况可以使用python解释器的交互模式，为了避免手动导入django的配置环境，可以运行 <code>python manage.py shell</code>，然后就可以使用django的API，并且在当前项目目录进行交互，如下例：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line">$ python manage.py shell</div><div class="line">Python 2.7.5 (default, Mar  9 2014, 22:15:05)</div><div class="line">[GCC 4.2.1 Compatible Apple LLVM 5.0 (clang-500.0.68)] on darwin</div><div class="line">Type <span class="string">"help"</span>, <span class="string">"copyright"</span>, <span class="string">"credits"</span> or <span class="string">"license"</span> <span class="keyword">for</span> more information.</div><div class="line">(InteractiveConsole)</div><div class="line">&gt;&gt;&gt; from questions.models import Question</div><div class="line">&gt;&gt;&gt; null_question = Question()</div><div class="line">&gt;&gt;&gt; null_question.save()</div><div class="line">&gt;&gt;&gt; <span class="keyword">for</span> question <span class="keyword">in</span> Question.objects.all():</div><div class="line">...     <span class="built_in">print</span> question.context</div><div class="line">...</div><div class="line">as</div><div class="line">as</div><div class="line">程序员为什么最帅</div><div class="line">程序为什么老出bug</div><div class="line"></div><div class="line">&gt;&gt;&gt;</div></pre></td></tr></table></figure>
-<p>交互模式使用起来可能事半功倍，所以不要忘了哦。</p>
-<h1 id="深入学习"><a href="#深入学习" class="headerlink" title="深入学习"></a>深入学习</h1><p>好了，前面就是django的一些重要的特点了，下面来看看有哪些资源可以帮我们更好地学习django。</p>
-<p><a href="http://django-china.cn/" target="_blank" rel="external">Django中国社区</a>是国内的Django开发社区，人气不是很旺，不过也能在里面找到有用的东西。比如@evilbinary在这里<a href="http://django-china.cn/topic/840/" target="_blank" rel="external">一个博客，兼容wp，代码高亮功能支持</a> 提供了一个用Django搭建的博客，并给出了源码，我们可以学习。还有一些不错的Django开源项目，比如这个小的BBS论坛<a href="http://fairybbs.com/" target="_blank" rel="external">fairybbs</a>，还有这个登录的应用<a href="https://github.com/yueyoum/django-siteuser" target="_blank" rel="external">django-siteuser</a>。</p>
-<p>中文的教程目前有<a href="http://djangobook.py3k.cn/" target="_blank" rel="external">djangobook 2.0</a>，但是书中使用的Django版本太低，因此不推荐使用。英文的资料还是挺丰富，不过还是推荐读文档，虽然文档有时候特别坑人(被坑了好多次)。</p>
-<p>此外，除了<strong>Stackoverflow(这个太喜欢了，谁用谁知道，不用担心英语太烂，放代码和错误提示，实在不行用Google翻译加一点描述就行。总而言之，SO就是程序员的天堂啊)</strong>, Segmentfault这些问答网站，很多Django用户在<a href="http://www.djangoproject.com/r/django-users" target="_blank" rel="external">邮件列表</a>(邮件列表是<code>groups.google.com</code>，所以你懂的)里提问题、回答问题，这里的氛围非常不错，各种问题都有人来帮你。比如这种中二的问题<a href="https://groups.google.com/forum/#!topic/django-users/xUmPe4xnuH8" target="_blank" rel="external">Serving static files and media in Django 1.7.1</a>也是有人十分认真的作答的。所以，不要害羞，有问题大胆问吧。</p>
-<p>如果你决定好好玩Django了，那么先看一下<a href="https://docs.djangoproject.com/en/1.7/faq/" target="_blank" rel="external">Django FAQ</a>，可能会解决关于Django的一些疑问。</p>
-]]></content>
-    
-    <summary type="html">
-    
-      &lt;p&gt;在&lt;a href=&quot;http://selfboot.cn/2014/12/26/django_start/&quot;&gt;两篇文章帮你入门Django(上)&lt;/a&gt;一文中，我们已经做了一个简单的小网站，实现了保存用户数据到数据库，以及从后台数据库读取数据显示到网页上这两个功能。&lt;/p&gt;
-&lt;p&gt;看上去没有什么问题了，不过我们可以让它变得更加完美，比如说为它添加一个简单的后台，用来管理我们的Question数据库，或者是写点测试单元来看看我们的程序有没有什么Bug。&lt;/p&gt;
-    
-    </summary>
-    
-      <category term="程序设计" scheme="http://selfboot.cn/categories/%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1/"/>
-    
-    
       <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
-    
-      <category term="教程" scheme="http://selfboot.cn/tags/%E6%95%99%E7%A8%8B/"/>
-    
-      <category term="Django" scheme="http://selfboot.cn/tags/Django/"/>
     
   </entry>
   
