@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://selfboot.cn/"/>
-  <updated>2016-12-28T09:08:06.000Z</updated>
+  <updated>2016-12-28T09:12:16.000Z</updated>
   <id>http://selfboot.cn/</id>
   
   <author>
@@ -17,10 +17,10 @@
   
   <entry>
     <title>Python2.x 字符编码终极指南</title>
-    <link href="http://selfboot.cn/2016/12/27/py_encode_decode/"/>
-    <id>http://selfboot.cn/2016/12/27/py_encode_decode/</id>
-    <published>2016-12-27T14:02:50.000Z</published>
-    <updated>2016-12-28T09:08:06.000Z</updated>
+    <link href="http://selfboot.cn/2016/12/28/py_encode_decode/"/>
+    <id>http://selfboot.cn/2016/12/28/py_encode_decode/</id>
+    <published>2016-12-28T14:02:50.000Z</published>
+    <updated>2016-12-28T09:12:16.000Z</updated>
     
     <content type="html"><![CDATA[<p>在<a href="http://selfboot.cn/2014/08/28/character_encoding/">人机交互之字符编码</a> 一文中对字符编码进行了详细的讨论，并通过一些简单的小程序验证了我们对于字符编码的认识。但仅了解这篇文章的内容，并不能帮我们在日常编程中躲过一些字符编码相关的坑，Stackoverflow 上就有大量编码相关的问题，比如 <a href="http://stackoverflow.com/questions/9942594/unicodeencodeerror-ascii-codec-cant-encode-character-u-xa0-in-position-20" target="_blank" rel="external">1</a>，<a href="Python: Convert Unicode to ASCII without errors" target="_blank" rel="external">2</a>，<a href="http://stackoverflow.com/questions/2688020/how-to-print-chinese-word-in-my-code-using-python" target="_blank" rel="external">3</a>。</p>
 <p><img src="http://xuelangzf-github.qiniudn.com/20161228_encode_decode_1.png" alt="图1. 错误的编解码"></p>
@@ -1028,9 +1028,9 @@
       <category term="程序设计" scheme="http://selfboot.cn/categories/%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1/"/>
     
     
-      <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
-    
       <category term="总结" scheme="http://selfboot.cn/tags/%E6%80%BB%E7%BB%93/"/>
+    
+      <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
     
   </entry>
   
