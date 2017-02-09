@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://selfboot.cn/"/>
-  <updated>2016-12-28T09:12:16.000Z</updated>
+  <updated>2016-12-28T11:13:37.000Z</updated>
   <id>http://selfboot.cn/</id>
   
   <author>
@@ -20,7 +20,7 @@
     <link href="http://selfboot.cn/2016/12/28/py_encode_decode/"/>
     <id>http://selfboot.cn/2016/12/28/py_encode_decode/</id>
     <published>2016-12-28T14:02:50.000Z</published>
-    <updated>2016-12-28T09:12:16.000Z</updated>
+    <updated>2016-12-28T11:13:37.000Z</updated>
     
     <content type="html"><![CDATA[<p>在<a href="http://selfboot.cn/2014/08/28/character_encoding/">人机交互之字符编码</a> 一文中对字符编码进行了详细的讨论，并通过一些简单的小程序验证了我们对于字符编码的认识。但仅了解这篇文章的内容，并不能帮我们在日常编程中躲过一些字符编码相关的坑，Stackoverflow 上就有大量编码相关的问题，比如 <a href="http://stackoverflow.com/questions/9942594/unicodeencodeerror-ascii-codec-cant-encode-character-u-xa0-in-position-20" target="_blank" rel="external">1</a>，<a href="Python: Convert Unicode to ASCII without errors" target="_blank" rel="external">2</a>，<a href="http://stackoverflow.com/questions/2688020/how-to-print-chinese-word-in-my-code-using-python" target="_blank" rel="external">3</a>。</p>
 <p><img src="http://xuelangzf-github.qiniudn.com/20161228_encode_decode_1.png" alt="图1. 错误的编解码"></p>
@@ -73,7 +73,7 @@
 <figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="meta">&gt;&gt;&gt; </span>str_str = <span class="string">'Welcome to 广州'</span>       <span class="comment"># 这是一个 str</span></div><div class="line"><span class="meta">&gt;&gt;&gt; </span>str_str, type(str_str)</div><div class="line">(<span class="string">'Welcome to \xe5\xb9\xbf\xe5\xb7\x9e'</span>, &lt;type <span class="string">'str'</span>&gt;)</div></pre></td></tr></table></figure>
 <p>python中 <code>\xhh</code>（h为16进制数字）表示一个字节，输出中的<code>\xe5\xb9\xbf\xe5\xb7\x9e</code> 就是所谓的字节串，它对应了<code>广州</code>。实际上 str_str 中的英文字母也是保存为字节串的，不过 repr 并没有以 <code>\x</code> 的形式返回。为了验证上面输出内容确实是<strong>字节串</strong>，我们用python提供的 <a href="https://docs.python.org/2.7/library/functions.html#bytearray" target="_blank" rel="external">bytearray 函数</a>将相同内容的 unicode字符串用 UTF-8 编码为字节数组，如下所示：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="meta">&gt;&gt;&gt; </span>unicode_str = <span class="string">u'Welcome to 广州'</span></div><div class="line"><span class="meta">&gt;&gt;&gt; </span>bytearray(unicode_str, <span class="string">'UTF-8'</span>)</div><div class="line">bytearray(<span class="string">b'Welcome to \xe5\xb9\xbf\xe5\xb7\x9e'</span>)</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>list(bytearray(unicode_str, <span class="string">'UTF-8'</span>)) </div><div class="line"><span class="comment"># 字节数组，每一项为一个字节；</span></div><div class="line">[<span class="number">87</span>, <span class="number">101</span>, <span class="number">108</span>, <span class="number">99</span>, <span class="number">111</span>, <span class="number">109</span>, <span class="number">101</span>, <span class="number">32</span>, <span class="number">116</span>, <span class="number">111</span>, <span class="number">32</span>, <span class="number">229</span>, <span class="number">185</span>, <span class="number">191</span>, <span class="number">229</span>, <span class="number">183</span>, <span class="number">158</span>]</div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">print</span> <span class="string">r"\x"</span> + <span class="string">r"\x"</span>.join([<span class="string">"%02x"</span> % c <span class="keyword">for</span> c <span class="keyword">in</span> list(bytearray(unicode_str, <span class="string">'UTF-8'</span>))])</div><div class="line"><span class="comment"># 转换为 \xhh 的形式</span></div><div class="line">\x57\x65\x6c\x63\x6f\x6d\x65\x20\x74\x6f\x20\xe5\xb9\xbf\xe5\xb7\x9e</div></pre></td></tr></table></figure>
-<p>可见，上面的 str_str 是 unicode_str 经过 <a href="http://selfboot.cn/2014/08/28/character_encoding/#发扬光大-UTF-8编码">UTF-8 编码</a> 后的字节串。这里透漏了一个十分重要的信息，<strong>\<type 'str'\="">类型隐含有某种编码方式</type></strong>，正是这种隐式编码（<em>implicit encoding</em>）的存在导致了许多问题的出现（后面详细说明）。值得注意的是，str类型字节串的隐式编码不一定都是’UTF-8’，前面示例程序都是在 OS X 平台下的终端，所以隐式编码是 UTF-8。对于 Windows 而言，如果语言设置为简体中文，那么交互界面输出如下：</p>
+<p>可见，上面的 str_str 是 unicode_str 经过 <a href="http://selfboot.cn/2014/08/28/character_encoding/#发扬光大-UTF-8编码">UTF-8 编码</a> 后的字节串。这里透漏了一个十分重要的信息，<strong>str类型隐含有某种编码方式</strong>，正是这种隐式编码（<em>implicit encoding</em>）的存在导致了许多问题的出现（后面详细说明）。值得注意的是，str类型字节串的隐式编码不一定都是’UTF-8’，前面示例程序都是在 OS X 平台下的终端，所以隐式编码是 UTF-8。对于 Windows 而言，如果语言设置为简体中文，那么交互界面输出如下：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># Win 平台下，系统语言为简体中文</span></div><div class="line"><span class="meta">&gt;&gt;&gt; </span>str_str = <span class="string">'Welcome to 广州'</span>   </div><div class="line"><span class="meta">&gt;&gt;&gt; </span>str_str, type(str_str)</div><div class="line">(<span class="string">'Welcome to \xb9\xe3\xd6\xdd'</span>, &lt;type <span class="string">'str'</span>&gt;)</div></pre></td></tr></table></figure>
 <p>这里str_str的隐式编码是<strong>cp936</strong>，可以用 <code>bytearray(unicode_str, &#39;cp936&#39;)</code> 来验证这点。终端下，str类型的隐式编码由系统 locale 决定，可以采用下面方式查看：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># Unix or Linux</span></div><div class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">import</span> locale</div><div class="line"><span class="meta">&gt;&gt;&gt; </span>locale.getdefaultlocale()       </div><div class="line">(<span class="string">'zh_CN'</span>, <span class="string">'UTF-8'</span>)</div><div class="line">...</div><div class="line"><span class="comment"># 简体中文 Windows</span></div><div class="line"><span class="meta">&gt;&gt;&gt; </span>locale.getdefaultlocale()       </div><div class="line">(<span class="string">'zh_CN'</span>, <span class="string">'cp936'</span>)</div></pre></td></tr></table></figure>
@@ -1028,9 +1028,9 @@
       <category term="程序设计" scheme="http://selfboot.cn/categories/%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1/"/>
     
     
-      <category term="总结" scheme="http://selfboot.cn/tags/%E6%80%BB%E7%BB%93/"/>
-    
       <category term="Python" scheme="http://selfboot.cn/tags/Python/"/>
+    
+      <category term="总结" scheme="http://selfboot.cn/tags/%E6%80%BB%E7%BB%93/"/>
     
   </entry>
   
